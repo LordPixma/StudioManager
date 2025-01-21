@@ -1,0 +1,59 @@
+# render.yaml
+services:
+  - type: web
+    name: studiomanager
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: studiomanager-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  - name: studiomanager-db
+    databaseName: studiomanager
+    plan: standard
+
+# build.sh
+#!/usr/bin/env bash
+# This script is used by Render to build and start the application
+
+# Exit on error
+set -o errexit
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Run database migrations
+flask db upgrade
+
+# Create admin user if needed
+python scripts/create_admin.py
+
+# Compile static assets (if needed)
+# flask assets build
+
+# gunicorn.conf.py
+bind = "0.0.0.0:$PORT"
+workers = 4
+threads = 2
+timeout = 120
+worker_class = "gthread"
+max_requests = 1000
+max_requests_jitter = 50
+preload_app = True

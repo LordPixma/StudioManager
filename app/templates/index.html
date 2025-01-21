@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to StudioManager{% endblock %}
+
+{% block content %}
+<div class="landing-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Welcome to StudioManager</h1>
+            <p>Streamline your studio operations with our comprehensive management solution. Manage bookings, track sessions, and grow your business efficiently.</p>
+            <div class="button-container">
+                <a href="{{ url_for('manager_routes.manager_login') }}" class="btn btn-primary">Studio Manager Login</a>
+                <a href="{{ url_for('admin_routes.admin_login') }}" class="btn btn-secondary">Admin Login</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h2>Studio Management</h2>
+                <p>Efficiently manage multiple studios, rooms, and resources from a single dashboard.</p>
+            </div>
+
+            <div class="feature-card">
+                <h2>Customer Management</h2>
+                <p>Maintain detailed customer profiles and booking history for better service delivery.</p>
+            </div>
+
+            <div class="feature-card">
+                <h2>Session Tracking</h2>
+                <p>Keep track of all ongoing and upcoming sessions with real-time updates.</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

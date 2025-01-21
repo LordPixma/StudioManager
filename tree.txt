@@ -1,0 +1,2500 @@
+.
+├── README.md
+├── StudioManager.zip
+├── __pycache__
+│   └── run.cpython-312.pyc
+├── app
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── __init__.cpython-313.pyc
+│   │   ├── config.cpython-312.pyc
+│   │   └── config.cpython-313.pyc
+│   ├── config.py
+│   ├── models
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── customer.cpython-312.pyc
+│   │   │   ├── customer.cpython-313.pyc
+│   │   │   ├── manager.cpython-312.pyc
+│   │   │   ├── manager.cpython-313.pyc
+│   │   │   ├── room.cpython-312.pyc
+│   │   │   ├── room.cpython-313.pyc
+│   │   │   ├── session.cpython-312.pyc
+│   │   │   ├── session.cpython-313.pyc
+│   │   │   ├── studio.cpython-312.pyc
+│   │   │   └── studio.cpython-313.pyc
+│   │   ├── customer.py
+│   │   ├── manager.py
+│   │   ├── room.py
+│   │   ├── session.py
+│   │   └── studio.py
+│   ├── reports
+│   │   ├── __pycache__
+│   │   │   ├── report_generator.cpython-312.pyc
+│   │   │   └── report_generator.cpython-313.pyc
+│   │   └── report_generator.py
+│   ├── routes
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── __init__.cpython-313.pyc
+│   │   │   ├── admin_routes.cpython-312.pyc
+│   │   │   ├── admin_routes.cpython-313.pyc
+│   │   │   ├── manager_routes.cpython-312.pyc
+│   │   │   └── manager_routes.cpython-313.pyc
+│   │   ├── admin_routes.py
+│   │   └── manager_routes.py
+│   ├── static
+│   │   ├── css
+│   │   │   ├── availability.css
+│   │   │   └── styles.css
+│   │   └── js
+│   │       ├── main.js
+│   │       └── manage_availability.js
+│   ├── templates
+│   │   ├── 404.html
+│   │   ├── admin_dashboard.html
+│   │   ├── admin_login.html
+│   │   ├── base.html
+│   │   ├── book_sessions.html
+│   │   ├── create_studio.html
+│   │   ├── create_studio_manager.html
+│   │   ├── edit_studio.html
+│   │   ├── edit_studio_manager.html
+│   │   ├── error.html
+│   │   ├── index.html
+│   │   ├── login.html
+│   │   ├── manage_availability.html
+│   │   ├── manage_customers.html
+│   │   ├── manage_managers.html
+│   │   ├── manage_rooms.html
+│   │   ├── manage_studios.html
+│   │   ├── manager_dashboard.html
+│   │   ├── manager_login.html
+│   │   ├── manager_profile.html
+│   │   ├── reports.html
+│   │   └── sessions.html
+│   └── utils
+│       ├── auth.py
+│       └── validators.py
+├── build.sh
+├── create_admin_user.py
+├── create_studio.py
+├── create_studio_manager.py
+├── instance
+│   └── app.db
+├── migrations
+│   ├── README
+│   ├── __pycache__
+│   │   ├── env.cpython-312.pyc
+│   │   └── env.cpython-313.pyc
+│   ├── alembic.ini
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions
+│       ├── __pycache__
+│       │   ├── cf66e27d13c5_initial_migration.cpython-312.pyc
+│       │   ├── cf66e27d13c5_initial_migration.cpython-313.pyc
+│       │   ├── f7439c7f6061_.cpython-312.pyc
+│       │   └── f7439c7f6061_.cpython-313.pyc
+│       ├── cf66e27d13c5_initial_migration.py
+│       └── f7439c7f6061_.py
+├── render.yaml
+├── requirements.txt
+├── run.py
+├── seed.py
+├── tree.txt
+├── user_report.py
+└── venv
+    ├── bin
+    │   ├── Activate.ps1
+    │   ├── activate
+    │   ├── activate.csh
+    │   ├── activate.fish
+    │   ├── alembic
+    │   ├── flask
+    │   ├── mako-render
+    │   ├── pip
+    │   ├── pip3
+    │   ├── pip3.12
+    │   ├── python -> python3.12
+    │   ├── python3 -> python3.12
+    │   ├── python3.12 -> /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+    │   └── tabulate
+    ├── include
+    │   └── site
+    │       └── python3.12
+    │           └── greenlet
+    │               └── greenlet.h
+    ├── lib
+    │   └── python3.12
+    │       └── site-packages
+    │           ├── Flask_Migrate-4.0.7.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── REQUESTED
+    │           │   ├── WHEEL
+    │           │   └── top_level.txt
+    │           ├── Mako-1.3.8.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   ├── entry_points.txt
+    │           │   └── top_level.txt
+    │           ├── MarkupSafe-3.0.2.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   └── top_level.txt
+    │           ├── SQLAlchemy-2.0.36.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   └── top_level.txt
+    │           ├── __pycache__
+    │           │   └── typing_extensions.cpython-312.pyc
+    │           ├── alembic
+    │           │   ├── __init__.py
+    │           │   ├── __main__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── __main__.cpython-312.pyc
+    │           │   │   ├── command.cpython-312.pyc
+    │           │   │   ├── config.cpython-312.pyc
+    │           │   │   ├── context.cpython-312.pyc
+    │           │   │   ├── environment.cpython-312.pyc
+    │           │   │   ├── migration.cpython-312.pyc
+    │           │   │   └── op.cpython-312.pyc
+    │           │   ├── autogenerate
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── api.cpython-312.pyc
+    │           │   │   │   ├── compare.cpython-312.pyc
+    │           │   │   │   ├── render.cpython-312.pyc
+    │           │   │   │   └── rewriter.cpython-312.pyc
+    │           │   │   ├── api.py
+    │           │   │   ├── compare.py
+    │           │   │   ├── render.py
+    │           │   │   └── rewriter.py
+    │           │   ├── command.py
+    │           │   ├── config.py
+    │           │   ├── context.py
+    │           │   ├── context.pyi
+    │           │   ├── ddl
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── _autogen.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── impl.cpython-312.pyc
+    │           │   │   │   ├── mssql.cpython-312.pyc
+    │           │   │   │   ├── mysql.cpython-312.pyc
+    │           │   │   │   ├── oracle.cpython-312.pyc
+    │           │   │   │   ├── postgresql.cpython-312.pyc
+    │           │   │   │   └── sqlite.cpython-312.pyc
+    │           │   │   ├── _autogen.py
+    │           │   │   ├── base.py
+    │           │   │   ├── impl.py
+    │           │   │   ├── mssql.py
+    │           │   │   ├── mysql.py
+    │           │   │   ├── oracle.py
+    │           │   │   ├── postgresql.py
+    │           │   │   └── sqlite.py
+    │           │   ├── environment.py
+    │           │   ├── migration.py
+    │           │   ├── op.py
+    │           │   ├── op.pyi
+    │           │   ├── operations
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── batch.cpython-312.pyc
+    │           │   │   │   ├── ops.cpython-312.pyc
+    │           │   │   │   ├── schemaobj.cpython-312.pyc
+    │           │   │   │   └── toimpl.cpython-312.pyc
+    │           │   │   ├── base.py
+    │           │   │   ├── batch.py
+    │           │   │   ├── ops.py
+    │           │   │   ├── schemaobj.py
+    │           │   │   └── toimpl.py
+    │           │   ├── py.typed
+    │           │   ├── runtime
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── environment.cpython-312.pyc
+    │           │   │   │   └── migration.cpython-312.pyc
+    │           │   │   ├── environment.py
+    │           │   │   └── migration.py
+    │           │   ├── script
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── revision.cpython-312.pyc
+    │           │   │   │   └── write_hooks.cpython-312.pyc
+    │           │   │   ├── base.py
+    │           │   │   ├── revision.py
+    │           │   │   └── write_hooks.py
+    │           │   ├── templates
+    │           │   │   ├── async
+    │           │   │   │   ├── README
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   └── env.cpython-312.pyc
+    │           │   │   │   ├── alembic.ini.mako
+    │           │   │   │   ├── env.py
+    │           │   │   │   └── script.py.mako
+    │           │   │   ├── generic
+    │           │   │   │   ├── README
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   └── env.cpython-312.pyc
+    │           │   │   │   ├── alembic.ini.mako
+    │           │   │   │   ├── env.py
+    │           │   │   │   └── script.py.mako
+    │           │   │   └── multidb
+    │           │   │       ├── README
+    │           │   │       ├── __pycache__
+    │           │   │       │   └── env.cpython-312.pyc
+    │           │   │       ├── alembic.ini.mako
+    │           │   │       ├── env.py
+    │           │   │       └── script.py.mako
+    │           │   ├── testing
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── assertions.cpython-312.pyc
+    │           │   │   │   ├── env.cpython-312.pyc
+    │           │   │   │   ├── fixtures.cpython-312.pyc
+    │           │   │   │   ├── requirements.cpython-312.pyc
+    │           │   │   │   ├── schemacompare.cpython-312.pyc
+    │           │   │   │   ├── util.cpython-312.pyc
+    │           │   │   │   └── warnings.cpython-312.pyc
+    │           │   │   ├── assertions.py
+    │           │   │   ├── env.py
+    │           │   │   ├── fixtures.py
+    │           │   │   ├── plugin
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   └── bootstrap.cpython-312.pyc
+    │           │   │   │   └── bootstrap.py
+    │           │   │   ├── requirements.py
+    │           │   │   ├── schemacompare.py
+    │           │   │   ├── suite
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _autogen_fixtures.cpython-312.pyc
+    │           │   │   │   │   ├── test_autogen_comments.cpython-312.pyc
+    │           │   │   │   │   ├── test_autogen_computed.cpython-312.pyc
+    │           │   │   │   │   ├── test_autogen_diffs.cpython-312.pyc
+    │           │   │   │   │   ├── test_autogen_fks.cpython-312.pyc
+    │           │   │   │   │   ├── test_autogen_identity.cpython-312.pyc
+    │           │   │   │   │   ├── test_environment.cpython-312.pyc
+    │           │   │   │   │   └── test_op.cpython-312.pyc
+    │           │   │   │   ├── _autogen_fixtures.py
+    │           │   │   │   ├── test_autogen_comments.py
+    │           │   │   │   ├── test_autogen_computed.py
+    │           │   │   │   ├── test_autogen_diffs.py
+    │           │   │   │   ├── test_autogen_fks.py
+    │           │   │   │   ├── test_autogen_identity.py
+    │           │   │   │   ├── test_environment.py
+    │           │   │   │   └── test_op.py
+    │           │   │   ├── util.py
+    │           │   │   └── warnings.py
+    │           │   └── util
+    │           │       ├── __init__.py
+    │           │       ├── __pycache__
+    │           │       │   ├── __init__.cpython-312.pyc
+    │           │       │   ├── compat.cpython-312.pyc
+    │           │       │   ├── editor.cpython-312.pyc
+    │           │       │   ├── exc.cpython-312.pyc
+    │           │       │   ├── langhelpers.cpython-312.pyc
+    │           │       │   ├── messaging.cpython-312.pyc
+    │           │       │   ├── pyfiles.cpython-312.pyc
+    │           │       │   └── sqla_compat.cpython-312.pyc
+    │           │       ├── compat.py
+    │           │       ├── editor.py
+    │           │       ├── exc.py
+    │           │       ├── langhelpers.py
+    │           │       ├── messaging.py
+    │           │       ├── pyfiles.py
+    │           │       └── sqla_compat.py
+    │           ├── alembic-1.14.0.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   ├── entry_points.txt
+    │           │   └── top_level.txt
+    │           ├── blinker
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _utilities.cpython-312.pyc
+    │           │   │   └── base.cpython-312.pyc
+    │           │   ├── _utilities.py
+    │           │   ├── base.py
+    │           │   └── py.typed
+    │           ├── blinker-1.9.0.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   └── WHEEL
+    │           ├── click
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _compat.cpython-312.pyc
+    │           │   │   ├── _termui_impl.cpython-312.pyc
+    │           │   │   ├── _textwrap.cpython-312.pyc
+    │           │   │   ├── _winconsole.cpython-312.pyc
+    │           │   │   ├── core.cpython-312.pyc
+    │           │   │   ├── decorators.cpython-312.pyc
+    │           │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   ├── formatting.cpython-312.pyc
+    │           │   │   ├── globals.cpython-312.pyc
+    │           │   │   ├── parser.cpython-312.pyc
+    │           │   │   ├── shell_completion.cpython-312.pyc
+    │           │   │   ├── termui.cpython-312.pyc
+    │           │   │   ├── testing.cpython-312.pyc
+    │           │   │   ├── types.cpython-312.pyc
+    │           │   │   └── utils.cpython-312.pyc
+    │           │   ├── _compat.py
+    │           │   ├── _termui_impl.py
+    │           │   ├── _textwrap.py
+    │           │   ├── _winconsole.py
+    │           │   ├── core.py
+    │           │   ├── decorators.py
+    │           │   ├── exceptions.py
+    │           │   ├── formatting.py
+    │           │   ├── globals.py
+    │           │   ├── parser.py
+    │           │   ├── py.typed
+    │           │   ├── shell_completion.py
+    │           │   ├── termui.py
+    │           │   ├── testing.py
+    │           │   ├── types.py
+    │           │   └── utils.py
+    │           ├── click-8.1.8.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   └── WHEEL
+    │           ├── flask
+    │           │   ├── __init__.py
+    │           │   ├── __main__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── __main__.cpython-312.pyc
+    │           │   │   ├── app.cpython-312.pyc
+    │           │   │   ├── blueprints.cpython-312.pyc
+    │           │   │   ├── cli.cpython-312.pyc
+    │           │   │   ├── config.cpython-312.pyc
+    │           │   │   ├── ctx.cpython-312.pyc
+    │           │   │   ├── debughelpers.cpython-312.pyc
+    │           │   │   ├── globals.cpython-312.pyc
+    │           │   │   ├── helpers.cpython-312.pyc
+    │           │   │   ├── logging.cpython-312.pyc
+    │           │   │   ├── sessions.cpython-312.pyc
+    │           │   │   ├── signals.cpython-312.pyc
+    │           │   │   ├── templating.cpython-312.pyc
+    │           │   │   ├── testing.cpython-312.pyc
+    │           │   │   ├── typing.cpython-312.pyc
+    │           │   │   ├── views.cpython-312.pyc
+    │           │   │   └── wrappers.cpython-312.pyc
+    │           │   ├── app.py
+    │           │   ├── blueprints.py
+    │           │   ├── cli.py
+    │           │   ├── config.py
+    │           │   ├── ctx.py
+    │           │   ├── debughelpers.py
+    │           │   ├── globals.py
+    │           │   ├── helpers.py
+    │           │   ├── json
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── provider.cpython-312.pyc
+    │           │   │   │   └── tag.cpython-312.pyc
+    │           │   │   ├── provider.py
+    │           │   │   └── tag.py
+    │           │   ├── logging.py
+    │           │   ├── py.typed
+    │           │   ├── sansio
+    │           │   │   ├── README.md
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── app.cpython-312.pyc
+    │           │   │   │   ├── blueprints.cpython-312.pyc
+    │           │   │   │   └── scaffold.cpython-312.pyc
+    │           │   │   ├── app.py
+    │           │   │   ├── blueprints.py
+    │           │   │   └── scaffold.py
+    │           │   ├── sessions.py
+    │           │   ├── signals.py
+    │           │   ├── templating.py
+    │           │   ├── testing.py
+    │           │   ├── typing.py
+    │           │   ├── views.py
+    │           │   └── wrappers.py
+    │           ├── flask-3.1.0.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   └── entry_points.txt
+    │           ├── flask_migrate
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   └── cli.cpython-312.pyc
+    │           │   ├── cli.py
+    │           │   └── templates
+    │           │       ├── aioflask
+    │           │       │   ├── README
+    │           │       │   ├── __pycache__
+    │           │       │   │   └── env.cpython-312.pyc
+    │           │       │   ├── alembic.ini.mako
+    │           │       │   ├── env.py
+    │           │       │   └── script.py.mako
+    │           │       ├── aioflask-multidb
+    │           │       │   ├── README
+    │           │       │   ├── __pycache__
+    │           │       │   │   └── env.cpython-312.pyc
+    │           │       │   ├── alembic.ini.mako
+    │           │       │   ├── env.py
+    │           │       │   └── script.py.mako
+    │           │       ├── flask
+    │           │       │   ├── README
+    │           │       │   ├── __pycache__
+    │           │       │   │   └── env.cpython-312.pyc
+    │           │       │   ├── alembic.ini.mako
+    │           │       │   ├── env.py
+    │           │       │   └── script.py.mako
+    │           │       └── flask-multidb
+    │           │           ├── README
+    │           │           ├── __pycache__
+    │           │           │   └── env.cpython-312.pyc
+    │           │           ├── alembic.ini.mako
+    │           │           ├── env.py
+    │           │           └── script.py.mako
+    │           ├── flask_sqlalchemy
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── cli.cpython-312.pyc
+    │           │   │   ├── extension.cpython-312.pyc
+    │           │   │   ├── model.cpython-312.pyc
+    │           │   │   ├── pagination.cpython-312.pyc
+    │           │   │   ├── query.cpython-312.pyc
+    │           │   │   ├── record_queries.cpython-312.pyc
+    │           │   │   ├── session.cpython-312.pyc
+    │           │   │   ├── table.cpython-312.pyc
+    │           │   │   └── track_modifications.cpython-312.pyc
+    │           │   ├── cli.py
+    │           │   ├── extension.py
+    │           │   ├── model.py
+    │           │   ├── pagination.py
+    │           │   ├── py.typed
+    │           │   ├── query.py
+    │           │   ├── record_queries.py
+    │           │   ├── session.py
+    │           │   ├── table.py
+    │           │   └── track_modifications.py
+    │           ├── flask_sqlalchemy-3.1.1.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.rst
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   └── WHEEL
+    │           ├── greenlet
+    │           │   ├── CObjects.cpp
+    │           │   ├── PyGreenlet.cpp
+    │           │   ├── PyGreenlet.hpp
+    │           │   ├── PyGreenletUnswitchable.cpp
+    │           │   ├── PyModule.cpp
+    │           │   ├── TBrokenGreenlet.cpp
+    │           │   ├── TExceptionState.cpp
+    │           │   ├── TGreenlet.cpp
+    │           │   ├── TGreenlet.hpp
+    │           │   ├── TGreenletGlobals.cpp
+    │           │   ├── TMainGreenlet.cpp
+    │           │   ├── TPythonState.cpp
+    │           │   ├── TStackState.cpp
+    │           │   ├── TThreadState.hpp
+    │           │   ├── TThreadStateCreator.hpp
+    │           │   ├── TThreadStateDestroy.cpp
+    │           │   ├── TUserGreenlet.cpp
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   └── __init__.cpython-312.pyc
+    │           │   ├── _greenlet.cpython-312-darwin.so
+    │           │   ├── greenlet.cpp
+    │           │   ├── greenlet.h
+    │           │   ├── greenlet_allocator.hpp
+    │           │   ├── greenlet_compiler_compat.hpp
+    │           │   ├── greenlet_cpython_add_pending.hpp
+    │           │   ├── greenlet_cpython_compat.hpp
+    │           │   ├── greenlet_exceptions.hpp
+    │           │   ├── greenlet_internal.hpp
+    │           │   ├── greenlet_refs.hpp
+    │           │   ├── greenlet_slp_switch.hpp
+    │           │   ├── greenlet_thread_support.hpp
+    │           │   ├── platform
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   └── __init__.cpython-312.pyc
+    │           │   │   ├── setup_switch_x64_masm.cmd
+    │           │   │   ├── switch_aarch64_gcc.h
+    │           │   │   ├── switch_alpha_unix.h
+    │           │   │   ├── switch_amd64_unix.h
+    │           │   │   ├── switch_arm32_gcc.h
+    │           │   │   ├── switch_arm32_ios.h
+    │           │   │   ├── switch_arm64_masm.asm
+    │           │   │   ├── switch_arm64_masm.obj
+    │           │   │   ├── switch_arm64_msvc.h
+    │           │   │   ├── switch_csky_gcc.h
+    │           │   │   ├── switch_loongarch64_linux.h
+    │           │   │   ├── switch_m68k_gcc.h
+    │           │   │   ├── switch_mips_unix.h
+    │           │   │   ├── switch_ppc64_aix.h
+    │           │   │   ├── switch_ppc64_linux.h
+    │           │   │   ├── switch_ppc_aix.h
+    │           │   │   ├── switch_ppc_linux.h
+    │           │   │   ├── switch_ppc_macosx.h
+    │           │   │   ├── switch_ppc_unix.h
+    │           │   │   ├── switch_riscv_unix.h
+    │           │   │   ├── switch_s390_unix.h
+    │           │   │   ├── switch_sh_gcc.h
+    │           │   │   ├── switch_sparc_sun_gcc.h
+    │           │   │   ├── switch_x32_unix.h
+    │           │   │   ├── switch_x64_masm.asm
+    │           │   │   ├── switch_x64_masm.obj
+    │           │   │   ├── switch_x64_msvc.h
+    │           │   │   ├── switch_x86_msvc.h
+    │           │   │   └── switch_x86_unix.h
+    │           │   ├── slp_platformselect.h
+    │           │   └── tests
+    │           │       ├── __init__.py
+    │           │       ├── __pycache__
+    │           │       │   ├── __init__.cpython-312.pyc
+    │           │       │   ├── fail_clearing_run_switches.cpython-312.pyc
+    │           │       │   ├── fail_cpp_exception.cpython-312.pyc
+    │           │       │   ├── fail_initialstub_already_started.cpython-312.pyc
+    │           │       │   ├── fail_slp_switch.cpython-312.pyc
+    │           │       │   ├── fail_switch_three_greenlets.cpython-312.pyc
+    │           │       │   ├── fail_switch_three_greenlets2.cpython-312.pyc
+    │           │       │   ├── fail_switch_two_greenlets.cpython-312.pyc
+    │           │       │   ├── leakcheck.cpython-312.pyc
+    │           │       │   ├── test_contextvars.cpython-312.pyc
+    │           │       │   ├── test_cpp.cpython-312.pyc
+    │           │       │   ├── test_extension_interface.cpython-312.pyc
+    │           │       │   ├── test_gc.cpython-312.pyc
+    │           │       │   ├── test_generator.cpython-312.pyc
+    │           │       │   ├── test_generator_nested.cpython-312.pyc
+    │           │       │   ├── test_greenlet.cpython-312.pyc
+    │           │       │   ├── test_greenlet_trash.cpython-312.pyc
+    │           │       │   ├── test_leaks.cpython-312.pyc
+    │           │       │   ├── test_stack_saved.cpython-312.pyc
+    │           │       │   ├── test_throw.cpython-312.pyc
+    │           │       │   ├── test_tracing.cpython-312.pyc
+    │           │       │   ├── test_version.cpython-312.pyc
+    │           │       │   └── test_weakref.cpython-312.pyc
+    │           │       ├── _test_extension.c
+    │           │       ├── _test_extension.cpython-312-darwin.so
+    │           │       ├── _test_extension_cpp.cpp
+    │           │       ├── _test_extension_cpp.cpython-312-darwin.so
+    │           │       ├── fail_clearing_run_switches.py
+    │           │       ├── fail_cpp_exception.py
+    │           │       ├── fail_initialstub_already_started.py
+    │           │       ├── fail_slp_switch.py
+    │           │       ├── fail_switch_three_greenlets.py
+    │           │       ├── fail_switch_three_greenlets2.py
+    │           │       ├── fail_switch_two_greenlets.py
+    │           │       ├── leakcheck.py
+    │           │       ├── test_contextvars.py
+    │           │       ├── test_cpp.py
+    │           │       ├── test_extension_interface.py
+    │           │       ├── test_gc.py
+    │           │       ├── test_generator.py
+    │           │       ├── test_generator_nested.py
+    │           │       ├── test_greenlet.py
+    │           │       ├── test_greenlet_trash.py
+    │           │       ├── test_leaks.py
+    │           │       ├── test_stack_saved.py
+    │           │       ├── test_throw.py
+    │           │       ├── test_tracing.py
+    │           │       ├── test_version.py
+    │           │       └── test_weakref.py
+    │           ├── greenlet-3.1.1.dist-info
+    │           │   ├── AUTHORS
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── LICENSE.PSF
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   └── top_level.txt
+    │           ├── itsdangerous
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _json.cpython-312.pyc
+    │           │   │   ├── encoding.cpython-312.pyc
+    │           │   │   ├── exc.cpython-312.pyc
+    │           │   │   ├── serializer.cpython-312.pyc
+    │           │   │   ├── signer.cpython-312.pyc
+    │           │   │   ├── timed.cpython-312.pyc
+    │           │   │   └── url_safe.cpython-312.pyc
+    │           │   ├── _json.py
+    │           │   ├── encoding.py
+    │           │   ├── exc.py
+    │           │   ├── py.typed
+    │           │   ├── serializer.py
+    │           │   ├── signer.py
+    │           │   ├── timed.py
+    │           │   └── url_safe.py
+    │           ├── itsdangerous-2.2.0.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   └── WHEEL
+    │           ├── jinja2
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _identifier.cpython-312.pyc
+    │           │   │   ├── async_utils.cpython-312.pyc
+    │           │   │   ├── bccache.cpython-312.pyc
+    │           │   │   ├── compiler.cpython-312.pyc
+    │           │   │   ├── constants.cpython-312.pyc
+    │           │   │   ├── debug.cpython-312.pyc
+    │           │   │   ├── defaults.cpython-312.pyc
+    │           │   │   ├── environment.cpython-312.pyc
+    │           │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   ├── ext.cpython-312.pyc
+    │           │   │   ├── filters.cpython-312.pyc
+    │           │   │   ├── idtracking.cpython-312.pyc
+    │           │   │   ├── lexer.cpython-312.pyc
+    │           │   │   ├── loaders.cpython-312.pyc
+    │           │   │   ├── meta.cpython-312.pyc
+    │           │   │   ├── nativetypes.cpython-312.pyc
+    │           │   │   ├── nodes.cpython-312.pyc
+    │           │   │   ├── optimizer.cpython-312.pyc
+    │           │   │   ├── parser.cpython-312.pyc
+    │           │   │   ├── runtime.cpython-312.pyc
+    │           │   │   ├── sandbox.cpython-312.pyc
+    │           │   │   ├── tests.cpython-312.pyc
+    │           │   │   ├── utils.cpython-312.pyc
+    │           │   │   └── visitor.cpython-312.pyc
+    │           │   ├── _identifier.py
+    │           │   ├── async_utils.py
+    │           │   ├── bccache.py
+    │           │   ├── compiler.py
+    │           │   ├── constants.py
+    │           │   ├── debug.py
+    │           │   ├── defaults.py
+    │           │   ├── environment.py
+    │           │   ├── exceptions.py
+    │           │   ├── ext.py
+    │           │   ├── filters.py
+    │           │   ├── idtracking.py
+    │           │   ├── lexer.py
+    │           │   ├── loaders.py
+    │           │   ├── meta.py
+    │           │   ├── nativetypes.py
+    │           │   ├── nodes.py
+    │           │   ├── optimizer.py
+    │           │   ├── parser.py
+    │           │   ├── py.typed
+    │           │   ├── runtime.py
+    │           │   ├── sandbox.py
+    │           │   ├── tests.py
+    │           │   ├── utils.py
+    │           │   └── visitor.py
+    │           ├── jinja2-3.1.5.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── WHEEL
+    │           │   └── entry_points.txt
+    │           ├── mako
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _ast_util.cpython-312.pyc
+    │           │   │   ├── ast.cpython-312.pyc
+    │           │   │   ├── cache.cpython-312.pyc
+    │           │   │   ├── cmd.cpython-312.pyc
+    │           │   │   ├── codegen.cpython-312.pyc
+    │           │   │   ├── compat.cpython-312.pyc
+    │           │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   ├── filters.cpython-312.pyc
+    │           │   │   ├── lexer.cpython-312.pyc
+    │           │   │   ├── lookup.cpython-312.pyc
+    │           │   │   ├── parsetree.cpython-312.pyc
+    │           │   │   ├── pygen.cpython-312.pyc
+    │           │   │   ├── pyparser.cpython-312.pyc
+    │           │   │   ├── runtime.cpython-312.pyc
+    │           │   │   ├── template.cpython-312.pyc
+    │           │   │   └── util.cpython-312.pyc
+    │           │   ├── _ast_util.py
+    │           │   ├── ast.py
+    │           │   ├── cache.py
+    │           │   ├── cmd.py
+    │           │   ├── codegen.py
+    │           │   ├── compat.py
+    │           │   ├── exceptions.py
+    │           │   ├── ext
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── autohandler.cpython-312.pyc
+    │           │   │   │   ├── babelplugin.cpython-312.pyc
+    │           │   │   │   ├── beaker_cache.cpython-312.pyc
+    │           │   │   │   ├── extract.cpython-312.pyc
+    │           │   │   │   ├── linguaplugin.cpython-312.pyc
+    │           │   │   │   ├── preprocessors.cpython-312.pyc
+    │           │   │   │   ├── pygmentplugin.cpython-312.pyc
+    │           │   │   │   └── turbogears.cpython-312.pyc
+    │           │   │   ├── autohandler.py
+    │           │   │   ├── babelplugin.py
+    │           │   │   ├── beaker_cache.py
+    │           │   │   ├── extract.py
+    │           │   │   ├── linguaplugin.py
+    │           │   │   ├── preprocessors.py
+    │           │   │   ├── pygmentplugin.py
+    │           │   │   └── turbogears.py
+    │           │   ├── filters.py
+    │           │   ├── lexer.py
+    │           │   ├── lookup.py
+    │           │   ├── parsetree.py
+    │           │   ├── pygen.py
+    │           │   ├── pyparser.py
+    │           │   ├── runtime.py
+    │           │   ├── template.py
+    │           │   ├── testing
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── _config.cpython-312.pyc
+    │           │   │   │   ├── assertions.cpython-312.pyc
+    │           │   │   │   ├── config.cpython-312.pyc
+    │           │   │   │   ├── exclusions.cpython-312.pyc
+    │           │   │   │   ├── fixtures.cpython-312.pyc
+    │           │   │   │   └── helpers.cpython-312.pyc
+    │           │   │   ├── _config.py
+    │           │   │   ├── assertions.py
+    │           │   │   ├── config.py
+    │           │   │   ├── exclusions.py
+    │           │   │   ├── fixtures.py
+    │           │   │   └── helpers.py
+    │           │   └── util.py
+    │           ├── markupsafe
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   └── _native.cpython-312.pyc
+    │           │   ├── _native.py
+    │           │   ├── _speedups.c
+    │           │   ├── _speedups.cpython-312-darwin.so
+    │           │   ├── _speedups.pyi
+    │           │   └── py.typed
+    │           ├── pip
+    │           │   ├── __init__.py
+    │           │   ├── __main__.py
+    │           │   ├── __pip-runner__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── __main__.cpython-312.pyc
+    │           │   │   └── __pip-runner__.cpython-312.pyc
+    │           │   ├── _internal
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── build_env.cpython-312.pyc
+    │           │   │   │   ├── cache.cpython-312.pyc
+    │           │   │   │   ├── configuration.cpython-312.pyc
+    │           │   │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   │   ├── main.cpython-312.pyc
+    │           │   │   │   ├── pyproject.cpython-312.pyc
+    │           │   │   │   ├── self_outdated_check.cpython-312.pyc
+    │           │   │   │   └── wheel_builder.cpython-312.pyc
+    │           │   │   ├── build_env.py
+    │           │   │   ├── cache.py
+    │           │   │   ├── cli
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── autocompletion.cpython-312.pyc
+    │           │   │   │   │   ├── base_command.cpython-312.pyc
+    │           │   │   │   │   ├── cmdoptions.cpython-312.pyc
+    │           │   │   │   │   ├── command_context.cpython-312.pyc
+    │           │   │   │   │   ├── index_command.cpython-312.pyc
+    │           │   │   │   │   ├── main.cpython-312.pyc
+    │           │   │   │   │   ├── main_parser.cpython-312.pyc
+    │           │   │   │   │   ├── parser.cpython-312.pyc
+    │           │   │   │   │   ├── progress_bars.cpython-312.pyc
+    │           │   │   │   │   ├── req_command.cpython-312.pyc
+    │           │   │   │   │   ├── spinners.cpython-312.pyc
+    │           │   │   │   │   └── status_codes.cpython-312.pyc
+    │           │   │   │   ├── autocompletion.py
+    │           │   │   │   ├── base_command.py
+    │           │   │   │   ├── cmdoptions.py
+    │           │   │   │   ├── command_context.py
+    │           │   │   │   ├── index_command.py
+    │           │   │   │   ├── main.py
+    │           │   │   │   ├── main_parser.py
+    │           │   │   │   ├── parser.py
+    │           │   │   │   ├── progress_bars.py
+    │           │   │   │   ├── req_command.py
+    │           │   │   │   ├── spinners.py
+    │           │   │   │   └── status_codes.py
+    │           │   │   ├── commands
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── cache.cpython-312.pyc
+    │           │   │   │   │   ├── check.cpython-312.pyc
+    │           │   │   │   │   ├── completion.cpython-312.pyc
+    │           │   │   │   │   ├── configuration.cpython-312.pyc
+    │           │   │   │   │   ├── debug.cpython-312.pyc
+    │           │   │   │   │   ├── download.cpython-312.pyc
+    │           │   │   │   │   ├── freeze.cpython-312.pyc
+    │           │   │   │   │   ├── hash.cpython-312.pyc
+    │           │   │   │   │   ├── help.cpython-312.pyc
+    │           │   │   │   │   ├── index.cpython-312.pyc
+    │           │   │   │   │   ├── inspect.cpython-312.pyc
+    │           │   │   │   │   ├── install.cpython-312.pyc
+    │           │   │   │   │   ├── list.cpython-312.pyc
+    │           │   │   │   │   ├── search.cpython-312.pyc
+    │           │   │   │   │   ├── show.cpython-312.pyc
+    │           │   │   │   │   ├── uninstall.cpython-312.pyc
+    │           │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   ├── cache.py
+    │           │   │   │   ├── check.py
+    │           │   │   │   ├── completion.py
+    │           │   │   │   ├── configuration.py
+    │           │   │   │   ├── debug.py
+    │           │   │   │   ├── download.py
+    │           │   │   │   ├── freeze.py
+    │           │   │   │   ├── hash.py
+    │           │   │   │   ├── help.py
+    │           │   │   │   ├── index.py
+    │           │   │   │   ├── inspect.py
+    │           │   │   │   ├── install.py
+    │           │   │   │   ├── list.py
+    │           │   │   │   ├── search.py
+    │           │   │   │   ├── show.py
+    │           │   │   │   ├── uninstall.py
+    │           │   │   │   └── wheel.py
+    │           │   │   ├── configuration.py
+    │           │   │   ├── distributions
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── installed.cpython-312.pyc
+    │           │   │   │   │   ├── sdist.cpython-312.pyc
+    │           │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── installed.py
+    │           │   │   │   ├── sdist.py
+    │           │   │   │   └── wheel.py
+    │           │   │   ├── exceptions.py
+    │           │   │   ├── index
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── collector.cpython-312.pyc
+    │           │   │   │   │   ├── package_finder.cpython-312.pyc
+    │           │   │   │   │   └── sources.cpython-312.pyc
+    │           │   │   │   ├── collector.py
+    │           │   │   │   ├── package_finder.py
+    │           │   │   │   └── sources.py
+    │           │   │   ├── locations
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _distutils.cpython-312.pyc
+    │           │   │   │   │   ├── _sysconfig.cpython-312.pyc
+    │           │   │   │   │   └── base.cpython-312.pyc
+    │           │   │   │   ├── _distutils.py
+    │           │   │   │   ├── _sysconfig.py
+    │           │   │   │   └── base.py
+    │           │   │   ├── main.py
+    │           │   │   ├── metadata
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _json.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   └── pkg_resources.cpython-312.pyc
+    │           │   │   │   ├── _json.py
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── importlib
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── _compat.cpython-312.pyc
+    │           │   │   │   │   │   ├── _dists.cpython-312.pyc
+    │           │   │   │   │   │   └── _envs.cpython-312.pyc
+    │           │   │   │   │   ├── _compat.py
+    │           │   │   │   │   ├── _dists.py
+    │           │   │   │   │   └── _envs.py
+    │           │   │   │   └── pkg_resources.py
+    │           │   │   ├── models
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── candidate.cpython-312.pyc
+    │           │   │   │   │   ├── direct_url.cpython-312.pyc
+    │           │   │   │   │   ├── format_control.cpython-312.pyc
+    │           │   │   │   │   ├── index.cpython-312.pyc
+    │           │   │   │   │   ├── installation_report.cpython-312.pyc
+    │           │   │   │   │   ├── link.cpython-312.pyc
+    │           │   │   │   │   ├── scheme.cpython-312.pyc
+    │           │   │   │   │   ├── search_scope.cpython-312.pyc
+    │           │   │   │   │   ├── selection_prefs.cpython-312.pyc
+    │           │   │   │   │   ├── target_python.cpython-312.pyc
+    │           │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   ├── candidate.py
+    │           │   │   │   ├── direct_url.py
+    │           │   │   │   ├── format_control.py
+    │           │   │   │   ├── index.py
+    │           │   │   │   ├── installation_report.py
+    │           │   │   │   ├── link.py
+    │           │   │   │   ├── scheme.py
+    │           │   │   │   ├── search_scope.py
+    │           │   │   │   ├── selection_prefs.py
+    │           │   │   │   ├── target_python.py
+    │           │   │   │   └── wheel.py
+    │           │   │   ├── network
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── auth.cpython-312.pyc
+    │           │   │   │   │   ├── cache.cpython-312.pyc
+    │           │   │   │   │   ├── download.cpython-312.pyc
+    │           │   │   │   │   ├── lazy_wheel.cpython-312.pyc
+    │           │   │   │   │   ├── session.cpython-312.pyc
+    │           │   │   │   │   ├── utils.cpython-312.pyc
+    │           │   │   │   │   └── xmlrpc.cpython-312.pyc
+    │           │   │   │   ├── auth.py
+    │           │   │   │   ├── cache.py
+    │           │   │   │   ├── download.py
+    │           │   │   │   ├── lazy_wheel.py
+    │           │   │   │   ├── session.py
+    │           │   │   │   ├── utils.py
+    │           │   │   │   └── xmlrpc.py
+    │           │   │   ├── operations
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── check.cpython-312.pyc
+    │           │   │   │   │   ├── freeze.cpython-312.pyc
+    │           │   │   │   │   └── prepare.cpython-312.pyc
+    │           │   │   │   ├── build
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── build_tracker.cpython-312.pyc
+    │           │   │   │   │   │   ├── metadata.cpython-312.pyc
+    │           │   │   │   │   │   ├── metadata_editable.cpython-312.pyc
+    │           │   │   │   │   │   ├── metadata_legacy.cpython-312.pyc
+    │           │   │   │   │   │   ├── wheel.cpython-312.pyc
+    │           │   │   │   │   │   ├── wheel_editable.cpython-312.pyc
+    │           │   │   │   │   │   └── wheel_legacy.cpython-312.pyc
+    │           │   │   │   │   ├── build_tracker.py
+    │           │   │   │   │   ├── metadata.py
+    │           │   │   │   │   ├── metadata_editable.py
+    │           │   │   │   │   ├── metadata_legacy.py
+    │           │   │   │   │   ├── wheel.py
+    │           │   │   │   │   ├── wheel_editable.py
+    │           │   │   │   │   └── wheel_legacy.py
+    │           │   │   │   ├── check.py
+    │           │   │   │   ├── freeze.py
+    │           │   │   │   ├── install
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── editable_legacy.cpython-312.pyc
+    │           │   │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   │   ├── editable_legacy.py
+    │           │   │   │   │   └── wheel.py
+    │           │   │   │   └── prepare.py
+    │           │   │   ├── pyproject.py
+    │           │   │   ├── req
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── constructors.cpython-312.pyc
+    │           │   │   │   │   ├── req_file.cpython-312.pyc
+    │           │   │   │   │   ├── req_install.cpython-312.pyc
+    │           │   │   │   │   ├── req_set.cpython-312.pyc
+    │           │   │   │   │   └── req_uninstall.cpython-312.pyc
+    │           │   │   │   ├── constructors.py
+    │           │   │   │   ├── req_file.py
+    │           │   │   │   ├── req_install.py
+    │           │   │   │   ├── req_set.py
+    │           │   │   │   └── req_uninstall.py
+    │           │   │   ├── resolution
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   └── base.cpython-312.pyc
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── legacy
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   └── resolver.cpython-312.pyc
+    │           │   │   │   │   └── resolver.py
+    │           │   │   │   └── resolvelib
+    │           │   │   │       ├── __init__.py
+    │           │   │   │       ├── __pycache__
+    │           │   │   │       │   ├── __init__.cpython-312.pyc
+    │           │   │   │       │   ├── base.cpython-312.pyc
+    │           │   │   │       │   ├── candidates.cpython-312.pyc
+    │           │   │   │       │   ├── factory.cpython-312.pyc
+    │           │   │   │       │   ├── found_candidates.cpython-312.pyc
+    │           │   │   │       │   ├── provider.cpython-312.pyc
+    │           │   │   │       │   ├── reporter.cpython-312.pyc
+    │           │   │   │       │   ├── requirements.cpython-312.pyc
+    │           │   │   │       │   └── resolver.cpython-312.pyc
+    │           │   │   │       ├── base.py
+    │           │   │   │       ├── candidates.py
+    │           │   │   │       ├── factory.py
+    │           │   │   │       ├── found_candidates.py
+    │           │   │   │       ├── provider.py
+    │           │   │   │       ├── reporter.py
+    │           │   │   │       ├── requirements.py
+    │           │   │   │       └── resolver.py
+    │           │   │   ├── self_outdated_check.py
+    │           │   │   ├── utils
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _jaraco_text.cpython-312.pyc
+    │           │   │   │   │   ├── _log.cpython-312.pyc
+    │           │   │   │   │   ├── appdirs.cpython-312.pyc
+    │           │   │   │   │   ├── compat.cpython-312.pyc
+    │           │   │   │   │   ├── compatibility_tags.cpython-312.pyc
+    │           │   │   │   │   ├── datetime.cpython-312.pyc
+    │           │   │   │   │   ├── deprecation.cpython-312.pyc
+    │           │   │   │   │   ├── direct_url_helpers.cpython-312.pyc
+    │           │   │   │   │   ├── egg_link.cpython-312.pyc
+    │           │   │   │   │   ├── encoding.cpython-312.pyc
+    │           │   │   │   │   ├── entrypoints.cpython-312.pyc
+    │           │   │   │   │   ├── filesystem.cpython-312.pyc
+    │           │   │   │   │   ├── filetypes.cpython-312.pyc
+    │           │   │   │   │   ├── glibc.cpython-312.pyc
+    │           │   │   │   │   ├── hashes.cpython-312.pyc
+    │           │   │   │   │   ├── logging.cpython-312.pyc
+    │           │   │   │   │   ├── misc.cpython-312.pyc
+    │           │   │   │   │   ├── packaging.cpython-312.pyc
+    │           │   │   │   │   ├── retry.cpython-312.pyc
+    │           │   │   │   │   ├── setuptools_build.cpython-312.pyc
+    │           │   │   │   │   ├── subprocess.cpython-312.pyc
+    │           │   │   │   │   ├── temp_dir.cpython-312.pyc
+    │           │   │   │   │   ├── unpacking.cpython-312.pyc
+    │           │   │   │   │   ├── urls.cpython-312.pyc
+    │           │   │   │   │   ├── virtualenv.cpython-312.pyc
+    │           │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   ├── _jaraco_text.py
+    │           │   │   │   ├── _log.py
+    │           │   │   │   ├── appdirs.py
+    │           │   │   │   ├── compat.py
+    │           │   │   │   ├── compatibility_tags.py
+    │           │   │   │   ├── datetime.py
+    │           │   │   │   ├── deprecation.py
+    │           │   │   │   ├── direct_url_helpers.py
+    │           │   │   │   ├── egg_link.py
+    │           │   │   │   ├── encoding.py
+    │           │   │   │   ├── entrypoints.py
+    │           │   │   │   ├── filesystem.py
+    │           │   │   │   ├── filetypes.py
+    │           │   │   │   ├── glibc.py
+    │           │   │   │   ├── hashes.py
+    │           │   │   │   ├── logging.py
+    │           │   │   │   ├── misc.py
+    │           │   │   │   ├── packaging.py
+    │           │   │   │   ├── retry.py
+    │           │   │   │   ├── setuptools_build.py
+    │           │   │   │   ├── subprocess.py
+    │           │   │   │   ├── temp_dir.py
+    │           │   │   │   ├── unpacking.py
+    │           │   │   │   ├── urls.py
+    │           │   │   │   ├── virtualenv.py
+    │           │   │   │   └── wheel.py
+    │           │   │   ├── vcs
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── bazaar.cpython-312.pyc
+    │           │   │   │   │   ├── git.cpython-312.pyc
+    │           │   │   │   │   ├── mercurial.cpython-312.pyc
+    │           │   │   │   │   ├── subversion.cpython-312.pyc
+    │           │   │   │   │   └── versioncontrol.cpython-312.pyc
+    │           │   │   │   ├── bazaar.py
+    │           │   │   │   ├── git.py
+    │           │   │   │   ├── mercurial.py
+    │           │   │   │   ├── subversion.py
+    │           │   │   │   └── versioncontrol.py
+    │           │   │   └── wheel_builder.py
+    │           │   ├── _vendor
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   └── typing_extensions.cpython-312.pyc
+    │           │   │   ├── cachecontrol
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _cmd.cpython-312.pyc
+    │           │   │   │   │   ├── adapter.cpython-312.pyc
+    │           │   │   │   │   ├── cache.cpython-312.pyc
+    │           │   │   │   │   ├── controller.cpython-312.pyc
+    │           │   │   │   │   ├── filewrapper.cpython-312.pyc
+    │           │   │   │   │   ├── heuristics.cpython-312.pyc
+    │           │   │   │   │   ├── serialize.cpython-312.pyc
+    │           │   │   │   │   └── wrapper.cpython-312.pyc
+    │           │   │   │   ├── _cmd.py
+    │           │   │   │   ├── adapter.py
+    │           │   │   │   ├── cache.py
+    │           │   │   │   ├── caches
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── file_cache.cpython-312.pyc
+    │           │   │   │   │   │   └── redis_cache.cpython-312.pyc
+    │           │   │   │   │   ├── file_cache.py
+    │           │   │   │   │   └── redis_cache.py
+    │           │   │   │   ├── controller.py
+    │           │   │   │   ├── filewrapper.py
+    │           │   │   │   ├── heuristics.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   ├── serialize.py
+    │           │   │   │   └── wrapper.py
+    │           │   │   ├── certifi
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __main__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __main__.cpython-312.pyc
+    │           │   │   │   │   └── core.cpython-312.pyc
+    │           │   │   │   ├── cacert.pem
+    │           │   │   │   ├── core.py
+    │           │   │   │   └── py.typed
+    │           │   │   ├── distlib
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── compat.cpython-312.pyc
+    │           │   │   │   │   ├── database.cpython-312.pyc
+    │           │   │   │   │   ├── index.cpython-312.pyc
+    │           │   │   │   │   ├── locators.cpython-312.pyc
+    │           │   │   │   │   ├── manifest.cpython-312.pyc
+    │           │   │   │   │   ├── markers.cpython-312.pyc
+    │           │   │   │   │   ├── metadata.cpython-312.pyc
+    │           │   │   │   │   ├── resources.cpython-312.pyc
+    │           │   │   │   │   ├── scripts.cpython-312.pyc
+    │           │   │   │   │   ├── util.cpython-312.pyc
+    │           │   │   │   │   ├── version.cpython-312.pyc
+    │           │   │   │   │   └── wheel.cpython-312.pyc
+    │           │   │   │   ├── compat.py
+    │           │   │   │   ├── database.py
+    │           │   │   │   ├── index.py
+    │           │   │   │   ├── locators.py
+    │           │   │   │   ├── manifest.py
+    │           │   │   │   ├── markers.py
+    │           │   │   │   ├── metadata.py
+    │           │   │   │   ├── resources.py
+    │           │   │   │   ├── scripts.py
+    │           │   │   │   ├── t32.exe
+    │           │   │   │   ├── t64-arm.exe
+    │           │   │   │   ├── t64.exe
+    │           │   │   │   ├── util.py
+    │           │   │   │   ├── version.py
+    │           │   │   │   ├── w32.exe
+    │           │   │   │   ├── w64-arm.exe
+    │           │   │   │   ├── w64.exe
+    │           │   │   │   └── wheel.py
+    │           │   │   ├── distro
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __main__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __main__.cpython-312.pyc
+    │           │   │   │   │   └── distro.cpython-312.pyc
+    │           │   │   │   ├── distro.py
+    │           │   │   │   └── py.typed
+    │           │   │   ├── idna
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── codec.cpython-312.pyc
+    │           │   │   │   │   ├── compat.cpython-312.pyc
+    │           │   │   │   │   ├── core.cpython-312.pyc
+    │           │   │   │   │   ├── idnadata.cpython-312.pyc
+    │           │   │   │   │   ├── intranges.cpython-312.pyc
+    │           │   │   │   │   ├── package_data.cpython-312.pyc
+    │           │   │   │   │   └── uts46data.cpython-312.pyc
+    │           │   │   │   ├── codec.py
+    │           │   │   │   ├── compat.py
+    │           │   │   │   ├── core.py
+    │           │   │   │   ├── idnadata.py
+    │           │   │   │   ├── intranges.py
+    │           │   │   │   ├── package_data.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   └── uts46data.py
+    │           │   │   ├── msgpack
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   │   │   ├── ext.cpython-312.pyc
+    │           │   │   │   │   └── fallback.cpython-312.pyc
+    │           │   │   │   ├── exceptions.py
+    │           │   │   │   ├── ext.py
+    │           │   │   │   └── fallback.py
+    │           │   │   ├── packaging
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _elffile.cpython-312.pyc
+    │           │   │   │   │   ├── _manylinux.cpython-312.pyc
+    │           │   │   │   │   ├── _musllinux.cpython-312.pyc
+    │           │   │   │   │   ├── _parser.cpython-312.pyc
+    │           │   │   │   │   ├── _structures.cpython-312.pyc
+    │           │   │   │   │   ├── _tokenizer.cpython-312.pyc
+    │           │   │   │   │   ├── markers.cpython-312.pyc
+    │           │   │   │   │   ├── metadata.cpython-312.pyc
+    │           │   │   │   │   ├── requirements.cpython-312.pyc
+    │           │   │   │   │   ├── specifiers.cpython-312.pyc
+    │           │   │   │   │   ├── tags.cpython-312.pyc
+    │           │   │   │   │   ├── utils.cpython-312.pyc
+    │           │   │   │   │   └── version.cpython-312.pyc
+    │           │   │   │   ├── _elffile.py
+    │           │   │   │   ├── _manylinux.py
+    │           │   │   │   ├── _musllinux.py
+    │           │   │   │   ├── _parser.py
+    │           │   │   │   ├── _structures.py
+    │           │   │   │   ├── _tokenizer.py
+    │           │   │   │   ├── markers.py
+    │           │   │   │   ├── metadata.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   ├── requirements.py
+    │           │   │   │   ├── specifiers.py
+    │           │   │   │   ├── tags.py
+    │           │   │   │   ├── utils.py
+    │           │   │   │   └── version.py
+    │           │   │   ├── pkg_resources
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   └── __pycache__
+    │           │   │   │       └── __init__.cpython-312.pyc
+    │           │   │   ├── platformdirs
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __main__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __main__.cpython-312.pyc
+    │           │   │   │   │   ├── android.cpython-312.pyc
+    │           │   │   │   │   ├── api.cpython-312.pyc
+    │           │   │   │   │   ├── macos.cpython-312.pyc
+    │           │   │   │   │   ├── unix.cpython-312.pyc
+    │           │   │   │   │   ├── version.cpython-312.pyc
+    │           │   │   │   │   └── windows.cpython-312.pyc
+    │           │   │   │   ├── android.py
+    │           │   │   │   ├── api.py
+    │           │   │   │   ├── macos.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   ├── unix.py
+    │           │   │   │   ├── version.py
+    │           │   │   │   └── windows.py
+    │           │   │   ├── pygments
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __main__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __main__.cpython-312.pyc
+    │           │   │   │   │   ├── cmdline.cpython-312.pyc
+    │           │   │   │   │   ├── console.cpython-312.pyc
+    │           │   │   │   │   ├── filter.cpython-312.pyc
+    │           │   │   │   │   ├── formatter.cpython-312.pyc
+    │           │   │   │   │   ├── lexer.cpython-312.pyc
+    │           │   │   │   │   ├── modeline.cpython-312.pyc
+    │           │   │   │   │   ├── plugin.cpython-312.pyc
+    │           │   │   │   │   ├── regexopt.cpython-312.pyc
+    │           │   │   │   │   ├── scanner.cpython-312.pyc
+    │           │   │   │   │   ├── sphinxext.cpython-312.pyc
+    │           │   │   │   │   ├── style.cpython-312.pyc
+    │           │   │   │   │   ├── token.cpython-312.pyc
+    │           │   │   │   │   ├── unistring.cpython-312.pyc
+    │           │   │   │   │   └── util.cpython-312.pyc
+    │           │   │   │   ├── cmdline.py
+    │           │   │   │   ├── console.py
+    │           │   │   │   ├── filter.py
+    │           │   │   │   ├── filters
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   └── __pycache__
+    │           │   │   │   │       └── __init__.cpython-312.pyc
+    │           │   │   │   ├── formatter.py
+    │           │   │   │   ├── formatters
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── _mapping.cpython-312.pyc
+    │           │   │   │   │   │   ├── bbcode.cpython-312.pyc
+    │           │   │   │   │   │   ├── groff.cpython-312.pyc
+    │           │   │   │   │   │   ├── html.cpython-312.pyc
+    │           │   │   │   │   │   ├── img.cpython-312.pyc
+    │           │   │   │   │   │   ├── irc.cpython-312.pyc
+    │           │   │   │   │   │   ├── latex.cpython-312.pyc
+    │           │   │   │   │   │   ├── other.cpython-312.pyc
+    │           │   │   │   │   │   ├── pangomarkup.cpython-312.pyc
+    │           │   │   │   │   │   ├── rtf.cpython-312.pyc
+    │           │   │   │   │   │   ├── svg.cpython-312.pyc
+    │           │   │   │   │   │   ├── terminal.cpython-312.pyc
+    │           │   │   │   │   │   └── terminal256.cpython-312.pyc
+    │           │   │   │   │   ├── _mapping.py
+    │           │   │   │   │   ├── bbcode.py
+    │           │   │   │   │   ├── groff.py
+    │           │   │   │   │   ├── html.py
+    │           │   │   │   │   ├── img.py
+    │           │   │   │   │   ├── irc.py
+    │           │   │   │   │   ├── latex.py
+    │           │   │   │   │   ├── other.py
+    │           │   │   │   │   ├── pangomarkup.py
+    │           │   │   │   │   ├── rtf.py
+    │           │   │   │   │   ├── svg.py
+    │           │   │   │   │   ├── terminal.py
+    │           │   │   │   │   └── terminal256.py
+    │           │   │   │   ├── lexer.py
+    │           │   │   │   ├── lexers
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── _mapping.cpython-312.pyc
+    │           │   │   │   │   │   └── python.cpython-312.pyc
+    │           │   │   │   │   ├── _mapping.py
+    │           │   │   │   │   └── python.py
+    │           │   │   │   ├── modeline.py
+    │           │   │   │   ├── plugin.py
+    │           │   │   │   ├── regexopt.py
+    │           │   │   │   ├── scanner.py
+    │           │   │   │   ├── sphinxext.py
+    │           │   │   │   ├── style.py
+    │           │   │   │   ├── styles
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   └── _mapping.cpython-312.pyc
+    │           │   │   │   │   └── _mapping.py
+    │           │   │   │   ├── token.py
+    │           │   │   │   ├── unistring.py
+    │           │   │   │   └── util.py
+    │           │   │   ├── pyproject_hooks
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _compat.cpython-312.pyc
+    │           │   │   │   │   └── _impl.cpython-312.pyc
+    │           │   │   │   ├── _compat.py
+    │           │   │   │   ├── _impl.py
+    │           │   │   │   └── _in_process
+    │           │   │   │       ├── __init__.py
+    │           │   │   │       ├── __pycache__
+    │           │   │   │       │   ├── __init__.cpython-312.pyc
+    │           │   │   │       │   └── _in_process.cpython-312.pyc
+    │           │   │   │       └── _in_process.py
+    │           │   │   ├── requests
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __version__.cpython-312.pyc
+    │           │   │   │   │   ├── _internal_utils.cpython-312.pyc
+    │           │   │   │   │   ├── adapters.cpython-312.pyc
+    │           │   │   │   │   ├── api.cpython-312.pyc
+    │           │   │   │   │   ├── auth.cpython-312.pyc
+    │           │   │   │   │   ├── certs.cpython-312.pyc
+    │           │   │   │   │   ├── compat.cpython-312.pyc
+    │           │   │   │   │   ├── cookies.cpython-312.pyc
+    │           │   │   │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   │   │   ├── help.cpython-312.pyc
+    │           │   │   │   │   ├── hooks.cpython-312.pyc
+    │           │   │   │   │   ├── models.cpython-312.pyc
+    │           │   │   │   │   ├── packages.cpython-312.pyc
+    │           │   │   │   │   ├── sessions.cpython-312.pyc
+    │           │   │   │   │   ├── status_codes.cpython-312.pyc
+    │           │   │   │   │   ├── structures.cpython-312.pyc
+    │           │   │   │   │   └── utils.cpython-312.pyc
+    │           │   │   │   ├── __version__.py
+    │           │   │   │   ├── _internal_utils.py
+    │           │   │   │   ├── adapters.py
+    │           │   │   │   ├── api.py
+    │           │   │   │   ├── auth.py
+    │           │   │   │   ├── certs.py
+    │           │   │   │   ├── compat.py
+    │           │   │   │   ├── cookies.py
+    │           │   │   │   ├── exceptions.py
+    │           │   │   │   ├── help.py
+    │           │   │   │   ├── hooks.py
+    │           │   │   │   ├── models.py
+    │           │   │   │   ├── packages.py
+    │           │   │   │   ├── sessions.py
+    │           │   │   │   ├── status_codes.py
+    │           │   │   │   ├── structures.py
+    │           │   │   │   └── utils.py
+    │           │   │   ├── resolvelib
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── providers.cpython-312.pyc
+    │           │   │   │   │   ├── reporters.cpython-312.pyc
+    │           │   │   │   │   ├── resolvers.cpython-312.pyc
+    │           │   │   │   │   └── structs.cpython-312.pyc
+    │           │   │   │   ├── compat
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   └── collections_abc.cpython-312.pyc
+    │           │   │   │   │   └── collections_abc.py
+    │           │   │   │   ├── providers.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   ├── reporters.py
+    │           │   │   │   ├── resolvers.py
+    │           │   │   │   └── structs.py
+    │           │   │   ├── rich
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __main__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── __main__.cpython-312.pyc
+    │           │   │   │   │   ├── _cell_widths.cpython-312.pyc
+    │           │   │   │   │   ├── _emoji_codes.cpython-312.pyc
+    │           │   │   │   │   ├── _emoji_replace.cpython-312.pyc
+    │           │   │   │   │   ├── _export_format.cpython-312.pyc
+    │           │   │   │   │   ├── _extension.cpython-312.pyc
+    │           │   │   │   │   ├── _fileno.cpython-312.pyc
+    │           │   │   │   │   ├── _inspect.cpython-312.pyc
+    │           │   │   │   │   ├── _log_render.cpython-312.pyc
+    │           │   │   │   │   ├── _loop.cpython-312.pyc
+    │           │   │   │   │   ├── _null_file.cpython-312.pyc
+    │           │   │   │   │   ├── _palettes.cpython-312.pyc
+    │           │   │   │   │   ├── _pick.cpython-312.pyc
+    │           │   │   │   │   ├── _ratio.cpython-312.pyc
+    │           │   │   │   │   ├── _spinners.cpython-312.pyc
+    │           │   │   │   │   ├── _stack.cpython-312.pyc
+    │           │   │   │   │   ├── _timer.cpython-312.pyc
+    │           │   │   │   │   ├── _win32_console.cpython-312.pyc
+    │           │   │   │   │   ├── _windows.cpython-312.pyc
+    │           │   │   │   │   ├── _windows_renderer.cpython-312.pyc
+    │           │   │   │   │   ├── _wrap.cpython-312.pyc
+    │           │   │   │   │   ├── abc.cpython-312.pyc
+    │           │   │   │   │   ├── align.cpython-312.pyc
+    │           │   │   │   │   ├── ansi.cpython-312.pyc
+    │           │   │   │   │   ├── bar.cpython-312.pyc
+    │           │   │   │   │   ├── box.cpython-312.pyc
+    │           │   │   │   │   ├── cells.cpython-312.pyc
+    │           │   │   │   │   ├── color.cpython-312.pyc
+    │           │   │   │   │   ├── color_triplet.cpython-312.pyc
+    │           │   │   │   │   ├── columns.cpython-312.pyc
+    │           │   │   │   │   ├── console.cpython-312.pyc
+    │           │   │   │   │   ├── constrain.cpython-312.pyc
+    │           │   │   │   │   ├── containers.cpython-312.pyc
+    │           │   │   │   │   ├── control.cpython-312.pyc
+    │           │   │   │   │   ├── default_styles.cpython-312.pyc
+    │           │   │   │   │   ├── diagnose.cpython-312.pyc
+    │           │   │   │   │   ├── emoji.cpython-312.pyc
+    │           │   │   │   │   ├── errors.cpython-312.pyc
+    │           │   │   │   │   ├── file_proxy.cpython-312.pyc
+    │           │   │   │   │   ├── filesize.cpython-312.pyc
+    │           │   │   │   │   ├── highlighter.cpython-312.pyc
+    │           │   │   │   │   ├── json.cpython-312.pyc
+    │           │   │   │   │   ├── jupyter.cpython-312.pyc
+    │           │   │   │   │   ├── layout.cpython-312.pyc
+    │           │   │   │   │   ├── live.cpython-312.pyc
+    │           │   │   │   │   ├── live_render.cpython-312.pyc
+    │           │   │   │   │   ├── logging.cpython-312.pyc
+    │           │   │   │   │   ├── markup.cpython-312.pyc
+    │           │   │   │   │   ├── measure.cpython-312.pyc
+    │           │   │   │   │   ├── padding.cpython-312.pyc
+    │           │   │   │   │   ├── pager.cpython-312.pyc
+    │           │   │   │   │   ├── palette.cpython-312.pyc
+    │           │   │   │   │   ├── panel.cpython-312.pyc
+    │           │   │   │   │   ├── pretty.cpython-312.pyc
+    │           │   │   │   │   ├── progress.cpython-312.pyc
+    │           │   │   │   │   ├── progress_bar.cpython-312.pyc
+    │           │   │   │   │   ├── prompt.cpython-312.pyc
+    │           │   │   │   │   ├── protocol.cpython-312.pyc
+    │           │   │   │   │   ├── region.cpython-312.pyc
+    │           │   │   │   │   ├── repr.cpython-312.pyc
+    │           │   │   │   │   ├── rule.cpython-312.pyc
+    │           │   │   │   │   ├── scope.cpython-312.pyc
+    │           │   │   │   │   ├── screen.cpython-312.pyc
+    │           │   │   │   │   ├── segment.cpython-312.pyc
+    │           │   │   │   │   ├── spinner.cpython-312.pyc
+    │           │   │   │   │   ├── status.cpython-312.pyc
+    │           │   │   │   │   ├── style.cpython-312.pyc
+    │           │   │   │   │   ├── styled.cpython-312.pyc
+    │           │   │   │   │   ├── syntax.cpython-312.pyc
+    │           │   │   │   │   ├── table.cpython-312.pyc
+    │           │   │   │   │   ├── terminal_theme.cpython-312.pyc
+    │           │   │   │   │   ├── text.cpython-312.pyc
+    │           │   │   │   │   ├── theme.cpython-312.pyc
+    │           │   │   │   │   ├── themes.cpython-312.pyc
+    │           │   │   │   │   ├── traceback.cpython-312.pyc
+    │           │   │   │   │   └── tree.cpython-312.pyc
+    │           │   │   │   ├── _cell_widths.py
+    │           │   │   │   ├── _emoji_codes.py
+    │           │   │   │   ├── _emoji_replace.py
+    │           │   │   │   ├── _export_format.py
+    │           │   │   │   ├── _extension.py
+    │           │   │   │   ├── _fileno.py
+    │           │   │   │   ├── _inspect.py
+    │           │   │   │   ├── _log_render.py
+    │           │   │   │   ├── _loop.py
+    │           │   │   │   ├── _null_file.py
+    │           │   │   │   ├── _palettes.py
+    │           │   │   │   ├── _pick.py
+    │           │   │   │   ├── _ratio.py
+    │           │   │   │   ├── _spinners.py
+    │           │   │   │   ├── _stack.py
+    │           │   │   │   ├── _timer.py
+    │           │   │   │   ├── _win32_console.py
+    │           │   │   │   ├── _windows.py
+    │           │   │   │   ├── _windows_renderer.py
+    │           │   │   │   ├── _wrap.py
+    │           │   │   │   ├── abc.py
+    │           │   │   │   ├── align.py
+    │           │   │   │   ├── ansi.py
+    │           │   │   │   ├── bar.py
+    │           │   │   │   ├── box.py
+    │           │   │   │   ├── cells.py
+    │           │   │   │   ├── color.py
+    │           │   │   │   ├── color_triplet.py
+    │           │   │   │   ├── columns.py
+    │           │   │   │   ├── console.py
+    │           │   │   │   ├── constrain.py
+    │           │   │   │   ├── containers.py
+    │           │   │   │   ├── control.py
+    │           │   │   │   ├── default_styles.py
+    │           │   │   │   ├── diagnose.py
+    │           │   │   │   ├── emoji.py
+    │           │   │   │   ├── errors.py
+    │           │   │   │   ├── file_proxy.py
+    │           │   │   │   ├── filesize.py
+    │           │   │   │   ├── highlighter.py
+    │           │   │   │   ├── json.py
+    │           │   │   │   ├── jupyter.py
+    │           │   │   │   ├── layout.py
+    │           │   │   │   ├── live.py
+    │           │   │   │   ├── live_render.py
+    │           │   │   │   ├── logging.py
+    │           │   │   │   ├── markup.py
+    │           │   │   │   ├── measure.py
+    │           │   │   │   ├── padding.py
+    │           │   │   │   ├── pager.py
+    │           │   │   │   ├── palette.py
+    │           │   │   │   ├── panel.py
+    │           │   │   │   ├── pretty.py
+    │           │   │   │   ├── progress.py
+    │           │   │   │   ├── progress_bar.py
+    │           │   │   │   ├── prompt.py
+    │           │   │   │   ├── protocol.py
+    │           │   │   │   ├── py.typed
+    │           │   │   │   ├── region.py
+    │           │   │   │   ├── repr.py
+    │           │   │   │   ├── rule.py
+    │           │   │   │   ├── scope.py
+    │           │   │   │   ├── screen.py
+    │           │   │   │   ├── segment.py
+    │           │   │   │   ├── spinner.py
+    │           │   │   │   ├── status.py
+    │           │   │   │   ├── style.py
+    │           │   │   │   ├── styled.py
+    │           │   │   │   ├── syntax.py
+    │           │   │   │   ├── table.py
+    │           │   │   │   ├── terminal_theme.py
+    │           │   │   │   ├── text.py
+    │           │   │   │   ├── theme.py
+    │           │   │   │   ├── themes.py
+    │           │   │   │   ├── traceback.py
+    │           │   │   │   └── tree.py
+    │           │   │   ├── tomli
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _parser.cpython-312.pyc
+    │           │   │   │   │   ├── _re.cpython-312.pyc
+    │           │   │   │   │   └── _types.cpython-312.pyc
+    │           │   │   │   ├── _parser.py
+    │           │   │   │   ├── _re.py
+    │           │   │   │   ├── _types.py
+    │           │   │   │   └── py.typed
+    │           │   │   ├── truststore
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _api.cpython-312.pyc
+    │           │   │   │   │   ├── _macos.cpython-312.pyc
+    │           │   │   │   │   ├── _openssl.cpython-312.pyc
+    │           │   │   │   │   ├── _ssl_constants.cpython-312.pyc
+    │           │   │   │   │   └── _windows.cpython-312.pyc
+    │           │   │   │   ├── _api.py
+    │           │   │   │   ├── _macos.py
+    │           │   │   │   ├── _openssl.py
+    │           │   │   │   ├── _ssl_constants.py
+    │           │   │   │   ├── _windows.py
+    │           │   │   │   └── py.typed
+    │           │   │   ├── typing_extensions.py
+    │           │   │   ├── urllib3
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _collections.cpython-312.pyc
+    │           │   │   │   │   ├── _version.cpython-312.pyc
+    │           │   │   │   │   ├── connection.cpython-312.pyc
+    │           │   │   │   │   ├── connectionpool.cpython-312.pyc
+    │           │   │   │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   │   │   ├── fields.cpython-312.pyc
+    │           │   │   │   │   ├── filepost.cpython-312.pyc
+    │           │   │   │   │   ├── poolmanager.cpython-312.pyc
+    │           │   │   │   │   ├── request.cpython-312.pyc
+    │           │   │   │   │   └── response.cpython-312.pyc
+    │           │   │   │   ├── _collections.py
+    │           │   │   │   ├── _version.py
+    │           │   │   │   ├── connection.py
+    │           │   │   │   ├── connectionpool.py
+    │           │   │   │   ├── contrib
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   ├── _appengine_environ.cpython-312.pyc
+    │           │   │   │   │   │   ├── appengine.cpython-312.pyc
+    │           │   │   │   │   │   ├── ntlmpool.cpython-312.pyc
+    │           │   │   │   │   │   ├── pyopenssl.cpython-312.pyc
+    │           │   │   │   │   │   ├── securetransport.cpython-312.pyc
+    │           │   │   │   │   │   └── socks.cpython-312.pyc
+    │           │   │   │   │   ├── _appengine_environ.py
+    │           │   │   │   │   ├── _securetransport
+    │           │   │   │   │   │   ├── __init__.py
+    │           │   │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   │   ├── bindings.cpython-312.pyc
+    │           │   │   │   │   │   │   └── low_level.cpython-312.pyc
+    │           │   │   │   │   │   ├── bindings.py
+    │           │   │   │   │   │   └── low_level.py
+    │           │   │   │   │   ├── appengine.py
+    │           │   │   │   │   ├── ntlmpool.py
+    │           │   │   │   │   ├── pyopenssl.py
+    │           │   │   │   │   ├── securetransport.py
+    │           │   │   │   │   └── socks.py
+    │           │   │   │   ├── exceptions.py
+    │           │   │   │   ├── fields.py
+    │           │   │   │   ├── filepost.py
+    │           │   │   │   ├── packages
+    │           │   │   │   │   ├── __init__.py
+    │           │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   └── six.cpython-312.pyc
+    │           │   │   │   │   ├── backports
+    │           │   │   │   │   │   ├── __init__.py
+    │           │   │   │   │   │   ├── __pycache__
+    │           │   │   │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   │   │   ├── makefile.cpython-312.pyc
+    │           │   │   │   │   │   │   └── weakref_finalize.cpython-312.pyc
+    │           │   │   │   │   │   ├── makefile.py
+    │           │   │   │   │   │   └── weakref_finalize.py
+    │           │   │   │   │   └── six.py
+    │           │   │   │   ├── poolmanager.py
+    │           │   │   │   ├── request.py
+    │           │   │   │   ├── response.py
+    │           │   │   │   └── util
+    │           │   │   │       ├── __init__.py
+    │           │   │   │       ├── __pycache__
+    │           │   │   │       │   ├── __init__.cpython-312.pyc
+    │           │   │   │       │   ├── connection.cpython-312.pyc
+    │           │   │   │       │   ├── proxy.cpython-312.pyc
+    │           │   │   │       │   ├── queue.cpython-312.pyc
+    │           │   │   │       │   ├── request.cpython-312.pyc
+    │           │   │   │       │   ├── response.cpython-312.pyc
+    │           │   │   │       │   ├── retry.cpython-312.pyc
+    │           │   │   │       │   ├── ssl_.cpython-312.pyc
+    │           │   │   │       │   ├── ssl_match_hostname.cpython-312.pyc
+    │           │   │   │       │   ├── ssltransport.cpython-312.pyc
+    │           │   │   │       │   ├── timeout.cpython-312.pyc
+    │           │   │   │       │   ├── url.cpython-312.pyc
+    │           │   │   │       │   └── wait.cpython-312.pyc
+    │           │   │   │       ├── connection.py
+    │           │   │   │       ├── proxy.py
+    │           │   │   │       ├── queue.py
+    │           │   │   │       ├── request.py
+    │           │   │   │       ├── response.py
+    │           │   │   │       ├── retry.py
+    │           │   │   │       ├── ssl_.py
+    │           │   │   │       ├── ssl_match_hostname.py
+    │           │   │   │       ├── ssltransport.py
+    │           │   │   │       ├── timeout.py
+    │           │   │   │       ├── url.py
+    │           │   │   │       └── wait.py
+    │           │   │   └── vendor.txt
+    │           │   └── py.typed
+    │           ├── pip-24.3.1.dist-info
+    │           │   ├── AUTHORS.txt
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE.txt
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── REQUESTED
+    │           │   ├── WHEEL
+    │           │   ├── entry_points.txt
+    │           │   └── top_level.txt
+    │           ├── sqlalchemy
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── events.cpython-312.pyc
+    │           │   │   ├── exc.cpython-312.pyc
+    │           │   │   ├── inspection.cpython-312.pyc
+    │           │   │   ├── log.cpython-312.pyc
+    │           │   │   ├── schema.cpython-312.pyc
+    │           │   │   └── types.cpython-312.pyc
+    │           │   ├── connectors
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── aioodbc.cpython-312.pyc
+    │           │   │   │   ├── asyncio.cpython-312.pyc
+    │           │   │   │   └── pyodbc.cpython-312.pyc
+    │           │   │   ├── aioodbc.py
+    │           │   │   ├── asyncio.py
+    │           │   │   └── pyodbc.py
+    │           │   ├── cyextension
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   └── __init__.cpython-312.pyc
+    │           │   │   ├── collections.cpython-312-darwin.so
+    │           │   │   ├── collections.pyx
+    │           │   │   ├── immutabledict.cpython-312-darwin.so
+    │           │   │   ├── immutabledict.pxd
+    │           │   │   ├── immutabledict.pyx
+    │           │   │   ├── processors.cpython-312-darwin.so
+    │           │   │   ├── processors.pyx
+    │           │   │   ├── resultproxy.cpython-312-darwin.so
+    │           │   │   ├── resultproxy.pyx
+    │           │   │   ├── util.cpython-312-darwin.so
+    │           │   │   └── util.pyx
+    │           │   ├── dialects
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   └── _typing.cpython-312.pyc
+    │           │   │   ├── _typing.py
+    │           │   │   ├── mssql
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── aioodbc.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── information_schema.cpython-312.pyc
+    │           │   │   │   │   ├── json.cpython-312.pyc
+    │           │   │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   │   ├── pymssql.cpython-312.pyc
+    │           │   │   │   │   └── pyodbc.cpython-312.pyc
+    │           │   │   │   ├── aioodbc.py
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── information_schema.py
+    │           │   │   │   ├── json.py
+    │           │   │   │   ├── provision.py
+    │           │   │   │   ├── pymssql.py
+    │           │   │   │   └── pyodbc.py
+    │           │   │   ├── mysql
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── aiomysql.cpython-312.pyc
+    │           │   │   │   │   ├── asyncmy.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── cymysql.cpython-312.pyc
+    │           │   │   │   │   ├── dml.cpython-312.pyc
+    │           │   │   │   │   ├── enumerated.cpython-312.pyc
+    │           │   │   │   │   ├── expression.cpython-312.pyc
+    │           │   │   │   │   ├── json.cpython-312.pyc
+    │           │   │   │   │   ├── mariadb.cpython-312.pyc
+    │           │   │   │   │   ├── mariadbconnector.cpython-312.pyc
+    │           │   │   │   │   ├── mysqlconnector.cpython-312.pyc
+    │           │   │   │   │   ├── mysqldb.cpython-312.pyc
+    │           │   │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   │   ├── pymysql.cpython-312.pyc
+    │           │   │   │   │   ├── pyodbc.cpython-312.pyc
+    │           │   │   │   │   ├── reflection.cpython-312.pyc
+    │           │   │   │   │   ├── reserved_words.cpython-312.pyc
+    │           │   │   │   │   └── types.cpython-312.pyc
+    │           │   │   │   ├── aiomysql.py
+    │           │   │   │   ├── asyncmy.py
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── cymysql.py
+    │           │   │   │   ├── dml.py
+    │           │   │   │   ├── enumerated.py
+    │           │   │   │   ├── expression.py
+    │           │   │   │   ├── json.py
+    │           │   │   │   ├── mariadb.py
+    │           │   │   │   ├── mariadbconnector.py
+    │           │   │   │   ├── mysqlconnector.py
+    │           │   │   │   ├── mysqldb.py
+    │           │   │   │   ├── provision.py
+    │           │   │   │   ├── pymysql.py
+    │           │   │   │   ├── pyodbc.py
+    │           │   │   │   ├── reflection.py
+    │           │   │   │   ├── reserved_words.py
+    │           │   │   │   └── types.py
+    │           │   │   ├── oracle
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── cx_oracle.cpython-312.pyc
+    │           │   │   │   │   ├── dictionary.cpython-312.pyc
+    │           │   │   │   │   ├── oracledb.cpython-312.pyc
+    │           │   │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   │   └── types.cpython-312.pyc
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── cx_oracle.py
+    │           │   │   │   ├── dictionary.py
+    │           │   │   │   ├── oracledb.py
+    │           │   │   │   ├── provision.py
+    │           │   │   │   └── types.py
+    │           │   │   ├── postgresql
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── _psycopg_common.cpython-312.pyc
+    │           │   │   │   │   ├── array.cpython-312.pyc
+    │           │   │   │   │   ├── asyncpg.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── dml.cpython-312.pyc
+    │           │   │   │   │   ├── ext.cpython-312.pyc
+    │           │   │   │   │   ├── hstore.cpython-312.pyc
+    │           │   │   │   │   ├── json.cpython-312.pyc
+    │           │   │   │   │   ├── named_types.cpython-312.pyc
+    │           │   │   │   │   ├── operators.cpython-312.pyc
+    │           │   │   │   │   ├── pg8000.cpython-312.pyc
+    │           │   │   │   │   ├── pg_catalog.cpython-312.pyc
+    │           │   │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   │   ├── psycopg.cpython-312.pyc
+    │           │   │   │   │   ├── psycopg2.cpython-312.pyc
+    │           │   │   │   │   ├── psycopg2cffi.cpython-312.pyc
+    │           │   │   │   │   ├── ranges.cpython-312.pyc
+    │           │   │   │   │   └── types.cpython-312.pyc
+    │           │   │   │   ├── _psycopg_common.py
+    │           │   │   │   ├── array.py
+    │           │   │   │   ├── asyncpg.py
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── dml.py
+    │           │   │   │   ├── ext.py
+    │           │   │   │   ├── hstore.py
+    │           │   │   │   ├── json.py
+    │           │   │   │   ├── named_types.py
+    │           │   │   │   ├── operators.py
+    │           │   │   │   ├── pg8000.py
+    │           │   │   │   ├── pg_catalog.py
+    │           │   │   │   ├── provision.py
+    │           │   │   │   ├── psycopg.py
+    │           │   │   │   ├── psycopg2.py
+    │           │   │   │   ├── psycopg2cffi.py
+    │           │   │   │   ├── ranges.py
+    │           │   │   │   └── types.py
+    │           │   │   ├── sqlite
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── aiosqlite.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── dml.cpython-312.pyc
+    │           │   │   │   │   ├── json.cpython-312.pyc
+    │           │   │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   │   ├── pysqlcipher.cpython-312.pyc
+    │           │   │   │   │   └── pysqlite.cpython-312.pyc
+    │           │   │   │   ├── aiosqlite.py
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── dml.py
+    │           │   │   │   ├── json.py
+    │           │   │   │   ├── provision.py
+    │           │   │   │   ├── pysqlcipher.py
+    │           │   │   │   └── pysqlite.py
+    │           │   │   └── type_migration_guidelines.txt
+    │           │   ├── engine
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── _py_processors.cpython-312.pyc
+    │           │   │   │   ├── _py_row.cpython-312.pyc
+    │           │   │   │   ├── _py_util.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── characteristics.cpython-312.pyc
+    │           │   │   │   ├── create.cpython-312.pyc
+    │           │   │   │   ├── cursor.cpython-312.pyc
+    │           │   │   │   ├── default.cpython-312.pyc
+    │           │   │   │   ├── events.cpython-312.pyc
+    │           │   │   │   ├── interfaces.cpython-312.pyc
+    │           │   │   │   ├── mock.cpython-312.pyc
+    │           │   │   │   ├── processors.cpython-312.pyc
+    │           │   │   │   ├── reflection.cpython-312.pyc
+    │           │   │   │   ├── result.cpython-312.pyc
+    │           │   │   │   ├── row.cpython-312.pyc
+    │           │   │   │   ├── strategies.cpython-312.pyc
+    │           │   │   │   ├── url.cpython-312.pyc
+    │           │   │   │   └── util.cpython-312.pyc
+    │           │   │   ├── _py_processors.py
+    │           │   │   ├── _py_row.py
+    │           │   │   ├── _py_util.py
+    │           │   │   ├── base.py
+    │           │   │   ├── characteristics.py
+    │           │   │   ├── create.py
+    │           │   │   ├── cursor.py
+    │           │   │   ├── default.py
+    │           │   │   ├── events.py
+    │           │   │   ├── interfaces.py
+    │           │   │   ├── mock.py
+    │           │   │   ├── processors.py
+    │           │   │   ├── reflection.py
+    │           │   │   ├── result.py
+    │           │   │   ├── row.py
+    │           │   │   ├── strategies.py
+    │           │   │   ├── url.py
+    │           │   │   └── util.py
+    │           │   ├── event
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── api.cpython-312.pyc
+    │           │   │   │   ├── attr.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── legacy.cpython-312.pyc
+    │           │   │   │   └── registry.cpython-312.pyc
+    │           │   │   ├── api.py
+    │           │   │   ├── attr.py
+    │           │   │   ├── base.py
+    │           │   │   ├── legacy.py
+    │           │   │   └── registry.py
+    │           │   ├── events.py
+    │           │   ├── exc.py
+    │           │   ├── ext
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── associationproxy.cpython-312.pyc
+    │           │   │   │   ├── automap.cpython-312.pyc
+    │           │   │   │   ├── baked.cpython-312.pyc
+    │           │   │   │   ├── compiler.cpython-312.pyc
+    │           │   │   │   ├── horizontal_shard.cpython-312.pyc
+    │           │   │   │   ├── hybrid.cpython-312.pyc
+    │           │   │   │   ├── indexable.cpython-312.pyc
+    │           │   │   │   ├── instrumentation.cpython-312.pyc
+    │           │   │   │   ├── mutable.cpython-312.pyc
+    │           │   │   │   ├── orderinglist.cpython-312.pyc
+    │           │   │   │   └── serializer.cpython-312.pyc
+    │           │   │   ├── associationproxy.py
+    │           │   │   ├── asyncio
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── engine.cpython-312.pyc
+    │           │   │   │   │   ├── exc.cpython-312.pyc
+    │           │   │   │   │   ├── result.cpython-312.pyc
+    │           │   │   │   │   ├── scoping.cpython-312.pyc
+    │           │   │   │   │   └── session.cpython-312.pyc
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── engine.py
+    │           │   │   │   ├── exc.py
+    │           │   │   │   ├── result.py
+    │           │   │   │   ├── scoping.py
+    │           │   │   │   └── session.py
+    │           │   │   ├── automap.py
+    │           │   │   ├── baked.py
+    │           │   │   ├── compiler.py
+    │           │   │   ├── declarative
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   └── extensions.cpython-312.pyc
+    │           │   │   │   └── extensions.py
+    │           │   │   ├── horizontal_shard.py
+    │           │   │   ├── hybrid.py
+    │           │   │   ├── indexable.py
+    │           │   │   ├── instrumentation.py
+    │           │   │   ├── mutable.py
+    │           │   │   ├── mypy
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── apply.cpython-312.pyc
+    │           │   │   │   │   ├── decl_class.cpython-312.pyc
+    │           │   │   │   │   ├── infer.cpython-312.pyc
+    │           │   │   │   │   ├── names.cpython-312.pyc
+    │           │   │   │   │   ├── plugin.cpython-312.pyc
+    │           │   │   │   │   └── util.cpython-312.pyc
+    │           │   │   │   ├── apply.py
+    │           │   │   │   ├── decl_class.py
+    │           │   │   │   ├── infer.py
+    │           │   │   │   ├── names.py
+    │           │   │   │   ├── plugin.py
+    │           │   │   │   └── util.py
+    │           │   │   ├── orderinglist.py
+    │           │   │   └── serializer.py
+    │           │   ├── future
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   └── engine.cpython-312.pyc
+    │           │   │   └── engine.py
+    │           │   ├── inspection.py
+    │           │   ├── log.py
+    │           │   ├── orm
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── _orm_constructors.cpython-312.pyc
+    │           │   │   │   ├── _typing.cpython-312.pyc
+    │           │   │   │   ├── attributes.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── bulk_persistence.cpython-312.pyc
+    │           │   │   │   ├── clsregistry.cpython-312.pyc
+    │           │   │   │   ├── collections.cpython-312.pyc
+    │           │   │   │   ├── context.cpython-312.pyc
+    │           │   │   │   ├── decl_api.cpython-312.pyc
+    │           │   │   │   ├── decl_base.cpython-312.pyc
+    │           │   │   │   ├── dependency.cpython-312.pyc
+    │           │   │   │   ├── descriptor_props.cpython-312.pyc
+    │           │   │   │   ├── dynamic.cpython-312.pyc
+    │           │   │   │   ├── evaluator.cpython-312.pyc
+    │           │   │   │   ├── events.cpython-312.pyc
+    │           │   │   │   ├── exc.cpython-312.pyc
+    │           │   │   │   ├── identity.cpython-312.pyc
+    │           │   │   │   ├── instrumentation.cpython-312.pyc
+    │           │   │   │   ├── interfaces.cpython-312.pyc
+    │           │   │   │   ├── loading.cpython-312.pyc
+    │           │   │   │   ├── mapped_collection.cpython-312.pyc
+    │           │   │   │   ├── mapper.cpython-312.pyc
+    │           │   │   │   ├── path_registry.cpython-312.pyc
+    │           │   │   │   ├── persistence.cpython-312.pyc
+    │           │   │   │   ├── properties.cpython-312.pyc
+    │           │   │   │   ├── query.cpython-312.pyc
+    │           │   │   │   ├── relationships.cpython-312.pyc
+    │           │   │   │   ├── scoping.cpython-312.pyc
+    │           │   │   │   ├── session.cpython-312.pyc
+    │           │   │   │   ├── state.cpython-312.pyc
+    │           │   │   │   ├── state_changes.cpython-312.pyc
+    │           │   │   │   ├── strategies.cpython-312.pyc
+    │           │   │   │   ├── strategy_options.cpython-312.pyc
+    │           │   │   │   ├── sync.cpython-312.pyc
+    │           │   │   │   ├── unitofwork.cpython-312.pyc
+    │           │   │   │   ├── util.cpython-312.pyc
+    │           │   │   │   └── writeonly.cpython-312.pyc
+    │           │   │   ├── _orm_constructors.py
+    │           │   │   ├── _typing.py
+    │           │   │   ├── attributes.py
+    │           │   │   ├── base.py
+    │           │   │   ├── bulk_persistence.py
+    │           │   │   ├── clsregistry.py
+    │           │   │   ├── collections.py
+    │           │   │   ├── context.py
+    │           │   │   ├── decl_api.py
+    │           │   │   ├── decl_base.py
+    │           │   │   ├── dependency.py
+    │           │   │   ├── descriptor_props.py
+    │           │   │   ├── dynamic.py
+    │           │   │   ├── evaluator.py
+    │           │   │   ├── events.py
+    │           │   │   ├── exc.py
+    │           │   │   ├── identity.py
+    │           │   │   ├── instrumentation.py
+    │           │   │   ├── interfaces.py
+    │           │   │   ├── loading.py
+    │           │   │   ├── mapped_collection.py
+    │           │   │   ├── mapper.py
+    │           │   │   ├── path_registry.py
+    │           │   │   ├── persistence.py
+    │           │   │   ├── properties.py
+    │           │   │   ├── query.py
+    │           │   │   ├── relationships.py
+    │           │   │   ├── scoping.py
+    │           │   │   ├── session.py
+    │           │   │   ├── state.py
+    │           │   │   ├── state_changes.py
+    │           │   │   ├── strategies.py
+    │           │   │   ├── strategy_options.py
+    │           │   │   ├── sync.py
+    │           │   │   ├── unitofwork.py
+    │           │   │   ├── util.py
+    │           │   │   └── writeonly.py
+    │           │   ├── pool
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── events.cpython-312.pyc
+    │           │   │   │   └── impl.cpython-312.pyc
+    │           │   │   ├── base.py
+    │           │   │   ├── events.py
+    │           │   │   └── impl.py
+    │           │   ├── py.typed
+    │           │   ├── schema.py
+    │           │   ├── sql
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── _dml_constructors.cpython-312.pyc
+    │           │   │   │   ├── _elements_constructors.cpython-312.pyc
+    │           │   │   │   ├── _orm_types.cpython-312.pyc
+    │           │   │   │   ├── _py_util.cpython-312.pyc
+    │           │   │   │   ├── _selectable_constructors.cpython-312.pyc
+    │           │   │   │   ├── _typing.cpython-312.pyc
+    │           │   │   │   ├── annotation.cpython-312.pyc
+    │           │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   ├── cache_key.cpython-312.pyc
+    │           │   │   │   ├── coercions.cpython-312.pyc
+    │           │   │   │   ├── compiler.cpython-312.pyc
+    │           │   │   │   ├── crud.cpython-312.pyc
+    │           │   │   │   ├── ddl.cpython-312.pyc
+    │           │   │   │   ├── default_comparator.cpython-312.pyc
+    │           │   │   │   ├── dml.cpython-312.pyc
+    │           │   │   │   ├── elements.cpython-312.pyc
+    │           │   │   │   ├── events.cpython-312.pyc
+    │           │   │   │   ├── expression.cpython-312.pyc
+    │           │   │   │   ├── functions.cpython-312.pyc
+    │           │   │   │   ├── lambdas.cpython-312.pyc
+    │           │   │   │   ├── naming.cpython-312.pyc
+    │           │   │   │   ├── operators.cpython-312.pyc
+    │           │   │   │   ├── roles.cpython-312.pyc
+    │           │   │   │   ├── schema.cpython-312.pyc
+    │           │   │   │   ├── selectable.cpython-312.pyc
+    │           │   │   │   ├── sqltypes.cpython-312.pyc
+    │           │   │   │   ├── traversals.cpython-312.pyc
+    │           │   │   │   ├── type_api.cpython-312.pyc
+    │           │   │   │   ├── util.cpython-312.pyc
+    │           │   │   │   └── visitors.cpython-312.pyc
+    │           │   │   ├── _dml_constructors.py
+    │           │   │   ├── _elements_constructors.py
+    │           │   │   ├── _orm_types.py
+    │           │   │   ├── _py_util.py
+    │           │   │   ├── _selectable_constructors.py
+    │           │   │   ├── _typing.py
+    │           │   │   ├── annotation.py
+    │           │   │   ├── base.py
+    │           │   │   ├── cache_key.py
+    │           │   │   ├── coercions.py
+    │           │   │   ├── compiler.py
+    │           │   │   ├── crud.py
+    │           │   │   ├── ddl.py
+    │           │   │   ├── default_comparator.py
+    │           │   │   ├── dml.py
+    │           │   │   ├── elements.py
+    │           │   │   ├── events.py
+    │           │   │   ├── expression.py
+    │           │   │   ├── functions.py
+    │           │   │   ├── lambdas.py
+    │           │   │   ├── naming.py
+    │           │   │   ├── operators.py
+    │           │   │   ├── roles.py
+    │           │   │   ├── schema.py
+    │           │   │   ├── selectable.py
+    │           │   │   ├── sqltypes.py
+    │           │   │   ├── traversals.py
+    │           │   │   ├── type_api.py
+    │           │   │   ├── util.py
+    │           │   │   └── visitors.py
+    │           │   ├── testing
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── assertions.cpython-312.pyc
+    │           │   │   │   ├── assertsql.cpython-312.pyc
+    │           │   │   │   ├── asyncio.cpython-312.pyc
+    │           │   │   │   ├── config.cpython-312.pyc
+    │           │   │   │   ├── engines.cpython-312.pyc
+    │           │   │   │   ├── entities.cpython-312.pyc
+    │           │   │   │   ├── exclusions.cpython-312.pyc
+    │           │   │   │   ├── pickleable.cpython-312.pyc
+    │           │   │   │   ├── profiling.cpython-312.pyc
+    │           │   │   │   ├── provision.cpython-312.pyc
+    │           │   │   │   ├── requirements.cpython-312.pyc
+    │           │   │   │   ├── schema.cpython-312.pyc
+    │           │   │   │   ├── util.cpython-312.pyc
+    │           │   │   │   └── warnings.cpython-312.pyc
+    │           │   │   ├── assertions.py
+    │           │   │   ├── assertsql.py
+    │           │   │   ├── asyncio.py
+    │           │   │   ├── config.py
+    │           │   │   ├── engines.py
+    │           │   │   ├── entities.py
+    │           │   │   ├── exclusions.py
+    │           │   │   ├── fixtures
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── base.cpython-312.pyc
+    │           │   │   │   │   ├── mypy.cpython-312.pyc
+    │           │   │   │   │   ├── orm.cpython-312.pyc
+    │           │   │   │   │   └── sql.cpython-312.pyc
+    │           │   │   │   ├── base.py
+    │           │   │   │   ├── mypy.py
+    │           │   │   │   ├── orm.py
+    │           │   │   │   └── sql.py
+    │           │   │   ├── pickleable.py
+    │           │   │   ├── plugin
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── bootstrap.cpython-312.pyc
+    │           │   │   │   │   ├── plugin_base.cpython-312.pyc
+    │           │   │   │   │   └── pytestplugin.cpython-312.pyc
+    │           │   │   │   ├── bootstrap.py
+    │           │   │   │   ├── plugin_base.py
+    │           │   │   │   └── pytestplugin.py
+    │           │   │   ├── profiling.py
+    │           │   │   ├── provision.py
+    │           │   │   ├── requirements.py
+    │           │   │   ├── schema.py
+    │           │   │   ├── suite
+    │           │   │   │   ├── __init__.py
+    │           │   │   │   ├── __pycache__
+    │           │   │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   │   ├── test_cte.cpython-312.pyc
+    │           │   │   │   │   ├── test_ddl.cpython-312.pyc
+    │           │   │   │   │   ├── test_deprecations.cpython-312.pyc
+    │           │   │   │   │   ├── test_dialect.cpython-312.pyc
+    │           │   │   │   │   ├── test_insert.cpython-312.pyc
+    │           │   │   │   │   ├── test_reflection.cpython-312.pyc
+    │           │   │   │   │   ├── test_results.cpython-312.pyc
+    │           │   │   │   │   ├── test_rowcount.cpython-312.pyc
+    │           │   │   │   │   ├── test_select.cpython-312.pyc
+    │           │   │   │   │   ├── test_sequence.cpython-312.pyc
+    │           │   │   │   │   ├── test_types.cpython-312.pyc
+    │           │   │   │   │   ├── test_unicode_ddl.cpython-312.pyc
+    │           │   │   │   │   └── test_update_delete.cpython-312.pyc
+    │           │   │   │   ├── test_cte.py
+    │           │   │   │   ├── test_ddl.py
+    │           │   │   │   ├── test_deprecations.py
+    │           │   │   │   ├── test_dialect.py
+    │           │   │   │   ├── test_insert.py
+    │           │   │   │   ├── test_reflection.py
+    │           │   │   │   ├── test_results.py
+    │           │   │   │   ├── test_rowcount.py
+    │           │   │   │   ├── test_select.py
+    │           │   │   │   ├── test_sequence.py
+    │           │   │   │   ├── test_types.py
+    │           │   │   │   ├── test_unicode_ddl.py
+    │           │   │   │   └── test_update_delete.py
+    │           │   │   ├── util.py
+    │           │   │   └── warnings.py
+    │           │   ├── types.py
+    │           │   └── util
+    │           │       ├── __init__.py
+    │           │       ├── __pycache__
+    │           │       │   ├── __init__.cpython-312.pyc
+    │           │       │   ├── _collections.cpython-312.pyc
+    │           │       │   ├── _concurrency_py3k.cpython-312.pyc
+    │           │       │   ├── _has_cy.cpython-312.pyc
+    │           │       │   ├── _py_collections.cpython-312.pyc
+    │           │       │   ├── compat.cpython-312.pyc
+    │           │       │   ├── concurrency.cpython-312.pyc
+    │           │       │   ├── deprecations.cpython-312.pyc
+    │           │       │   ├── langhelpers.cpython-312.pyc
+    │           │       │   ├── preloaded.cpython-312.pyc
+    │           │       │   ├── queue.cpython-312.pyc
+    │           │       │   ├── tool_support.cpython-312.pyc
+    │           │       │   ├── topological.cpython-312.pyc
+    │           │       │   └── typing.cpython-312.pyc
+    │           │       ├── _collections.py
+    │           │       ├── _concurrency_py3k.py
+    │           │       ├── _has_cy.py
+    │           │       ├── _py_collections.py
+    │           │       ├── compat.py
+    │           │       ├── concurrency.py
+    │           │       ├── deprecations.py
+    │           │       ├── langhelpers.py
+    │           │       ├── preloaded.py
+    │           │       ├── queue.py
+    │           │       ├── tool_support.py
+    │           │       ├── topological.py
+    │           │       └── typing.py
+    │           ├── tabulate
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   └── version.cpython-312.pyc
+    │           │   └── version.py
+    │           ├── tabulate-0.9.0.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   ├── REQUESTED
+    │           │   ├── WHEEL
+    │           │   ├── entry_points.txt
+    │           │   └── top_level.txt
+    │           ├── typing_extensions-4.12.2.dist-info
+    │           │   ├── INSTALLER
+    │           │   ├── LICENSE
+    │           │   ├── METADATA
+    │           │   ├── RECORD
+    │           │   └── WHEEL
+    │           ├── typing_extensions.py
+    │           ├── werkzeug
+    │           │   ├── __init__.py
+    │           │   ├── __pycache__
+    │           │   │   ├── __init__.cpython-312.pyc
+    │           │   │   ├── _internal.cpython-312.pyc
+    │           │   │   ├── _reloader.cpython-312.pyc
+    │           │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   ├── formparser.cpython-312.pyc
+    │           │   │   ├── http.cpython-312.pyc
+    │           │   │   ├── local.cpython-312.pyc
+    │           │   │   ├── security.cpython-312.pyc
+    │           │   │   ├── serving.cpython-312.pyc
+    │           │   │   ├── test.cpython-312.pyc
+    │           │   │   ├── testapp.cpython-312.pyc
+    │           │   │   ├── urls.cpython-312.pyc
+    │           │   │   ├── user_agent.cpython-312.pyc
+    │           │   │   ├── utils.cpython-312.pyc
+    │           │   │   └── wsgi.cpython-312.pyc
+    │           │   ├── _internal.py
+    │           │   ├── _reloader.py
+    │           │   ├── datastructures
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── accept.cpython-312.pyc
+    │           │   │   │   ├── auth.cpython-312.pyc
+    │           │   │   │   ├── cache_control.cpython-312.pyc
+    │           │   │   │   ├── csp.cpython-312.pyc
+    │           │   │   │   ├── etag.cpython-312.pyc
+    │           │   │   │   ├── file_storage.cpython-312.pyc
+    │           │   │   │   ├── headers.cpython-312.pyc
+    │           │   │   │   ├── mixins.cpython-312.pyc
+    │           │   │   │   ├── range.cpython-312.pyc
+    │           │   │   │   └── structures.cpython-312.pyc
+    │           │   │   ├── accept.py
+    │           │   │   ├── auth.py
+    │           │   │   ├── cache_control.py
+    │           │   │   ├── csp.py
+    │           │   │   ├── etag.py
+    │           │   │   ├── file_storage.py
+    │           │   │   ├── headers.py
+    │           │   │   ├── mixins.py
+    │           │   │   ├── range.py
+    │           │   │   └── structures.py
+    │           │   ├── debug
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── console.cpython-312.pyc
+    │           │   │   │   ├── repr.cpython-312.pyc
+    │           │   │   │   └── tbtools.cpython-312.pyc
+    │           │   │   ├── console.py
+    │           │   │   ├── repr.py
+    │           │   │   ├── shared
+    │           │   │   │   ├── ICON_LICENSE.md
+    │           │   │   │   ├── console.png
+    │           │   │   │   ├── debugger.js
+    │           │   │   │   ├── less.png
+    │           │   │   │   ├── more.png
+    │           │   │   │   └── style.css
+    │           │   │   └── tbtools.py
+    │           │   ├── exceptions.py
+    │           │   ├── formparser.py
+    │           │   ├── http.py
+    │           │   ├── local.py
+    │           │   ├── middleware
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── dispatcher.cpython-312.pyc
+    │           │   │   │   ├── http_proxy.cpython-312.pyc
+    │           │   │   │   ├── lint.cpython-312.pyc
+    │           │   │   │   ├── profiler.cpython-312.pyc
+    │           │   │   │   ├── proxy_fix.cpython-312.pyc
+    │           │   │   │   └── shared_data.cpython-312.pyc
+    │           │   │   ├── dispatcher.py
+    │           │   │   ├── http_proxy.py
+    │           │   │   ├── lint.py
+    │           │   │   ├── profiler.py
+    │           │   │   ├── proxy_fix.py
+    │           │   │   └── shared_data.py
+    │           │   ├── py.typed
+    │           │   ├── routing
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── converters.cpython-312.pyc
+    │           │   │   │   ├── exceptions.cpython-312.pyc
+    │           │   │   │   ├── map.cpython-312.pyc
+    │           │   │   │   ├── matcher.cpython-312.pyc
+    │           │   │   │   └── rules.cpython-312.pyc
+    │           │   │   ├── converters.py
+    │           │   │   ├── exceptions.py
+    │           │   │   ├── map.py
+    │           │   │   ├── matcher.py
+    │           │   │   └── rules.py
+    │           │   ├── sansio
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── http.cpython-312.pyc
+    │           │   │   │   ├── multipart.cpython-312.pyc
+    │           │   │   │   ├── request.cpython-312.pyc
+    │           │   │   │   ├── response.cpython-312.pyc
+    │           │   │   │   └── utils.cpython-312.pyc
+    │           │   │   ├── http.py
+    │           │   │   ├── multipart.py
+    │           │   │   ├── request.py
+    │           │   │   ├── response.py
+    │           │   │   └── utils.py
+    │           │   ├── security.py
+    │           │   ├── serving.py
+    │           │   ├── test.py
+    │           │   ├── testapp.py
+    │           │   ├── urls.py
+    │           │   ├── user_agent.py
+    │           │   ├── utils.py
+    │           │   ├── wrappers
+    │           │   │   ├── __init__.py
+    │           │   │   ├── __pycache__
+    │           │   │   │   ├── __init__.cpython-312.pyc
+    │           │   │   │   ├── request.cpython-312.pyc
+    │           │   │   │   └── response.cpython-312.pyc
+    │           │   │   ├── request.py
+    │           │   │   └── response.py
+    │           │   └── wsgi.py
+    │           └── werkzeug-3.1.3.dist-info
+    │               ├── INSTALLER
+    │               ├── LICENSE.txt
+    │               ├── METADATA
+    │               ├── RECORD
+    │               └── WHEEL
+    └── pyvenv.cfg
+
+279 directories, 2219 files

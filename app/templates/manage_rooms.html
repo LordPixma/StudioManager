@@ -1,0 +1,420 @@
+<!-- app/templates/manage_rooms.html -->
+{% extends 'base.html' %}
+
+{% block title %}Manage Rooms{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Manage Rooms</h1>
+        <p class="text-muted">Add, remove, or update room details for your studio</p>
+    </div>
+
+    <!-- Add Room Form -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                </svg>
+            </div>
+            <h2>Add New Room</h2>
+        </div>
+
+        <form id="addRoomForm" class="room-form" onsubmit="addRoom(event)">
+            <div class="form-group">
+                <label for="name">Room Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    placeholder="Enter room name"
+                    required
+                >
+                <span class="help-text">Choose a unique name for this room</span>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    Add Room
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Existing Rooms List -->
+    <div class="rooms-grid" id="roomsList">
+        {% for room in rooms %}
+        <div class="room-card" data-room-id="{{ room.id }}">
+            <div class="room-header">
+                <div class="room-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M3 9h18"/>
+                    </svg>
+                </div>
+                <h3>{{ room.name }}</h3>
+            </div>
+            
+            <div class="room-info">
+                <p><strong>Availability:</strong> {{ room.availability or 'Not set' }}</p>
+            </div>
+            
+            <div class="room-actions">
+                <a href="{{ url_for('manager_routes.manage_availability') }}?room_id={{ room.id }}" class="btn btn-secondary">
+                    Set Availability
+                </a>
+                <button onclick="deleteRoom({{ room.id }})" class="btn btn-danger">Delete Room</button>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-rooms">
+            <p>No rooms available. Add your first room to get started.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.inline-form {
+    display: inline-block;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.room-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.room-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+}
+
+.room-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.room-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.room-header h3 {
+    font-size: 1.25rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.room-info {
+    margin: 1rem 0;
+}
+
+.room-info p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+.room-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    font-size: 0.875rem;
+}
+
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    margin-left: 0.5rem;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.no-rooms {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #eaeaea;
+}
+
+.no-rooms p {
+    margin: 0;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .content-card {
+        padding: 1.5rem;
+    }
+    
+    .room-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+</style>
+
+<script>
+async function addRoom(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const roomName = form.name.value;
+    
+    try {
+        const response = await fetch('/manager/add_room', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: roomName
+            })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Refresh the page to show the new room
+            location.reload();
+        } else {
+            alert(data.error || 'Error adding room');
+        }
+    } catch (error) {
+        alert('Error adding room: ' + error.message);
+    }
+}
+
+async function deleteRoom(roomId) {
+    if (!confirm('Are you sure you want to delete this room?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/manager/remove_room', {
+            method: 'POST',  // Changed from DELETE to POST
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                room_id: roomId
+            })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Remove the room card from the DOM
+            const roomCard = document.querySelector(`[data-room-id="${roomId}"]`);
+            if (roomCard) {
+                roomCard.remove();
+            }
+            
+            // If no rooms left, show the no-rooms message
+            const roomsList = document.getElementById('roomsList');
+            if (!roomsList.querySelector('.room-card')) {
+                roomsList.innerHTML = `
+                    <div class="no-rooms">
+                        <p>No rooms available. Add your first room to get started.</p>
+                    </div>
+                `;
+            }
+        } else {
+            alert(data.error || 'Error deleting room');
+        }
+    } catch (error) {
+        alert('Error deleting room: ' + error.message);
+    }
+}
+
+// Show alert message function
+function showAlert(message, type = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.textContent = message;
+    
+    const container = document.querySelector('.page-container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

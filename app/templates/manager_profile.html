@@ -1,0 +1,326 @@
+<!-- app/templates/manager_profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}Profile Settings{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Profile Settings</h1>
+        <p class="text-muted">Manage your account details</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="alert alert-success">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                </svg>
+            </div>
+            <h2>Profile Information</h2>
+        </div>
+
+        <form action="{{ url_for('manager_routes.update_profile') }}" method="POST" class="profile-form">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    value="{{ manager.name }}"
+                    required
+                >
+                <span class="help-text">Your full name as it appears in the system</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    value="{{ manager.email }}"
+                    required
+                >
+                <span class="help-text">Your email address for login and communications</span>
+            </div>
+
+            <div class="form-divider">
+                <span>Change Password</span>
+            </div>
+
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input 
+                    type="password" 
+                    id="current_password" 
+                    name="current_password" 
+                    class="form-control"
+                >
+                <span class="help-text">Enter your current password to make changes</span>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input 
+                    type="password" 
+                    id="new_password" 
+                    name="new_password" 
+                    class="form-control"
+                    minlength="8"
+                >
+                <span class="help-text">Must be at least 8 characters long</span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    Save Changes
+                </button>
+                <a href="{{ url_for('manager_routes.manager_dashboard') }}" class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </form>
+
+        <div class="profile-info">
+            <div class="info-section">
+                <h3>Studio Information</h3>
+                <p><strong>Studio:</strong> {{ manager.studio.name }}</p>
+                <p><strong>Address:</strong> {{ manager.studio.address }}</p>
+                <p><strong>Phone:</strong> {{ manager.studio.phone_number or 'Not provided' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.alert-success {
+    background-color: #dcfce7;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.form-divider {
+    position: relative;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.form-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #eaeaea;
+}
+
+.form-divider span {
+    background: white;
+    padding: 0 1rem;
+    color: #666;
+    position: relative;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.profile-info {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #eaeaea;
+}
+
+.info-section {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.info-section h3 {
+    font-size: 1rem;
+    color: #1a1a1a;
+    margin-bottom: 0.75rem;
+}
+
+.info-section p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .content-card {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

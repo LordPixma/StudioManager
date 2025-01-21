@@ -1,0 +1,311 @@
+<!-- app/templates/edit_studio_manager.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Studio Manager{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Edit Studio Manager</h1>
+        <p class="text-muted">Update manager details and studio assignment</p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            </div>
+            <h2>Manager Details</h2>
+        </div>
+
+        <form action="{{ url_for('admin_routes.edit_studio_manager', manager_id=manager.id) }}" method="POST" class="manager-form">
+            <div class="form-group">
+                <label for="name">Manager Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    value="{{ manager.name }}"
+                    required
+                >
+                <span class="help-text">Update the manager's name as needed</span>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    value="{{ manager.email }}"
+                    required
+                >
+                <span class="help-text">Update the manager's email address</span>
+            </div>
+
+            <div class="form-group">
+                <label for="studio_id">Assign to Studio</label>
+                <select id="studio_id" name="studio_id" class="form-control" required>
+                    <option value="">Select a studio</option>
+                    {% for studio in studios %}
+                    <option value="{{ studio.id }}" {% if studio.id == manager.studio_id %}selected{% endif %}>
+                        {{ studio.name }} - {{ studio.address }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <span class="help-text">Change the studio assignment if needed</span>
+            </div>
+
+            <!-- Studio Preview Card -->
+            <div id="studioPreview" class="studio-preview" style="display: none;">
+                <h3>Selected Studio Details</h3>
+                <div class="preview-content">
+                    <p><strong>Name:</strong> <span id="previewName"></span></p>
+                    <p><strong>Address:</strong> <span id="previewAddress"></span></p>
+                    <p><strong>Phone:</strong> <span id="previewPhone"></span></p>
+                    <p><strong>Current Managers:</strong> <span id="previewManagers"></span></p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    Update Manager
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <a href="{{ url_for('admin_routes.manage_managers') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.manager-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+}
+
+select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    appearance: none;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.studio-preview {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.studio-preview h3 {
+    font-size: 1rem;
+    color: #1a1a1a;
+    margin-bottom: 0.75rem;
+}
+
+.preview-content {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.preview-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.preview-content strong {
+    color: #1a1a1a;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-left: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .content-card {
+        padding: 1.5rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+function updateStudioPreview(select) {
+    const preview = document.getElementById('studioPreview');
+    if (select.value) {
+        const option = select.selectedOptions[0];
+        document.getElementById('previewName').textContent = option.text.split(' - ')[0];
+        document.getElementById('previewAddress').textContent = option.text.split(' - ')[1];
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Initialize studio preview
+document.addEventListener('DOMContentLoaded', function() {
+    const studioSelect = document.getElementById('studio_id');
+    updateStudioPreview(studioSelect);
+    studioSelect.addEventListener('change', function() {
+        updateStudioPreview(this);
+    });
+});
+</script>
+
+{% if error %}
+<script>
+    alert("{{ error }}");
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Customers{% endblock %}
+
+{% block content %}
+<div class="customers-container">
+    <div class="header-section">
+        <h1>Manage Customers</h1>
+        <p>Add and manage your studio customers</p>
+    </div>
+
+    <!-- Add Customer Form -->
+    <div class="form-card">
+        <h2>Add New Customer</h2>
+        <form action="{{ url_for('manager_routes.add_customer') }}" method="POST" class="customer-form">
+            <div class="form-group">
+                <label for="name">Customer Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input type="tel" id="phone_number" name="phone_number">
+            </div>
+
+            <button type="submit" class="add-button">Add Customer</button>
+        </form>
+    </div>
+
+    <!-- Existing Customers List -->
+    <div class="customers-list">
+        <h2>Existing Customers</h2>
+        {% if customers %}
+            <div class="customers-grid">
+                {% for customer in customers %}
+                    <div class="customer-card">
+                        <div class="customer-info">
+                            <h3>{{ customer.name }}</h3>
+                            <p>{{ customer.email }}</p>
+                            {% if customer.phone_number %}
+                                <p>{{ customer.phone_number }}</p>
+                            {% endif %}
+                        </div>
+                        <form action="{{ url_for('manager_routes.remove_customer') }}" method="POST" class="delete-form">
+                            <input type="hidden" name="customer_id" value="{{ customer.id }}">
+                            <button type="submit" class="delete-button" 
+                                    onclick="return confirm('Are you sure you want to remove this customer?')">
+                                ×
+                            </button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                No customers available. Add a new customer to get started.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .customers-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header-section {
+        margin-bottom: 2rem;
+    }
+
+    .header-section h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-section p {
+        color: #666;
+        font-size: 1rem;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .form-card h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .customer-form {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .form-group input {
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+    }
+
+    .add-button {
+        background: #2563eb;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+    .add-button:hover {
+        background: #1d4ed8;
+    }
+
+    .customers-list {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+    }
+
+    .customers-list h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .customers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .customer-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        transition: border-color 0.2s;
+    }
+
+    .customer-card:hover {
+        border-color: #2563eb;
+    }
+
+    .customer-info h3 {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.25rem;
+    }
+
+    .customer-info p {
+        color: #666;
+        font-size: 0.875rem;
+        margin: 0.25rem 0;
+    }
+
+    .delete-button {
+        background: none;
+        border: none;
+        color: #dc2626;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        line-height: 1;
+    }
+
+    .delete-button:hover {
+        background: #fee2e2;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #666;
+        padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .customers-container {
+            padding: 1rem;
+        }
+
+        .customers-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-card, .customers-list {
+            padding: 1rem;
+        }
+    }
+</style>
+
+{% if error %}
+    <div class="notification error">
+        {{ error }}
+    </div>
+{% endif %}
+
+{% if success %}
+    <div class="notification success">
+        {{ success }}
+    </div>
+{% endif %}
+
+<style>
+    .notification {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        padding: 1rem;
+        border-radius: 4px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .notification.error {
+        background-color: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+    }
+
+    .notification.success {
+        background-color: #dcfce7;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}

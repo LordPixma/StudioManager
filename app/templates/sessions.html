@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Sessions{% endblock %}
+
+{% block content %}
+<div class="sessions-container">
+    <div class="header-section">
+        <h1>Manage Sessions</h1>
+        <p>Book and manage studio sessions</p>
+    </div>
+
+    <!-- Book New Session Form -->
+    <div class="form-card">
+        <h2>Book New Session</h2>
+        <form action="{{ url_for('manager_routes.book_session') }}" method="POST" class="booking-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="room_id">Select Room</label>
+                    <select id="room_id" name="room_id" required class="form-select">
+                        <option value="">Choose a room</option>
+                        {% for room in rooms %}
+                        <option value="{{ room.id }}">{{ room.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_id">Select Customer</label>
+                    <select id="customer_id" name="customer_id" required class="form-select">
+                        <option value="">Choose a customer</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="start_time">Start Time</label>
+                    <input type="datetime-local" id="start_time" name="start_time" required class="form-input">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Book Session</button>
+        </form>
+    </div>
+
+    <!-- Ongoing Sessions -->
+    <div class="sessions-section">
+        <h2>Ongoing Sessions</h2>
+        {% if ongoing_sessions %}
+            <div class="sessions-grid">
+                {% for session in ongoing_sessions %}
+                    <div class="session-card">
+                        <div class="session-info">
+                            <h3>Room: {{ session.room.name }}</h3>
+                            <p>Customer: {{ session.customer.name }}</p>
+                            <p>Started: {{ session.start_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <form action="{{ url_for('manager_routes.end_session') }}" method="POST">
+                            <input type="hidden" name="session_id" value="{{ session.id }}">
+                            <button type="submit" class="btn-end-session">End Session</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">No ongoing sessions at the moment.</p>
+        {% endif %}
+    </div>
+
+    <!-- Completed Sessions -->
+    <div class="sessions-section">
+        <h2>Completed Sessions</h2>
+        {% if completed_sessions %}
+            <div class="sessions-grid">
+                {% for session in completed_sessions %}
+                    <div class="session-card completed">
+                        <div class="session-info">
+                            <h3>Room: {{ session.room.name }}</h3>
+                            <p>Customer: {{ session.customer.name }}</p>
+                            <p>Started: {{ session.start_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p>Ended: {{ session.end_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">No completed sessions available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .sessions-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header-section {
+        margin-bottom: 2rem;
+    }
+
+    .header-section h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-section p {
+        color: #666;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .form-card h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .booking-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        color: #374151;
+    }
+
+    .form-select, .form-input {
+        padding: 0.5rem;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 1rem;
+        background-color: white;
+    }
+
+    .form-select:focus, .form-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        width: fit-content;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .sessions-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .sessions-section h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .sessions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .session-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        background: #f8fafc;
+    }
+
+    .session-card.completed {
+        background: #f3f4f6;
+    }
+
+    .session-info h3 {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .session-info p {
+        color: #666;
+        font-size: 0.875rem;
+        margin: 0.25rem 0;
+    }
+
+    .btn-end-session {
+        background: #dc2626;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-end-session:hover {
+        background: #b91c1c;
+    }
+
+    .empty-state {
+        text-align: center;
+        color: #666;
+        padding: 2rem;
+        background: #f9fafb;
+        border-radius: 6px;
+        border: 1px dashed #e5e7eb;
+    }
+
+    @media (max-width: 768px) {
+        .sessions-container {
+            padding: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sessions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .session-card {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-end-session {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

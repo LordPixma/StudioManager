@@ -1,0 +1,501 @@
+<!-- app/templates/create_studio_manager.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Studio Manager{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Create Studio Manager</h1>
+        <p class="text-muted">Add a new manager to oversee studio operations</p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="17" y1="11" x2="23" y2="11"/>
+                </svg>
+            </div>
+            <h2>Manager Details</h2>
+        </div>
+
+        <form id="managerForm" action="{{ url_for('admin_routes.create_studio_manager') }}" method="POST" class="manager-form">
+            <div class="form-group">
+                <label for="name">Manager Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    placeholder="Enter manager's full name"
+                    required
+                    pattern="[A-Za-z\s]{2,}"
+                    onkeyup="validateName(this)"
+                >
+                <span class="help-text">Enter the manager's full name as it should appear in the system</span>
+                <div class="validation-feedback" id="nameValidation"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-control" 
+                    placeholder="Enter manager's email address"
+                    required
+                    onkeyup="validateEmail(this)"
+                >
+                <span class="help-text">This email will be used for login and communications</span>
+                <div class="validation-feedback" id="emailValidation"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-input-group">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-control" 
+                        placeholder="Enter secure password"
+                        required
+                        minlength="8"
+                        onkeyup="checkPasswordStrength(this)"
+                    >
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="password-strength-meter">
+                    <div class="strength-bar"></div>
+                </div>
+                <div class="password-requirements">
+                    <div class="requirement" id="req-length">At least 8 characters</div>
+                    <div class="requirement" id="req-uppercase">At least one uppercase letter</div>
+                    <div class="requirement" id="req-lowercase">At least one lowercase letter</div>
+                    <div class="requirement" id="req-number">At least one number</div>
+                    <div class="requirement" id="req-special">At least one special character</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="studio_id">Assign to Studio</label>
+                <select 
+                    id="studio_id" 
+                    name="studio_id" 
+                    class="form-control" 
+                    required
+                    onchange="updateStudioPreview(this)"
+                >
+                    <option value="">Select a studio</option>
+                    {% for studio in studios %}
+                    <option value="{{ studio.id }}" 
+                            data-address="{{ studio.address }}"
+                            data-phone="{{ studio.phone_number }}"
+                            data-managers="{{ studio.managers|length }}">
+                        {{ studio.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <span class="help-text">Select the studio this manager will oversee</span>
+            </div>
+
+            <!-- Studio Preview Card -->
+            <div id="studioPreview" class="studio-preview" style="display: none;">
+                <h3>Selected Studio Details</h3>
+                <div class="preview-content">
+                    <p><strong>Name:</strong> <span id="previewName"></span></p>
+                    <p><strong>Address:</strong> <span id="previewAddress"></span></p>
+                    <p><strong>Phone:</strong> <span id="previewPhone"></span></p>
+                    <p><strong>Current Managers:</strong> <span id="previewManagers"></span></p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    Create Manager
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <a href="{{ url_for('admin_routes.admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.manager-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+}
+
+select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    appearance: none;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-left: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .content-card {
+        padding: 1.5rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}.password-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    color: #666;
+}
+
+.password-strength-meter {
+    height: 4px;
+    background: #eee;
+    margin-top: 0.5rem;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s;
+    border-radius: 2px;
+}
+
+.password-requirements {
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.requirement {
+    font-size: 0.875rem;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.requirement::before {
+    content: "×";
+    color: #dc3545;
+}
+
+.requirement.met::before {
+    content: "✓";
+    color: #28a745;
+}
+
+.validation-feedback {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    min-height: 1.25rem;
+}
+
+.validation-feedback.error {
+    color: #dc3545;
+}
+
+.validation-feedback.success {
+    color: #28a745;
+}
+
+.studio-preview {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.studio-preview h3 {
+    font-size: 1rem;
+    color: #1a1a1a;
+    margin-bottom: 0.75rem;
+}
+
+.preview-content {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.preview-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.preview-content strong {
+    color: #1a1a1a;
+}
+</style>
+
+<script>
+function validateName(input) {
+    const nameRegex = /^[A-Za-z\s]{2,}$/;
+    const validationDiv = document.getElementById('nameValidation');
+    if (input.value.length === 0) {
+        validationDiv.textContent = '';
+    } else if (!nameRegex.test(input.value)) {
+        validationDiv.textContent = 'Name should contain only letters and spaces';
+        validationDiv.className = 'validation-feedback error';
+    } else {
+        validationDiv.textContent = 'Valid name';
+        validationDiv.className = 'validation-feedback success';
+    }
+    validateForm();
+}
+
+function validateEmail(input) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validationDiv = document.getElementById('emailValidation');
+    if (input.value.length === 0) {
+        validationDiv.textContent = '';
+    } else if (!emailRegex.test(input.value)) {
+        validationDiv.textContent = 'Please enter a valid email address';
+        validationDiv.className = 'validation-feedback error';
+    } else {
+        validationDiv.textContent = 'Valid email address';
+        validationDiv.className = 'validation-feedback success';
+    }
+    validateForm();
+}
+
+function checkPasswordStrength(input) {
+    const password = input.value;
+    const strengthBar = document.querySelector('.strength-bar');
+    
+    // Update requirements
+    document.getElementById('req-length').classList.toggle('met', password.length >= 8);
+    document.getElementById('req-uppercase').classList.toggle('met', /[A-Z]/.test(password));
+    document.getElementById('req-lowercase').classList.toggle('met', /[a-z]/.test(password));
+    document.getElementById('req-number').classList.toggle('met', /\d/.test(password));
+    document.getElementById('req-special').classList.toggle('met', /[^A-Za-z0-9]/.test(password));
+
+    // Calculate strength
+    let strength = 0;
+    if (password.length >= 8) strength += 20;
+    if (/[A-Z]/.test(password)) strength += 20;
+    if (/[a-z]/.test(password)) strength += 20;
+    if (/\d/.test(password)) strength += 20;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 20;
+
+    // Update strength bar
+    strengthBar.style.width = `${strength}%`;
+    if (strength <= 40) {
+        strengthBar.style.backgroundColor = '#dc3545';
+    } else if (strength <= 80) {
+        strengthBar.style.backgroundColor = '#ffc107';
+    } else {
+        strengthBar.style.backgroundColor = '#28a745';
+    }
+
+    validateForm();
+}
+
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+}
+
+function updateStudioPreview(select) {
+    const preview = document.getElementById('studioPreview');
+    if (select.value) {
+        const option = select.selectedOptions[0];
+        document.getElementById('previewName').textContent = option.text;
+        document.getElementById('previewAddress').textContent = option.dataset.address;
+        document.getElementById('previewPhone').textContent = option.dataset.phone || 'Not provided';
+        document.getElementById('previewManagers').textContent = option.dataset.managers;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+    validateForm();
+}
+
+function validateForm() {
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.getElementById('managerForm');
+    const nameValid = document.getElementById('nameValidation').classList.contains('success');
+    const emailValid = document.getElementById('emailValidation').classList.contains('success');
+    const passwordValid = document.querySelectorAll('.requirement.met').length === 5;
+    const studioSelected = form.studio_id.value !== '';
+
+    submitBtn.disabled = !(nameValid && emailValid && passwordValid && studioSelected);
+}
+</script>
+
+{% if error %}
+<script>
+    alert("{{ error }}");
+</script>
+{% endif %}
+{% endblock %}

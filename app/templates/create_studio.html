@@ -1,0 +1,254 @@
+<!-- app/templates/create_studio.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create New Studio{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Create New Studio</h1>
+        <p class="text-muted">Set up a new studio location and expand your operations</p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h18v18H3zM3 9h18M9 21V9"/>
+                </svg>
+            </div>
+            <h2>Studio Details</h2>
+        </div>
+
+        <form action="{{ url_for('admin_routes.create_studio') }}" method="POST" class="studio-form">
+            <div class="form-group">
+                <label for="name">Studio Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    placeholder="Enter studio name"
+                    required
+                >
+                <span class="help-text">Choose a unique name for your studio location</span>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea 
+                    id="address" 
+                    name="address" 
+                    class="form-control" 
+                    placeholder="Enter full studio address"
+                    rows="3"
+                    required
+                ></textarea>
+                <span class="help-text">Provide the complete physical address of the studio</span>
+            </div>
+
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input 
+                    type="tel" 
+                    id="phone_number" 
+                    name="phone_number" 
+                    class="form-control" 
+                    placeholder="Enter phone number"
+                    pattern="[0-9]{10,}"
+                >
+                <span class="help-text">Enter a valid contact number for the studio (minimum 10 digits)</span>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary">
+                    Create Studio
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </button>
+                <a href="{{ url_for('admin_routes.admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.studio-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #1a1a1a;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    outline: none;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-left: 0.5rem;
+}
+
+/* Validation Styles */
+.form-control:invalid {
+    border-color: #dc3545;
+}
+
+.form-control:invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .content-card {
+        padding: 1.5rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+
+{% if error %}
+<script>
+    alert("{{ error }}");
+</script>
+{% endif %}
+{% endblock %}

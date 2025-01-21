@@ -1,0 +1,270 @@
+<!-- app/templates/manage_studios.html -->
+{% extends 'base.html' %}
+
+{% block title %}Manage Studios{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Manage Studios</h1>
+        <p class="text-muted">View and manage all studio locations</p>
+    </div>
+
+    <div class="actions-bar">
+        <a href="{{ url_for('admin_routes.create_studio') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add New Studio
+        </a>
+    </div>
+
+    <div class="studios-grid">
+        {% for studio in studios %}
+        <div class="studio-card" data-studio-id="{{ studio.id }}">
+            <div class="studio-header">
+                <div class="studio-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h18v18H3zM3 9h18M9 21V9"/>
+                    </svg>
+                </div>
+                <h2>{{ studio.name }}</h2>
+            </div>
+            
+            <div class="studio-info">
+                <p><strong>Address:</strong> {{ studio.address }}</p>
+                <p><strong>Phone:</strong> {{ studio.phone_number or 'Not provided' }}</p>
+                <p><strong>Managers:</strong> {{ studio.managers|length }}</p>
+                <p><strong>Created:</strong> {{ studio.created_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+            
+            <div class="studio-actions">
+                <a href="{{ url_for('admin_routes.edit_studio', studio_id=studio.id) }}" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                </a>
+                <button onclick="deleteStudio({{ studio.id }})" class="btn btn-danger" {% if studio.managers %}disabled{% endif %}>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-studios">
+            <p>No studios found. Create your first studio to get started.</p>
+            <a href="{{ url_for('admin_routes.create_studio') }}" class="btn btn-primary">Create Studio</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.actions-bar {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.studios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.studio-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.studio-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+}
+
+.studio-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.studio-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
+}
+
+.studio-header h2 {
+    font-size: 1.25rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.studio-info {
+    margin: 1rem 0;
+}
+
+.studio-info p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+.studio-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+}
+
+.btn-primary {
+    background: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0052a3;
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-danger:disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.no-studios {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #eaeaea;
+}
+
+.no-studios p {
+    margin-bottom: 1.5rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+    
+    .page-header h1 {
+        font-size: 2rem;
+    }
+    
+    .studio-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+function deleteStudio(studioId) {
+    if (confirm('Are you sure you want to delete this studio? This action cannot be undone.')) {
+        fetch(`/admin/delete-studio/${studioId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the studio card from the DOM
+                document.querySelector(`[data-studio-id="${studioId}"]`).remove();
+                alert(data.message);
+                
+                // If no studios left, show the no-studios message
+                if (document.querySelectorAll('.studio-card').length === 0) {
+                    location.reload();
+                }
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the studio.');
+        });
+    }
+}
+</script>
+{% endblock %}

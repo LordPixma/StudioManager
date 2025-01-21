@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# build.sh - Deployment build script for StudioManager on Render
+
+# Exit on error
+set -o errexit
+
+# Store start time
+START_TIME=$(date +%s)
+
+echo "🚀 Starting build process..."
+
+# Python version management
+if [ -n "$PYTHON_VERSION" ]; then
+    echo "🐍 Setting up Python ${PYTHON_VERSION}..."
+    pyenv install -s "${PYTHON_VERSION}"
+    pyenv global "${PYTHON_VERSION}"
+fi
+
+# Create and activate virtual environment
+echo "🔧 Creating virtual environment..."
+python -m venv .venv
+source .venv/bin/activate
+
+# Upgrade pip and install dependencies
+echo "📦 Installing dependencies..."
+python -m pip install --upgrade pip
+python -m pip install --no-cache-dir -r requirements.txt
+
+# Verify critical environment variables
+echo "✔️ Verifying environment variables..."
+required_vars=(
+    "DATABASE_URL"
+    "SECRET_KEY"
+    "FLASK_APP"
+    "FLASK_ENV"
+)
+
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var}" ]; then
+        echo "❌ Error: Required environment variable $var is not set"
+        exit 1
+    fi
+done
+
+# Create necessary directories
+echo "📁 Creating application directories..."
+mkdir -p instance
+mkdir -p logs
+mkdir -p app/static/uploads
+
+# Set proper permissions
+echo "🔒 Setting file permissions..."
+chmod -R 755 app/static
+chmod -R 755 instance
+chmod -R 755 logs
+
+# Run database migrations
+echo "🔄 Running database migrations..."
+flask db upgrade
+
+# Create initial content if needed
+echo "📝 Setting up initial content..."
+if [ "$FLASK_ENV" = "production" ]; then
+    # Only run in production to avoid duplicate data in development
+    python scripts/init_db.py
+fi
+
+# Create admin user if environment variables are set
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ] && \
+   [ -n "$ADMIN_FIRST_NAME" ] && [ -n "$ADMIN_LAST_NAME" ]; then
+    echo "👤 Creating admin user..."
+    python scripts/create_admin.py
+else
+    echo "⚠️ Warning: Admin user environment variables not set. Skipping admin creation."
+fi
+
+# Cleanup
+echo "🧹 Cleaning up..."
+find . -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
+find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+# Calculate and display build time
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+echo "✨ Build completed in ${DURATION} seconds"
+
+# Final verification
+echo "🔍 Performing final checks..."
+python -c "
+import sys
+import flask
+import sqlalchemy
+print(f'Python version: {sys.version}')
+print(f'Flask version: {flask.__version__}')
+print(f'SQLAlchemy version: {sqlalchemy.__version__}')
+"
+
+echo "🎉 Build script completed successfully!"

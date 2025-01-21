@@ -1,0 +1,95 @@
+<!-- app/templates/edit_studio.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Studio{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Edit Studio</h1>
+
+    <form action="/admin/update_studio" method="POST" class="studio-form">
+        <input type="hidden" name="studio_id" value="{{ studio.id }}">
+
+        <div class="form-group">
+            <label for="name">Studio Name</label>
+            <input type="text" id="name" name="name" value="{{ studio.name }}" placeholder="Enter studio name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="address">Address</label>
+            <textarea id="address" name="address" placeholder="Enter studio address" required>{{ studio.address }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="phone_number">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" value="{{ studio.phone_number }}" placeholder="Enter phone number">
+        </div>
+
+        <button type="submit" class="btn">Update Studio</button>
+    </form>
+</div>
+{% endblock %}
+
+<style>
+.form-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.form-container h1 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #333;
+}
+
+.studio-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+button.btn {
+    background: #007bff;
+    color: #fff;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+}
+
+button.btn:hover {
+    background: #0056b3;
+}
+</style>

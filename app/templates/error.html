@@ -1,0 +1,51 @@
+<!-- app/templates/error.html -->
+{% extends 'base.html' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <h1>{{ error_code }}</h1>
+    <p>{{ error_message }}</p>
+    <a href="/" class="btn">Go Back to Home</a>
+</div>
+{% endblock %}
+
+<style>
+.error-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.error-container h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+.error-container p {
+    font-size: 1.25rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+.error-container .btn {
+    display: inline-block;
+    background: #007bff;
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.error-container .btn:hover {
+    background: #0056b3;
+}
+</style>

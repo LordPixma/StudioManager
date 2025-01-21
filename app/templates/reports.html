@@ -1,0 +1,124 @@
+<!-- app/templates/reports.html -->
+{% extends 'base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <h1>Management Reports</h1>
+
+    <!-- Summary Report Section -->
+    <div class="report-section">
+        <h2>Summary Report</h2>
+        <p><strong>Total Studios:</strong> {{ summary_report.total_studios }}</p>
+        <p><strong>Total Managers:</strong> {{ summary_report.total_managers }}</p>
+        <p><strong>Total Rooms:</strong> {{ summary_report.total_rooms }}</p>
+        <p><strong>Total Customers:</strong> {{ summary_report.total_customers }}</p>
+        <p><strong>Ongoing Sessions:</strong> {{ summary_report.ongoing_sessions }}</p>
+        <p><strong>Completed Sessions:</strong> {{ summary_report.completed_sessions }}</p>
+    </div>
+
+    <hr>
+
+    <!-- Studio Details Report Section -->
+    <div class="report-section">
+        <h2>Studio Details</h2>
+        {% for studio in studio_details %}
+        <div class="studio-details">
+            <h3>{{ studio.studio_name }}</h3>
+            <p><strong>Address:</strong> {{ studio.address }}</p>
+            <p><strong>Phone Number:</strong> {{ studio.phone_number }}</p>
+            <p><strong>Managers:</strong></p>
+            <ul>
+                {% for manager in studio.managers %}
+                <li>{{ manager.name }} ({{ manager.email }})</li>
+                {% else %}
+                <li>No managers assigned</li>
+                {% endfor %}
+            </ul>
+            <p><strong>Rooms:</strong></p>
+            <ul>
+                {% for room in studio.rooms %}
+                <li>{{ room.name }} - {{ room.availability or "Availability not set" }}</li>
+                {% else %}
+                <li>No rooms available</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <p>No studio details available.</p>
+        {% endfor %}
+    </div>
+
+    <hr>
+
+    <!-- Session Activity Report Section -->
+    <div class="report-section">
+        <h2>Session Activity</h2>
+        {% for session in session_activity %}
+        <div class="session-details">
+            <p><strong>Room:</strong> {{ session.room_name }}</p>
+            <p><strong>Customer:</strong> {{ session.customer_name }}</p>
+            <p><strong>Start Time:</strong> {{ session.start_time }}</p>
+            <p><strong>End Time:</strong> {{ session.end_time or "Ongoing" }}</p>
+        </div>
+        {% else %}
+        <p>No session activity recorded.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+<style>
+.reports-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.reports-container h1 {
+    margin-bottom: 2rem;
+    text-align: center;
+    color: #333;
+}
+
+.report-section {
+    margin-bottom: 2rem;
+}
+
+.report-section h2 {
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.studio-details,
+.session-details {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.studio-details h3 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.studio-details p,
+.session-details p {
+    margin: 0.5rem 0;
+}
+
+ul {
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+ul li {
+    margin-bottom: 0.5rem;
+}
+</style>
