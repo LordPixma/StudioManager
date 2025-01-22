@@ -46,21 +46,21 @@ chmod -R 755 logs
 
 # Setup database migrations
 echo "🔄 Setting up database migrations..."
-if [ ! -d "migrations" ]; then
-    echo "Initializing migrations directory..."
-    flask db init
-fi
 
-# Clean and recreate migrations
-echo "Cleaning up existing migrations..."
-rm -rf migrations/versions/*
-
-echo "Creating new migration..."
+# Remove existing migrations and reinitialize
+echo "Cleaning up migrations..."
+rm -rf migrations
 export PYTHONPATH=$PYTHONPATH:$(pwd)
+
+# Initialize fresh migrations
+echo "Initializing fresh migrations..."
+flask db init
+
+echo "Creating initial migration..."
 flask db migrate -m "Initial migration"
 
 echo "Applying migrations..."
-flask db upgrade head || {
+flask db upgrade || {
     echo "Migration failed, attempting to stamp head and retry..."
     flask db stamp head
     flask db upgrade
