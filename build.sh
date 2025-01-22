@@ -52,19 +52,19 @@ echo "Cleaning up migrations..."
 rm -rf migrations
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
+# Reset migrations and database state
+echo "Resetting database state..."
+PYTHONPATH=$(pwd) python scripts/reset_migrations.py
+
 # Initialize fresh migrations
 echo "Initializing fresh migrations..."
 flask db init
 
 echo "Creating initial migration..."
-flask db migrate -m "Initial migration"
+FLASK_APP=run.py flask db migrate -m "Initial migration"
 
 echo "Applying migrations..."
-flask db upgrade || {
-    echo "Migration failed, attempting to stamp head and retry..."
-    flask db stamp head
-    flask db upgrade
-}
+FLASK_APP=run.py flask db upgrade
 
 # Create initial admin user if environment variables are set
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
