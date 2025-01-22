@@ -51,12 +51,12 @@ if [ ! -d "migrations" ]; then
     flask db init
 fi
 
-# Remove existing migration files to start fresh
+# Clean and recreate migrations
 echo "Cleaning up existing migrations..."
 rm -rf migrations/versions/*
 
-# Create and apply fresh migrations
 echo "Creating new migration..."
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 flask db migrate -m "Initial migration"
 
 echo "Applying migrations..."
@@ -66,10 +66,12 @@ flask db upgrade head || {
     flask db upgrade
 }
 
-# Create initial admin user if needed
+# Create initial admin user if environment variables are set
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     echo "👤 Creating admin user..."
-    python scripts/create_admin.py
+    PYTHONPATH=$(pwd) python scripts/create_admin.py
+else
+    echo "⚠️ Skipping admin user creation - ADMIN_EMAIL and/or ADMIN_PASSWORD not set"
 fi
 
 # Cleanup

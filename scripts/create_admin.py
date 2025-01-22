@@ -1,36 +1,50 @@
+# scripts/create_admin.py
 import os
+import sys
+from pathlib import Path
+
+# Add the project root directory to Python path
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
+
 from werkzeug.security import generate_password_hash
 from app import create_app, db
 from app.models.manager import StudioManager
 
 def create_admin():
-    # Initialize the Flask app and database context
-    app = create_app("DevelopmentConfig")  # Use the proper class name here
+    """Create an admin user using environment variables."""
+    app = create_app('ProductionConfig')
+    
     with app.app_context():
-        # Prompt user for admin credentials
-        print("Create Admin User")
-        username = input("Enter username: ").strip()
-        email = input("Enter email: ").strip()
-        password = input("Enter password: ").strip()
-
-        # Check if admin user already exists
+        email = os.getenv('ADMIN_EMAIL')
+        password = os.getenv('ADMIN_PASSWORD')
+        
+        if not email or not password:
+            print("Error: ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set")
+            sys.exit(1)
+            
+        # Check if admin already exists
         existing_admin = StudioManager.query.filter_by(email=email).first()
         if existing_admin:
-            print("Error: An admin user with this email already exists.")
+            print(f"Admin user with email {email} already exists")
             return
-
-        # Create admin user
-        hashed_password = generate_password_hash(password)
-        admin_user = StudioManager(
-            name=username,
+            
+        # Create admin user (studio_id=None indicates admin status)
+        admin = StudioManager(
+            name='Admin',  # Default name, can be changed later
             email=email,
-            password=hashed_password,
-            studio_id=None  # Admins may not be tied to a specific studio
+            password=generate_password_hash(password),
+            studio_id=None  # None indicates this is an admin user
         )
-
-        db.session.add(admin_user)
-        db.session.commit()
-        print("Admin user created successfully.")
+        
+        try:
+            db.session.add(admin)
+            db.session.commit()
+            print(f"Admin user created successfully with email: {email}")
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creating admin user: {str(e)}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     create_admin()
