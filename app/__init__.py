@@ -64,3 +64,5 @@ def create_app(config_class="DevelopmentConfig"):
 if __name__ == "__main__":
     app = create_app("config.DevelopmentConfig")
     app.run(debug=True)
+
+# end
