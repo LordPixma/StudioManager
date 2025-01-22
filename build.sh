@@ -44,16 +44,27 @@ chmod -R 755 app/static
 chmod -R 755 instance
 chmod -R 755 logs
 
-# Initialize database migrations if needed
-echo "🔄 Initializing database migrations..."
+# Setup database migrations
+echo "🔄 Setting up database migrations..."
 if [ ! -d "migrations" ]; then
+    echo "Initializing migrations directory..."
     flask db init
 fi
 
-# Run database migrations
-echo "🔄 Running database migrations..."
+# Remove existing migration files to start fresh
+echo "Cleaning up existing migrations..."
+rm -rf migrations/versions/*
+
+# Create and apply fresh migrations
+echo "Creating new migration..."
 flask db migrate -m "Initial migration"
-flask db upgrade
+
+echo "Applying migrations..."
+flask db upgrade head || {
+    echo "Migration failed, attempting to stamp head and retry..."
+    flask db stamp head
+    flask db upgrade
+}
 
 # Create initial admin user if needed
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then

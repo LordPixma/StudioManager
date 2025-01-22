@@ -1,10 +1,17 @@
 import os
+from urllib.parse import urlparse
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://sodekunle:L3umas3lnuk3d0@localhost/studiomanager')
+    
+    # Process DATABASE_URL for SQLAlchemy
+    database_url = os.getenv('DATABASE_URL')
+    if database_url and database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = database_url or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG = os.getenv('DEBUG', False)
+    DEBUG = False
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -12,15 +19,10 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
+    SQLALCHEMY_ECHO = False
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://sodekunle:L3umas3lnuk3d0@localhost/studiomanager_test'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     SQLALCHEMY_ECHO = False
-
-# Choose the configuration based on the environment
-config_options = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig
-}
+    WTF_CSRF_ENABLED = False
