@@ -4,9 +4,6 @@
 # Exit on error
 set -o errexit
 
-# Store start time
-START_TIME=$(date +%s)
-
 echo "🚀 Starting build process..."
 
 # Python version management
@@ -58,20 +55,10 @@ chmod -R 755 logs
 echo "🔄 Running database migrations..."
 flask db upgrade
 
-# Create initial content if needed
-echo "📝 Setting up initial content..."
-if [ "$FLASK_ENV" = "production" ]; then
-    # Only run in production to avoid duplicate data in development
-    python scripts/init_db.py
-fi
-
-# Create admin user if environment variables are set
-if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ] && \
-   [ -n "$ADMIN_FIRST_NAME" ] && [ -n "$ADMIN_LAST_NAME" ]; then
+# Create initial admin user if needed
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     echo "👤 Creating admin user..."
     python scripts/create_admin.py
-else
-    echo "⚠️ Warning: Admin user environment variables not set. Skipping admin creation."
 fi
 
 # Cleanup
@@ -79,10 +66,7 @@ echo "🧹 Cleaning up..."
 find . -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
 find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
-# Calculate and display build time
-END_TIME=$(date +%s)
-DURATION=$((END_TIME - START_TIME))
-echo "✨ Build completed in ${DURATION} seconds"
+echo "🎉 Build script completed successfully!"
 
 # Final verification
 echo "🔍 Performing final checks..."
@@ -94,5 +78,3 @@ print(f'Python version: {sys.version}')
 print(f'Flask version: {flask.__version__}')
 print(f'SQLAlchemy version: {sqlalchemy.__version__}')
 "
-
-echo "🎉 Build script completed successfully!"
