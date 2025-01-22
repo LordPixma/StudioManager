@@ -6,13 +6,6 @@ set -o errexit
 
 echo "🚀 Starting build process..."
 
-# Python version management
-if [ -n "$PYTHON_VERSION" ]; then
-    echo "🐍 Setting up Python ${PYTHON_VERSION}..."
-    pyenv install -s "${PYTHON_VERSION}"
-    pyenv global "${PYTHON_VERSION}"
-fi
-
 # Create and activate virtual environment
 echo "🔧 Creating virtual environment..."
 python -m venv .venv
@@ -78,5 +71,3 @@ print(f'Python version: {sys.version}')
 print(f'Flask version: {flask.__version__}')
 print(f'SQLAlchemy version: {sqlalchemy.__version__}')
 "
-
-# end
