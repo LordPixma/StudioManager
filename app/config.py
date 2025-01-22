@@ -2,7 +2,7 @@ import os
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///app.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://sodekunle:L3umas3lnuk3d0@localhost/studiomanager')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = os.getenv('DEBUG', False)
 
@@ -15,7 +15,7 @@ class ProductionConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://sodekunle:L3umas3lnuk3d0@localhost/studiomanager_test'
     SQLALCHEMY_ECHO = False
 
 # Choose the configuration based on the environment

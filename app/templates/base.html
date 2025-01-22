@@ -1,4 +1,3 @@
-
 <!-- app/templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
@@ -11,51 +10,71 @@
 <body>
     <!-- Navigation Bar -->
     <header>
-        <nav>
-            <div class="nav-container">
+        <nav class="navbar">
+            <div class="navbar-container">
                 <a href="/" class="brand-logo">StudioManager</a>
-                <ul class="nav-links">
-                    {% if session.get('role') == 'admin' %}
-                        <li><a href="{{ url_for('admin_routes.admin_dashboard') }}">Dashboard</a></li>
-                        <li><a href="{{ url_for('admin_routes.manage_studios') }}">Studios</a></li>
-                        <li><a href="{{ url_for('admin_routes.manage_managers') }}">Managers</a></li>
-                        <li><a href="{{ url_for('admin_routes.admin_reports') }}">Reports</a></li>
-                    {% elif session.get('role') == 'manager' %}
-                        <li><a href="{{ url_for('manager_routes.manager_dashboard') }}">Dashboard</a></li>
-                        <li><a href="{{ url_for('manager_routes.manage_rooms') }}">Rooms</a></li>
-                        <li><a href="{{ url_for('manager_routes.manage_customers') }}">Customers</a></li>
-                        <li><a href="{{ url_for('manager_routes.manager_sessions') }}">Sessions</a></li>
-                    {% endif %}
-                </ul>
-                
+                <button class="navbar-toggler" type="button" aria-label="Toggle navigation" aria-expanded="false">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse">
+                    <ul class="navbar-nav">
+                        {% if session.get('role') == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_routes.admin_dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_routes.manage_studios') }}">Studios</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_routes.manage_managers') }}">Managers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_routes.admin_reports') }}">Reports</a>
+                        </li>
+                        {% elif session.get('role') == 'manager' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('manager_routes.manager_dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('manager_routes.manage_rooms') }}">Rooms</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('manager_routes.manage_customers') }}">Customers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('manager_routes.manager_sessions') }}">Sessions</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
                 {% if session.get('role') %}
                 <div class="user-menu">
-                    <button class="user-menu-button" onclick="toggleUserMenu()">
+                    <button class="user-menu-button" type="button" aria-label="Toggle user menu" aria-expanded="false">
                         {% if session.get('role') == 'admin' %}
-                            <span class="user-role">Admin</span>
+                        <span class="user-role">Admin</span>
                         {% elif session.get('role') == 'manager' %}
-                            <span class="user-name">{{ current_manager.name if current_manager }}</span>
-                            <span class="user-role">Studio Manager</span>
+                        <span class="user-name">{{ current_manager.name if current_manager }}</span>
+                        <span class="user-role">Studio Manager</span>
                         {% endif %}
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9l6 6 6-6"/>
+                            <path d="M6 9l6 6 6-6" />
                         </svg>
                     </button>
                     <div class="user-dropdown" id="userDropdown">
                         {% if session.get('role') == 'manager' %}
                         <a href="{{ url_for('manager_routes.profile') }}" class="dropdown-item">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
                             </svg>
                             Profile Settings
                         </a>
                         {% endif %}
                         <a href="{{ url_for('logout') }}" class="dropdown-item">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                                <polyline points="16 17 21 12 16 7"/>
-                                <line x1="21" y1="12" x2="9" y2="12"/>
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
                             </svg>
                             Logout
                         </a>
@@ -90,281 +109,348 @@
     <!-- Footer Area -->
     <footer>
         <div class="footer-container">
-            <p>&copy; 2025 Lgger Analytics Limited</p>
-            <p>All rights reserved.</p>
-            <ul class="footer-links">
-                <li><a href="/privacy">Privacy</a></li>
-                <li><a href="/terms">Terms</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2025 Lgger Analytics Limited</p>
+                </div>
+                <div class="footer-section">
+                    <ul class="footer-links">
+                        <li><a href="/privacy">Privacy</a></li>
+                        <li><a href="/terms">Terms</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <p>All rights reserved.</p>
+                </div>
+            </div>
         </div>
     </footer>
 
     <style>
-    .nav-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 2rem;
-        background: #0066cc;
-        color: white;
-    }
+        .navbar {
+            background-color: #0066cc;
+            color: #fff;
+            padding: 1rem 2rem;
+        }
 
-    .brand-logo {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: white;
-        text-decoration: none;
-    }
+        .navbar-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    .nav-links {
-        display: flex;
-        gap: 2rem;
-        list-style: none;
-        margin: 0;
-    }
+        .brand-logo {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+            text-decoration: none;
+        }
 
+        .navbar-toggler {
+            display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+        }
 
+        .navbar-toggler-icon {
+            display: block;
+            width: 24px;
+            height: 24px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg' fill='%23fff'%3E%3Cpath d='M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z'/%3E%3C/svg%3E");
+        }
 
-.nav-links a {
-    color: white;
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-}
+        .navbar-nav {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            margin: 0;
+        }
 
-.nav-links a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
+        .nav-item .nav-link {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
 
-.user-menu {
-    position: relative;
-    margin-left: 2rem;
-}
+        .nav-item .nav-link:hover,
+        .nav-item .nav-link:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 
-.user-menu-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
+        .nav-item .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
 
-.user-menu-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
+        .user-menu {
+            position: relative;
+            margin-left: 2rem;
+        }
 
-.user-name {
-    font-weight: 500;
-}
+        .user-menu-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
 
-.user-role {
-    font-size: 0.875rem;
-    opacity: 0.8;
-}
+        .user-menu-button:hover,
+        .user-menu-button:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 
-.user-menu-button .icon {
-    width: 16px;
-    height: 16px;
-    transition: transform 0.2s;
-}
+        .user-name {
+            font-weight: 500;
+        }
 
-.user-menu-button[aria-expanded="true"] .icon {
-    transform: rotate(180deg);
-}
+        .user-role {
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
 
-.user-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 0.5rem;
-    background: white;
-    border-radius: 6px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid #eaeaea;
-    min-width: 200px;
-    display: none;
-    z-index: 100;
-}
+        .user-menu-button .icon {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s;
+        }
 
-.user-dropdown.show {
-    display: block;
-}
+        .user-menu-button[aria-expanded="true"] .icon {
+            transform: rotate(180deg);
+        }
 
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    color: #1a1a1a;
-    text-decoration: none;
-    transition: background-color 0.2s;
-}
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid #eaeaea;
+            min-width: 200px;
+            display: none;
+            z-index: 100;
+        }
 
-.dropdown-item:not(:last-child) {
-    border-bottom: 1px solid #eaeaea;
-}
+        .user-dropdown.show {
+            display: block;
+        }
 
-.dropdown-item:hover {
-    background-color: #f8f9fa;
-}
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #1a1a1a;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
 
-.dropdown-item .icon {
-    width: 18px;
-    height: 18px;
-    color: #666;
-}
+        .dropdown-item:not(:last-child) {
+            border-bottom: 1px solid #eaeaea;
+        }
 
-.footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
+        .dropdown-item:hover,
+        .dropdown-item:focus {
+            background-color: #f8f9fa;
+        }
 
-.footer-links {
-    display: flex;
-    gap: 2rem;
-    list-style: none;
-}
+        .dropdown-item .icon {
+            width: 18px;
+            height: 18px;
+            color: #666;
+        }
 
-.footer-links a {
-    color: #666;
-    text-decoration: none;
-    transition: color 0.2s;
-}
+        footer {
+            background-color: #f8f9fa;
+            border-top: 1px solid #eaeaea;
+            padding: 1.5rem 0;
+        }
 
-.footer-links a:hover {
-    color: #0066cc;
-}
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.flash-messages {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1000;
-    max-width: 400px;
-}
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
 
-.flash-message {
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    animation: slideIn 0.3s ease-out;
-}
+        .footer-section {
+            flex: 1;
+            text-align: center;
+        }
 
-.flash-message.success {
-    background-color: #dcfce7;
-    border: 1px solid #bbf7d0;
-    color: #166534;
-}
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+        }
 
-.flash-message.error {
-    background-color: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
-}
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
 
-.flash-close {
-    background: none;
-    border: none;
-    color: currentColor;
-    padding: 0 0.5rem;
-    font-size: 1.25rem;
-    cursor: pointer;
-    opacity: 0.7;
-}
+        .footer-links a:hover {
+            color: #0066cc;
+        }
 
-.flash-close:hover {
-    opacity: 1;
-}
+        .flash-messages {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            max-width: 400px;
+        }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
+        .flash-message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
 
-@media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-        padding: 1rem;
-    }
+        .flash-message.success {
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
 
-    .nav-links {
-        flex-direction: column;
-        width: 100%;
-        gap: 0.5rem;
-        margin: 1rem 0;
-    }
+        .flash-message.error {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
 
-    .nav-links a {
-        display: block;
-        text-align: center;
-    }
+        .flash-close {
+            background: none;
+            border: none;
+            color: currentColor;
+            padding: 0 0.5rem;
+            font-size: 1.25rem;
+            cursor: pointer;
+            opacity: 0.7;
+        }
 
-    .user-menu {
-        margin: 0;
-        width: 100%;
-    }
+        .flash-close:hover {
+            opacity: 1;
+        }
 
-    .user-menu-button {
-        width: 100%;
-        justify-content: center;
-    }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-    .user-dropdown {
-        width: 100%;
-    }
+        @media (max-width: 768px) {
+            .navbar-container {
+                padding: 1rem;
+            }
 
-    .footer-container {
-        flex-direction: column;
-        text-align: center;
-        gap: 1rem;
-    }
+            .navbar-toggler {
+                display: block;
+            }
 
-    .footer-links {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-}
-</style>
+            .navbar-collapse {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background-color: #0066cc;
+                padding: 1rem;
+                display: none;
+            }
 
-<script>
-function toggleUserMenu() {
-    const dropdown = document.getElementById('userDropdown');
-    const button = document.querySelector('.user-menu-button');
-    dropdown.classList.toggle('show');
-    button.setAttribute('aria-expanded', dropdown.classList.contains('show'));
-}
+            .navbar-collapse.show {
+                display: block;
+            }
 
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('userDropdown');
-    const button = document.querySelector('.user-menu-button');
-    
-    if (!dropdown.contains(event.target) && !button.contains(event.target)) {
-        dropdown.classList.remove('show');
-        button.setAttribute('aria-expanded', 'false');
-    }
-});
+            .navbar-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .user-menu {
+                margin: 0;
+                width: 100%;
+            }
+
+            .user-menu-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .user-dropdown {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            const userMenuButton = document.querySelector('.user-menu-button');
+            const userDropdown = document.getElementById('userDropdown');
+
+            navbarToggler.addEventListener('click', function() {
+                this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'false');
+                navbarCollapse.classList.toggle('show');
+            });
+
+            userMenuButton.addEventListener('click', function() {
+                this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'false');
+                userDropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (!userDropdown.contains(event.target) && !userMenuButton.contains(event.target)) {
+                    userDropdown.classList.remove('show');
+                    userMenuButton.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+
+    // Handle logout button click
+    const logoutButton = document.querySelector('.logout-button');
+    logoutButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        if (confirm('Are you sure you want to log out?')) {
+            window.location.href = '{{ url_for("logout") }}';
+        }
+    });
 </script>
 </body>
 </html>

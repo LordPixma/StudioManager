@@ -1,124 +1,355 @@
-<!-- app/templates/reports.html -->
 {% extends 'base.html' %}
 
-{% block title %}Reports{% endblock %}
+{% block title %}Management Reports{% endblock %}
 
 {% block content %}
-<div class="reports-container">
-    <h1>Management Reports</h1>
-
-    <!-- Summary Report Section -->
-    <div class="report-section">
-        <h2>Summary Report</h2>
-        <p><strong>Total Studios:</strong> {{ summary_report.total_studios }}</p>
-        <p><strong>Total Managers:</strong> {{ summary_report.total_managers }}</p>
-        <p><strong>Total Rooms:</strong> {{ summary_report.total_rooms }}</p>
-        <p><strong>Total Customers:</strong> {{ summary_report.total_customers }}</p>
-        <p><strong>Ongoing Sessions:</strong> {{ summary_report.ongoing_sessions }}</p>
-        <p><strong>Completed Sessions:</strong> {{ summary_report.completed_sessions }}</p>
+<div class="page-container">
+    <div class="page-header">
+        <h1>Management Reports</h1>
+        <p class="text-muted">Comprehensive insights into your studio operations</p>
     </div>
 
-    <hr>
-
-    <!-- Studio Details Report Section -->
-    <div class="report-section">
-        <h2>Studio Details</h2>
-        {% for studio in studio_details %}
-        <div class="studio-details">
-            <h3>{{ studio.studio_name }}</h3>
-            <p><strong>Address:</strong> {{ studio.address }}</p>
-            <p><strong>Phone Number:</strong> {{ studio.phone_number }}</p>
-            <p><strong>Managers:</strong></p>
-            <ul>
-                {% for manager in studio.managers %}
-                <li>{{ manager.name }} ({{ manager.email }})</li>
-                {% else %}
-                <li>No managers assigned</li>
-                {% endfor %}
-            </ul>
-            <p><strong>Rooms:</strong></p>
-            <ul>
-                {% for room in studio.rooms %}
-                <li>{{ room.name }} - {{ room.availability or "Availability not set" }}</li>
-                {% else %}
-                <li>No rooms available</li>
-                {% endfor %}
-            </ul>
+    <!-- Summary Report Card -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3h18v18H3zM3 9h18M9 21V9"/>
+                </svg>
+            </div>
+            <h2>Summary Report</h2>
         </div>
-        {% else %}
-        <p>No studio details available.</p>
-        {% endfor %}
+        <div class="report-grid">
+            <div class="report-stat">
+                <span class="stat-label">Total Studios</span>
+                <span class="stat-value">{{ summary_report.total_studios }}</span>
+            </div>
+            <div class="report-stat">
+                <span class="stat-label">Total Managers</span>
+                <span class="stat-value">{{ summary_report.total_managers }}</span>
+            </div>
+            <div class="report-stat">
+                <span class="stat-label">Total Rooms</span>
+                <span class="stat-value">{{ summary_report.total_rooms }}</span>
+            </div>
+            <div class="report-stat">
+                <span class="stat-label">Total Customers</span>
+                <span class="stat-value">{{ summary_report.total_customers }}</span>
+            </div>
+            <div class="report-stat">
+                <span class="stat-label">Ongoing Sessions</span>
+                <span class="stat-value">{{ summary_report.ongoing_sessions }}</span>
+            </div>
+            <div class="report-stat">
+                <span class="stat-label">Completed Sessions</span>
+                <span class="stat-value">{{ summary_report.completed_sessions }}</span>
+            </div>
+        </div>
     </div>
 
-    <hr>
-
-    <!-- Session Activity Report Section -->
-    <div class="report-section">
-        <h2>Session Activity</h2>
-        {% for session in session_activity %}
-        <div class="session-details">
-            <p><strong>Room:</strong> {{ session.room_name }}</p>
-            <p><strong>Customer:</strong> {{ session.customer_name }}</p>
-            <p><strong>Start Time:</strong> {{ session.start_time }}</p>
-            <p><strong>End Time:</strong> {{ session.end_time or "Ongoing" }}</p>
+    <!-- Studio Details Report -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                </svg>
+            </div>
+            <h2>Studio Details</h2>
         </div>
+        {% if studio_details %}
+            <div class="studio-details-grid">
+                {% for studio in studio_details %}
+                    <div class="studio-card">
+                        <h3>{{ studio.studio_name }}</h3>
+                        <div class="studio-info">
+                            <p><strong>Address:</strong> {{ studio.address }}</p>
+                            <p><strong>Phone Number:</strong> {{ studio.phone_number or 'Not provided' }}</p>
+                            
+                            <div class="detail-section">
+                                <h4>Managers</h4>
+                                {% if studio.managers %}
+                                    <ul>
+                                        {% for manager in studio.managers %}
+                                            <li>{{ manager.name }} ({{ manager.email }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No managers assigned</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="detail-section">
+                                <h4>Rooms</h4>
+                                {% if studio.rooms %}
+                                    <ul>
+                                        {% for room in studio.rooms %}
+                                            <li>{{ room.name }} - {{ room.availability or "Availability not set" }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No rooms available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         {% else %}
-        <p>No session activity recorded.</p>
-        {% endfor %}
+            <div class="no-data">
+                <p>No studio details available.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Session Activity Report -->
+    <div class="content-card">
+        <div class="card-header">
+            <div class="header-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+            <h2>Session Activity</h2>
+        </div>
+        {% if session_activity %}
+            <div class="sessions-grid">
+                {% for session in session_activity %}
+                    <div class="session-card">
+                        <div class="session-header">
+                            <h3>Room: {{ session.room_name }}</h3>
+                            <span class="session-status {{ 'ongoing' if not session.end_time else 'completed' }}">
+                                {{ 'Ongoing' if not session.end_time else 'Completed' }}
+                            </span>
+                        </div>
+                        <div class="session-details">
+                            <p><strong>Customer:</strong> {{ session.customer_name }}</p>
+                            <p><strong>Start Time:</strong> {{ session.start_time }}</p>
+                            <p><strong>End Time:</strong> {{ session.end_time or "Not ended" }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-data">
+                <p>No session activity recorded.</p>
+            </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
 
 <style>
-.reports-container {
-    max-width: 1000px;
-    margin: 2rem auto;
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 2rem;
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 5px;
 }
 
-.reports-container h1 {
+.page-header {
     margin-bottom: 2rem;
     text-align: center;
-    color: #333;
 }
 
-.report-section {
+.page-header h1 {
+    font-size: 2.5rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eaeaea;
     margin-bottom: 2rem;
 }
 
-.report-section h2 {
-    color: #007bff;
-    margin-bottom: 1rem;
+.card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
 }
 
-.studio-details,
-.session-details {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+.header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: #f0f7ff;
+    color: #0066cc;
 }
 
-.studio-details h3 {
+.card-header h2 {
+    font-size: 1.5rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.report-stat {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid #eaeaea;
+}
+
+.stat-label {
+    display: block;
+    color: #666;
+    font-size: 0.875rem;
     margin-bottom: 0.5rem;
-    color: #333;
 }
 
-.studio-details p,
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.studio-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.studio-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #eaeaea;
+}
+
+.studio-card h3 {
+    font-size: 1.25rem;
+    color: #1a1a1a;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 0.5rem;
+}
+
+.studio-info p {
+    margin: 0.5rem 0;
+    color: #666;
+}
+
+.detail-section {
+    margin-top: 1rem;
+}
+
+.detail-section h4 {
+    font-size: 1rem;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 0.25rem;
+}
+
+.detail-section ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-section ul li {
+    padding: 0.25rem 0;
+    color: #666;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.detail-section ul li:last-child {
+    border-bottom: none;
+}
+
+.sessions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.session-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #eaeaea;
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 0.5rem;
+}
+
+.session-header h3 {
+    font-size: 1.25rem;
+    color: #1a1a1a;
+    margin: 0;
+}
+
+.session-status {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.session-status.ongoing {
+    background-color: #e6f3ff;
+    color: #0066cc;
+}
+
+.session-status.completed {
+    background-color: #e6f7f0;
+    color: #10b981;
+}
+
 .session-details p {
     margin: 0.5rem 0;
+    color: #666;
 }
 
-ul {
-    padding-left: 1.5rem;
-    margin: 0.5rem 0;
+.no-data {
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px dashed #eaeaea;
 }
 
-ul li {
-    margin-bottom: 0.5rem;
+@media (max-width: 768px) {
+    .page-container {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+    }
+
+    .report-grid,
+    .studio-details-grid,
+    .sessions-grid {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
+{% endblock %}

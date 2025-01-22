@@ -245,3 +245,144 @@ def run_reports():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@admin_routes.route('/settings')
+def admin_settings():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_routes.admin_login'))
+    
+    current_admin = StudioManager.query.get(session['admin_id'])
+    admins = StudioManager.query.filter_by(studio_id=None).all()
+    
+    return render_template('admin_settings.html', 
+                         current_admin=current_admin,
+                         admins=admins)
+
+@admin_routes.route('/update-admin-profile', methods=['POST'])
+def update_admin_profile():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_routes.admin_login'))
+    
+    current_admin = StudioManager.query.get(session['admin_id'])
+    
+    try:
+        if request.form.get('current_password'):
+            if not check_password_hash(current_admin.password, request.form['current_password']):
+                flash('Current password is incorrect', 'error')
+                return redirect(url_for('admin_routes.admin_settings'))
+            
+            current_admin.password = generate_password_hash(request.form['new_password'])
+        
+        current_admin.name = request.form['name']
+        current_admin.email = request.form['email']
+        
+        db.session.commit()
+        flash('Profile updated successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(str(e), 'error')
+    
+    return redirect(url_for('admin_routes.admin_settings'))
+
+from app.utils.validators import validate_admin_email_unique, validate_admin_exists, validate_min_admin_count
+
+@admin_routes.route('/add-admin', methods=['POST'])
+def add_admin():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_routes.admin_login'))
+    
+    try:
+        # Validate email uniqueness
+        is_unique, message = validate_admin_email_unique(request.form['email'])
+        if not is_unique:
+            flash(message, 'error')
+            return redirect(url_for('admin_routes.admin_settings'))
+            
+        # Create new admin (studio_id=None indicates admin user)
+        new_admin = StudioManager(
+            name=request.form['name'],
+            email=request.form['email'],
+            password=generate_password_hash(request.form['password']),
+            studio_id=None
+        )
+        
+        db.session.add(new_admin)
+        db.session.commit()
+        flash('Admin user added successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(str(e), 'error')
+    
+    return redirect(url_for('admin_routes.admin_settings'))
+
+@admin_routes.route('/reset-admin-password/<int:admin_id>', methods=['POST'])
+def reset_admin_password(admin_id):
+    if 'admin_id' not in session:
+        return jsonify({"success": False, "message": "Not authorized"}), 401
+    
+    admin = StudioManager.query.get_or_404(admin_id)
+    
+    try:
+        # Generate a new random password (12 characters)
+        chars = string.ascii_letters + string.digits + "!@#$%^&*"
+        new_password = ''.join(random.choice(chars) for _ in range(12))
+        
+        # Hash the new password
+        admin.password = generate_password_hash(new_password)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "Password reset successfully",
+            "new_password": new_password
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Error resetting password: {str(e)}"
+        }), 500
+
+
+@admin_routes.route('/remove-admin/<int:admin_id>', methods=['POST'])
+def remove_admin(admin_id):
+    if 'admin_id' not in session:
+        return jsonify({"success": False, "message": "Not authorized"}), 401
+    
+    if int(session['admin_id']) == admin_id:
+        return jsonify({
+            "success": False,
+            "message": "Cannot remove your own admin account"
+        }), 400
+    
+    # Verify the admin exists and is actually an admin (studio_id is None)
+    admin = StudioManager.query.filter_by(id=admin_id, studio_id=None).first()
+    if not admin:
+        return jsonify({
+            "success": False,
+            "message": "Admin not found"
+        }), 404
+    
+    # Check if this would remove the last admin
+    admin_count = StudioManager.query.filter_by(studio_id=None).count()
+    if admin_count <= 1:
+        return jsonify({
+            "success": False,
+            "message": "Cannot remove the last admin account"
+        }), 400
+    
+    try:
+        db.session.delete(admin)
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "message": "Admin removed successfully"
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "message": f"Error removing admin: {str(e)}"
+        }), 500

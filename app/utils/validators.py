@@ -77,3 +77,33 @@ def validate_password_strength(password):
     if not any(char.isupper() for char in password):
         return False, "Password must contain at least one uppercase letter."
     return True, "Password is strong."
+
+def validate_admin_email_unique(email, admin_id=None):
+    """
+    Validate if an email is unique for admin users.
+    Optionally exclude a specific admin by ID.
+    """
+    query = StudioManager.query.filter_by(email=email, studio_id=None)
+    if admin_id:
+        query = query.filter(StudioManager.id != admin_id)
+    if query.first():
+        return False, "Email is already in use by another admin."
+    return True, "Email is unique."
+
+def validate_admin_exists(admin_id):
+    """
+    Validate if an admin exists.
+    """
+    admin = StudioManager.query.filter_by(id=admin_id, studio_id=None).first()
+    if not admin:
+        return False, "Admin not found."
+    return True, admin
+
+def validate_min_admin_count():
+    """
+    Validate that there will be at least one admin remaining.
+    """
+    admin_count = StudioManager.query.filter_by(studio_id=None).count()
+    if admin_count <= 1:
+        return False, "Cannot remove the last admin account."
+    return True, "Multiple admins exist."
