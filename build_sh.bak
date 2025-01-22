@@ -44,15 +44,8 @@ chmod -R 755 app/static
 chmod -R 755 instance
 chmod -R 755 logs
 
-# Initialize database migrations if needed
-echo "🔄 Initializing database migrations..."
-if [ ! -d "migrations" ]; then
-    flask db init
-fi
-
 # Run database migrations
 echo "🔄 Running database migrations..."
-flask db migrate -m "Initial migration"
 flask db upgrade
 
 # Create initial admin user if needed

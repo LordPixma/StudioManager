@@ -14,7 +14,20 @@ def create_app(config_class="DevelopmentConfig"):
     Factory function to create and configure the Flask app.
     """
     app = Flask(__name__)
-    app.config.from_object(f'app.config.{config_class}')
+    
+    # Import config directly
+    from app.config import Config, DevelopmentConfig, ProductionConfig, TestingConfig
+    
+    # Select the config class based on the name
+    config_mapping = {
+        'Config': Config,
+        'DevelopmentConfig': DevelopmentConfig,
+        'ProductionConfig': ProductionConfig,
+        'TestingConfig': TestingConfig
+    }
+    
+    selected_config = config_mapping.get(config_class, DevelopmentConfig)
+    app.config.from_object(selected_config)
 
     # Initialize extensions
     db.init_app(app)
