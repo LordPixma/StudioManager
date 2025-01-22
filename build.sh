@@ -52,18 +52,33 @@ echo "Cleaning up migrations..."
 rm -rf migrations
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 
-# Reset migrations and database state
-echo "Resetting database state..."
-PYTHONPATH=$(pwd) python scripts/reset_migrations.py
+# Reset database using Python script
+echo "Resetting database schema..."
+python << EOF
+from app import create_app, db
+from sqlalchemy import text
+
+app = create_app('ProductionConfig')
+with app.app_context():
+    # Drop all tables including alembic_version
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
+            conn.commit()
+        db.drop_all()
+        print("Database schema reset successfully")
+    except Exception as e:
+        print(f"Warning: {str(e)}")
+        print("Continuing with migration...")
+EOF
 
 # Initialize fresh migrations
 echo "Initializing fresh migrations..."
-flask db init
+FLASK_APP=run.py flask db init
 
-echo "Creating initial migration..."
+# Create and apply initial migration
+echo "Creating and applying initial migration..."
 FLASK_APP=run.py flask db migrate -m "Initial migration"
-
-echo "Applying migrations..."
 FLASK_APP=run.py flask db upgrade
 
 # Create initial admin user if environment variables are set
