@@ -1,10 +1,5 @@
 {% extends 'base.html' %}
 {% block head %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/manage_availability.js') }}"></script>
 {% endblock %}
 
 {% block title %}Manage Room Availability{% endblock %}
@@ -262,4 +257,11 @@
     }
 }
 </style>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+  <script src="{{ url_for('static', filename='js/manage_availability.js') }}"></script>
 {% endblock %}
