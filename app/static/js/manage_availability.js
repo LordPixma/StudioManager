@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const bookCustomerBtn = document.getElementById('book-customer');
     const statusMessage = document.getElementById('status-message');
 
+    // Debugging: Check if buttons are found in the DOM
+    console.log('markAvailableBtn:', markAvailableBtn);
+    console.log('markUnavailableBtn:', markUnavailableBtn);
+    console.log('bookCustomerBtn:', bookCustomerBtn);
+
     // Selected time slot state
     let selectedDate = null;
     let selectedTime = null;
