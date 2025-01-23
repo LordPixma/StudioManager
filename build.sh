@@ -1,6 +1,3 @@
-Here's the adjusted build script with admin user existence check:
-
-```bash
 #!/usr/bin/env bash
 set -o errexit
 
@@ -23,8 +20,8 @@ done
 mkdir -p instance logs app/static/uploads
 chmod -R 755 app/static instance logs
 
-# Clean and reinitialize database with admin check
-python << EOF
+# Database initialization and admin check
+python << 'PYEOF'
 from app import create_app, db
 from sqlalchemy import text
 from app.models.manager import StudioManager
@@ -37,13 +34,12 @@ with app.app_context():
         conn.commit()
     db.create_all()
     
-    # Check if admin exists
     admin = StudioManager.query.filter_by(studio_id=None).first()
     if not admin:
         print("No admin user found - new admin will be created")
     else:
         print("Admin user already exists - skipping creation")
-EOF
+PYEOF
 
 export FLASK_APP=run.py
 rm -rf migrations
@@ -53,10 +49,11 @@ flask db upgrade
 
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
     echo "👤 Checking/creating admin user..."
-    python << EOF
+    python << 'PYEOF'
 from app import create_app, db
 from app.models.manager import StudioManager
 from werkzeug.security import generate_password_hash
+import os
 
 app = create_app('ProductionConfig')
 with app.app_context():
@@ -64,8 +61,8 @@ with app.app_context():
     if not existing_admin:
         admin = StudioManager(
             name='Admin',
-            email='$ADMIN_EMAIL',
-            password=generate_password_hash('$ADMIN_PASSWORD'),
+            email=os.environ['ADMIN_EMAIL'],
+            password=generate_password_hash(os.environ['ADMIN_PASSWORD']),
             studio_id=None
         )
         db.session.add(admin)
@@ -73,11 +70,10 @@ with app.app_context():
         print("Admin user created successfully")
     else:
         print("Admin user already exists - skipping creation")
-EOF
+PYEOF
 fi
 
 find . -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
 find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
 echo "✅ Build completed successfully!"
-```
