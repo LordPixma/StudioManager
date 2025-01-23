@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# build.sh - Deployment build script for StudioManager on Render
-
 set -o errexit
 
 echo "🚀 Starting build process..."
@@ -29,14 +27,15 @@ chmod -R 755 app/static instance logs
 # Clean and reinitialize database
 python << EOF
 from app import create_app, db
-from flask_migrate import init, migrate, upgrade
 from sqlalchemy import text
 
 app = create_app('ProductionConfig')
 with app.app_context():
     # Drop existing tables
     db.drop_all()
-    db.engine.execute(text('DROP TABLE IF EXISTS alembic_version'))
+    with db.engine.connect() as conn:
+        conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
+        conn.commit()
     # Create new tables
     db.create_all()
 EOF
