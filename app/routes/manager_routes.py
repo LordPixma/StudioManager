@@ -27,7 +27,55 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@manager_routes.app_template_filter('from_json')
+def from_json(value):
+    try:
+        return json.loads(value) if value else {}
+    except:
+        return {}
+
 # Authentication Routes
+@manager_routes.route('/update_room_availability', methods=['POST'])
+@login_required
+def update_room_availability():
+    current_manager = get_current_manager()
+    room_id = request.form.get('room_id')
+    room = Room.query.filter_by(id=room_id, studio_id=current_manager.studio_id).first()
+    
+    if not room:
+        flash('Room not found', 'error')
+        return redirect(url_for('manager_routes.manage_availability'))
+        
+    try:
+        date = request.form.get('date')
+        time = request.form.get('time')
+        status = request.form.get('status')
+        customer_id = request.form.get('customer_id')
+        
+        # Load existing availability
+        availability = json.loads(room.availability or '{}')
+        if date not in availability:
+            availability[date] = {}
+            
+        slot_info = {'status': status}
+        if customer_id and status == 'booked':
+            customer = Customer.query.get(customer_id)
+            if customer:
+                slot_info['customer_id'] = customer_id
+                slot_info['customer_name'] = customer.name
+                
+        availability[date][time] = slot_info
+        room.availability = json.dumps(availability)
+        db.session.commit()
+        flash('Availability updated successfully', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating availability: {str(e)}', 'error')
+    
+    return redirect(url_for('manager_routes.manage_availability'))
+
+
 @manager_routes.route('/login', methods=['GET', 'POST'])
 def manager_login():
     if request.method == 'POST':
