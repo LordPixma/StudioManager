@@ -10,3 +10,4 @@ app = create_app(config_name)
 if __name__ == "__main__":
     # Run the application
     app.run(debug=config_name.endswith('DevelopmentConfig'))
+
