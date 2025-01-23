@@ -14,13 +14,7 @@ python -m pip install --upgrade pip
 python -m pip install --no-cache-dir -r requirements.txt
 
 # Verify environment variables
-required_vars=(
-    "DATABASE_URL"
-    "SECRET_KEY"
-    "FLASK_APP"
-    "FLASK_ENV"
-)
-
+required_vars=("DATABASE_URL" "SECRET_KEY" "FLASK_APP" "FLASK_ENV")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
         echo "❌ Error: Required environment variable $var is not set"
@@ -28,21 +22,40 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# Create directories
+# Create directories and set permissions
 mkdir -p instance logs app/static/uploads
 chmod -R 755 app/static instance logs
 
-# Run migrations
-export PYTHONPATH=$PYTHONPATH:$(pwd)
+# Clean and reinitialize database
+python << EOF
+from app import create_app, db
+from flask_migrate import init, migrate, upgrade
+from sqlalchemy import text
+
+app = create_app('ProductionConfig')
+with app.app_context():
+    # Drop existing tables
+    db.drop_all()
+    db.engine.execute(text('DROP TABLE IF EXISTS alembic_version'))
+    # Create new tables
+    db.create_all()
+EOF
+
+# Initialize fresh migrations
+export FLASK_APP=run.py
+rm -rf migrations
+flask db init
+flask db migrate -m "Initial migration"
 flask db upgrade
 
-# Create admin if needed
+# Create admin user if credentials provided
 if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
-    PYTHONPATH=$(pwd) python scripts/create_admin.py
+    echo "👤 Creating admin user..."
+    python scripts/create_admin.py
 fi
 
 # Cleanup
 find . -type d -name "__pycache__" -exec rm -r {} + 2>/dev/null || true
 find . -type f -name "*.pyc" -delete 2>/dev/null || true
 
-echo "🎉 Build script completed successfully!"
+echo "✅ Build completed successfully!"
