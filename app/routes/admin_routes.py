@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session, flash
 from app.models.studio import Studio
 from app.models.manager import StudioManager
 from app.models.room import Room
