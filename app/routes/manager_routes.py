@@ -192,54 +192,6 @@ def get_room_availability(room_id):
             
     return jsonify({"availability": availability})
 
-@manager_routes.route('/api/rooms/<int:room_id>/availability', methods=['POST'])
-@login_required
-def update_room_availability(room_id):
-    current_manager = get_current_manager()
-    room = Room.query.filter_by(id=room_id, studio_id=current_manager.studio_id).first()
-    
-    if not room:
-        return jsonify({"error": "Room not found"}), 404
-        
-    try:
-        data = request.get_json()
-        availability_data = data.get('availability')
-        
-        # Load existing availability
-        current_availability = {}
-        if room.availability:
-            try:
-                current_availability = json.loads(room.availability)
-            except json.JSONDecodeError:
-                current_availability = {}
-        
-        # Update the specific slot
-        day = availability_data['day']
-        time = availability_data['time']
-        if day not in current_availability:
-            current_availability[day] = {}
-            
-        current_availability[day][time] = {
-            'status': availability_data['status'],
-            'customer_id': availability_data.get('customer_id'),
-        }
-        
-        # If there's a customer, add their name to the data
-        if availability_data.get('customer_id'):
-            customer = Customer.query.get(availability_data['customer_id'])
-            if customer:
-                current_availability[day][time]['customer_name'] = customer.name
-        
-        # Save back to database
-        room.availability = json.dumps(current_availability)
-        db.session.commit()
-        
-        return jsonify({"message": "Availability updated successfully"})
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 400
-
 @manager_routes.route('/add_room', methods=['POST'])
 @login_required
 def add_room():
