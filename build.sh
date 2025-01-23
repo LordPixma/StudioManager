@@ -28,12 +28,11 @@ from app.models.manager import StudioManager
 
 app = create_app('ProductionConfig')
 with app.app_context():
-    db.drop_all()
-    with db.engine.connect() as conn:
-        conn.execute(text('DROP TABLE IF EXISTS alembic_version'))
-        conn.commit()
+    # Only create tables if they don't exist
     db.create_all()
     
+    # Check for admin without dropping data
+    from app.models.manager import StudioManager
     admin = StudioManager.query.filter_by(studio_id=None).first()
     if not admin:
         print("No admin user found - new admin will be created")
