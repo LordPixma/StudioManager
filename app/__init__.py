@@ -45,6 +45,10 @@ def create_app(config_class="DevelopmentConfig"):
 
     @app.route('/')
     def index():
+        if 'admin_id' in flask_session:
+            return redirect(url_for('admin_routes.admin_dashboard'))
+        elif 'manager_id' in flask_session:
+            return redirect(url_for('manager_routes.manager_dashboard'))
         return render_template('index.html')
     
     @app.route('/logout')
