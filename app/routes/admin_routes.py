@@ -87,10 +87,11 @@ def create_studio_manager():
         if not studio:
             return jsonify({"error": "Studio not found"}), 404
 
+        hashed_password = generate_password_hash(data['password'])
         new_manager = StudioManager(
             name=data['name'],
             email=data['email'],
-            password=data['password'],  # Use hashed passwords in production!
+            password=hashed_password,
             studio_id=studio.id
         )
         db.session.add(new_manager)
