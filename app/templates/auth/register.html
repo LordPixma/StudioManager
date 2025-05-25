@@ -1,0 +1,231 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Register - StudioManager{% endblock %}
+
+{% block page_title %}
+<div class="page-header">
+    <h1 class="page-title">Join StudioManager</h1>
+    <p class="page-description">Create your account to get started</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2 id="register-title">Create Account</h2>
+        </div>
+        
+        <form id="register-form" class="auth-form" novalidate>
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <!-- Name Field -->
+            <div class="form-group">
+                <label for="name" class="form-label">Full Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-input" 
+                    required 
+                    autocomplete="name"
+                    placeholder="Enter your full name"
+                >
+                <div class="field-error" id="name-error"></div>
+            </div>
+            
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-input" 
+                    required 
+                    autocomplete="email"
+                    placeholder="Enter your email address"
+                >
+                <div class="field-error" id="email-error"></div>
+                <div class="field-success" id="email-success" style="display: none;">
+                    ✓ Email is available
+                </div>
+            </div>
+            
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <div class="password-field">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        required 
+                        autocomplete="new-password"
+                        placeholder="Create a strong password"
+                        minlength="8"
+                    >
+                    <button type="button" class="password-toggle" id="password-toggle">
+                        <svg class="eye-icon" width="20" height="20" viewBox="0 0 20 20">
+                            <path d="M10 3C5 3 1.73 7.11 1 10c.73 2.89 4 7 9 7s8.27-4.11 9-7c-.73-2.89-4-7-9-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="password-strength" id="password-strength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                    <div class="strength-text" id="strength-text">Password strength</div>
+                </div>
+                <div class="field-error" id="password-error"></div>
+            </div>
+            
+            <!-- Confirm Password Field -->
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    class="form-input" 
+                    required 
+                    autocomplete="new-password"
+                    placeholder="Confirm your password"
+                >
+                <div class="field-error" id="confirm_password-error"></div>
+                <div class="field-success" id="confirm_password-success" style="display: none;">
+                    ✓ Passwords match
+                </div>
+            </div>
+            
+            <!-- Admin-only fields (hidden by default) -->
+            <div id="admin-fields" style="display: none;">
+                <!-- Role Selection -->
+                <div class="form-group">
+                    <label for="role" class="form-label">User Role</label>
+                    <select id="role" name="role" class="form-select">
+                        <option value="receptionist">Receptionist</option>
+                        <option value="staff">Staff/Instructor</option>
+                        <option value="manager">Studio Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <div class="field-error" id="role-error"></div>
+                </div>
+                
+                <!-- Studio Selection -->
+                <div class="form-group">
+                    <label for="studio_id" class="form-label">Assign to Studio</label>
+                    <select id="studio_id" name="studio_id" class="form-select">
+                        <option value="">Select a studio...</option>
+                        <!-- Options populated by JavaScript from /api/studios -->
+                    </select>
+                    <div class="field-error" id="studio_id-error"></div>
+                </div>
+            </div>
+            
+            <!-- Hidden role field for public registration -->
+            <input type="hidden" id="hidden_role" name="role" value="receptionist">
+            
+            <!-- Terms & Conditions -->
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="terms" name="terms" class="form-checkbox" required>
+                    <label for="terms" class="checkbox-label">
+                        I agree to the <a href="#" class="link">Terms of Service</a> and 
+                        <a href="#" class="link">Privacy Policy</a>
+                    </label>
+                </div>
+                <div class="field-error" id="terms-error"></div>
+            </div>
+            
+            <!-- Form Error Display -->
+            <div id="form-error" class="form-error" style="display: none;"></div>
+            
+            <!-- Submit Button -->
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-full" id="register-submit">
+                    <span class="btn-text">Create Account</span>
+                    <div class="btn-spinner" style="display: none;">
+                        <div class="spinner-small"></div>
+                    </div>
+                </button>
+            </div>
+        </form>
+        
+        <!-- Additional Links -->
+        <div class="auth-footer">
+            <div class="auth-divider">
+                <span>Already have an account?</span>
+            </div>
+            <div class="auth-links">
+                <a href="{{ url_for('auth.login') }}" class="auth-link auth-link-primary">
+                    Sign in to your account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize registration form handling when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is already authenticated
+        if (Auth.isAuthenticated()) {
+            // If admin, show admin fields, otherwise redirect to dashboard
+            const user = Auth.getCurrentUser();
+            if (user && user.role === 'admin') {
+                document.getElementById('register-title').textContent = 'Add New User';
+                Auth.initAdminRegistration();
+            } else {
+                window.location.href = '/dashboard';
+                return;
+            }
+        }
+        
+        // Initialize registration form
+        Auth.initRegistrationForm();
+        
+        // Focus name field
+        document.getElementById('name').focus();
+        
+        // Password visibility toggle
+        const passwordToggle = document.getElementById('password-toggle');
+        const passwordField = document.getElementById('password');
+        
+        passwordToggle.addEventListener('click', function() {
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                passwordToggle.classList.add('active');
+            } else {
+                passwordField.type = 'password';
+                passwordToggle.classList.remove('active');
+            }
+        });
+        
+        // Password strength indicator
+        passwordField.addEventListener('input', function() {
+            Auth.updatePasswordStrength(this.value);
+        });
+        
+        // Confirm password validation
+        const confirmPasswordField = document.getElementById('confirm_password');
+        confirmPasswordField.addEventListener('input', function() {
+            Auth.validatePasswordMatch(passwordField.value, this.value);
+        });
+        
+        // Real-time email validation
+        const emailField = document.getElementById('email');
+        let emailTimeout;
+        emailField.addEventListener('input', function() {
+            clearTimeout(emailTimeout);
+            emailTimeout = setTimeout(() => {
+                Auth.validateEmailUniqueness(this.value);
+            }, 500); // 500ms delay to avoid too many requests
+        });
+    });
+</script>
+{% endblock %}

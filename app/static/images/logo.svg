@@ -1,0 +1,25 @@
+<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="32" rx="6" fill="#2563eb"/>
+  
+  <!-- Studio icon -->
+  <g transform="translate(8, 6)">
+    <!-- Building/studio shape -->
+    <rect x="0" y="8" width="20" height="12" rx="1" fill="white" opacity="0.9"/>
+    <rect x="2" y="10" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="6" y="10" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="10" y="10" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="15" y="10" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="2" y="15" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="6" y="15" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="10" y="15" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    <rect x="15" y="15" width="3" height="3" rx="0.5" fill="#2563eb"/>
+    
+    <!-- Roof -->
+    <path d="M0 8 L10 2 L20 8 Z" fill="white"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="36" y="12" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="white">STUDIO</text>
+  <text x="36" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="white">MANAGER</text>
+</svg>

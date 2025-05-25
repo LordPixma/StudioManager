@@ -1,0 +1,19 @@
+﻿# App-wide configuration (dev, prod, test)
+"""
+Configuration settings for Flask application.
+"""
+
+import os
+
+class Config:
+    # Secret key for session signing. Override in production via environment variable.
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'change-me')
+
+    # SQLAlchemy settings (update DATABASE_URL in production)
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///studio_manager.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Session cookie settings
+    SESSION_COOKIE_SECURE = True       # only send cookie over HTTPS
+    SESSION_COOKIE_HTTPONLY = True     # inaccessible to JavaScript
+    PERMANENT_SESSION_LIFETIME = 3600  # seconds (60 minutes)

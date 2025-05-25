@@ -1,0 +1,562 @@
+/**
+ * StudioManager - Responsive Stylesheet
+ * Mobile-first responsive design for all breakpoints
+ */
+
+/* ============================================================================
+   BREAKPOINT DEFINITIONS
+   ============================================================================ */
+
+/*
+  Mobile-first approach:
+  - Base styles: Mobile (0px+)
+  - sm: Tablet (640px+)
+  - md: Desktop (768px+)
+  - lg: Large Desktop (1024px+)
+  - xl: Extra Large (1280px+)
+*/
+
+/* ============================================================================
+   TABLET STYLES (640px+)
+   ============================================================================ */
+
+@media (min-width: 640px) {
+    
+    /* Typography adjustments */
+    .page-title {
+        font-size: var(--font-size-5xl);
+    }
+    
+    /* Header adjustments */
+    .header-content {
+        padding: 0 var(--space-2);
+    }
+    
+    .nav-list {
+        gap: var(--space-4);
+    }
+    
+    /* Auth forms */
+    .auth-card {
+        padding: var(--space-10);
+    }
+    
+    /* Modals */
+    .modal-content {
+        min-width: 400px;
+        max-width: 500px;
+    }
+    
+    /* Forms */
+    .form-group {
+        margin-bottom: var(--space-5);
+    }
+    
+    /* Buttons */
+    .btn-group {
+        display: flex;
+        gap: var(--space-3);
+        justify-content: flex-end;
+    }
+    
+    .btn-group .btn {
+        flex: 0 0 auto;
+    }
+}
+
+/* ============================================================================
+   DESKTOP STYLES (768px+)
+   ============================================================================ */
+
+@media (min-width: 768px) {
+    
+    /* Layout improvements */
+    .main {
+        padding: var(--space-12) 0;
+    }
+    
+    /* Header with better spacing */
+    .header-right {
+        gap: var(--space-6);
+    }
+    
+    .nav-list {
+        gap: var(--space-8);
+    }
+    
+    /* Auth layout side-by-side for wide forms */
+    .auth-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
+    }
+    
+    /* Tables become more spacious */
+    .table th,
+    .table td {
+        padding: var(--space-5);
+    }
+    
+    /* Cards in grid layouts */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--space-6);
+    }
+    
+    /* Form layouts */
+    .form-horizontal {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: var(--space-4);
+        align-items: center;
+    }
+    
+    .form-horizontal .form-label {
+        margin-bottom: 0;
+        text-align: right;
+    }
+    
+    /* Modal sizing */
+    .modal-content {
+        min-width: 500px;
+        max-width: 700px;
+    }
+    
+    /* Dashboard layouts */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-6);
+    }
+    
+    .dashboard-main {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: var(--space-8);
+    }
+}
+
+/* ============================================================================
+   LARGE DESKTOP STYLES (1024px+)
+   ============================================================================ */
+
+@media (min-width: 1024px) {
+    
+    /* Enhanced typography scale */
+    .page-title {
+        font-size: var(--font-size-6xl);
+    }
+    
+    /* Larger containers */
+    .container {
+        max-width: 1200px;
+    }
+    
+    /* Navigation with more space */
+    .nav-list {
+        gap: var(--space-10);
+    }
+    
+    /* Multi-column forms */
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+    }
+    
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: var(--space-6);
+    }
+    
+    /* Enhanced card layouts */
+    .card-grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: var(--space-8);
+    }
+    
+    /* Dashboard with sidebar */
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: var(--space-10);
+        min-height: calc(100vh - var(--header-height) - var(--footer-height));
+    }
+    
+    .dashboard-sidebar {
+        background-color: var(--white);
+        border-radius: var(--border-radius-lg);
+        padding: var(--space-6);
+        height: fit-content;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .dashboard-content {
+        min-width: 0; /* Prevent overflow */
+    }
+    
+    /* Large modals */
+    .modal-content.modal-large {
+        min-width: 800px;
+        max-width: 1000px;
+    }
+    
+    /* Data tables with fixed headers */
+    .table-fixed-header {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .table-fixed-header th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: var(--white);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* ============================================================================
+   EXTRA LARGE SCREENS (1280px+)
+   ============================================================================ */
+
+@media (min-width: 1280px) {
+    
+    /* Maximum container width */
+    .container {
+        max-width: 1400px;
+    }
+    
+    /* Enhanced dashboard layouts */
+    .dashboard-layout {
+        grid-template-columns: 320px 1fr;
+        gap: var(--space-12);
+    }
+    
+    /* More columns for large screens */
+    .card-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    
+    /* Four-column forms for complex data entry */
+    .form-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-6);
+    }
+    
+    /* Large data tables */
+    .table-container {
+        max-height: 70vh;
+    }
+}
+
+/* ============================================================================
+   MOBILE-SPECIFIC STYLES (Mobile-first base + specific mobile overrides)
+   ============================================================================ */
+
+@media (max-width: 639px) {
+    
+    /* Mobile navigation */
+    .header-content {
+        flex-wrap: wrap;
+        gap: var(--space-3);
+    }
+    
+    .header-right {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+        padding-top: var(--space-3);
+        border-top: 1px solid var(--gray-200);
+    }
+    
+    /* Hide session info on very small screens */
+    .session-info {
+        display: none;
+    }
+    
+    /* Mobile navigation menu */
+    .nav {
+        display: none; /* Hidden by default on mobile, show via JS when needed */
+    }
+    
+    .nav.mobile-open {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: var(--white);
+        border-top: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-lg);
+        z-index: 50;
+    }
+    
+    .nav.mobile-open .nav-list {
+        flex-direction: column;
+        padding: var(--space-4);
+        gap: var(--space-2);
+    }
+    
+    .nav.mobile-open .nav-list a {
+        display: block;
+        padding: var(--space-3);
+    }
+    
+    /* Mobile hamburger menu button */
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        padding: var(--space-2);
+        cursor: pointer;
+        color: var(--gray-700);
+    }
+    
+    /* Mobile auth forms */
+    .auth-card {
+        margin: var(--space-4);
+        padding: var(--space-6);
+        border-radius: var(--border-radius-lg);
+    }
+    
+    .auth-header h2 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    /* Mobile buttons */
+    .btn-mobile-full {
+        width: 100%;
+        margin-bottom: var(--space-3);
+    }
+    
+    /* Mobile forms */
+    .form-group {
+        margin-bottom: var(--space-5);
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    /* Mobile modals */
+    .modal-content {
+        width: 95vw;
+        max-width: none;
+        margin: var(--space-4);
+        max-height: calc(100vh - 2rem);
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+    
+    /* Mobile tables - horizontal scroll */
+    .table-container {
+        border-radius: var(--border-radius-md);
+        margin: 0 calc(-1 * var(--space-4));
+    }
+    
+    .table {
+        min-width: 600px; /* Force horizontal scroll for complex tables */
+    }
+    
+    /* Mobile-friendly table alternative */
+    .table-mobile {
+        display: none;
+    }
+    
+    @media (max-width: 480px) {
+        .table-container {
+            display: none;
+        }
+        
+        .table-mobile {
+            display: block;
+        }
+        
+        .table-mobile-item {
+            background-color: var(--white);
+            border-radius: var(--border-radius-md);
+            padding: var(--space-4);
+            margin-bottom: var(--space-4);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .table-mobile-item:last-child {
+            margin-bottom: 0;
+        }
+    }
+    
+    /* Mobile spacing adjustments */
+    .main {
+        padding: var(--space-6) 0;
+    }
+    
+    .page-header {
+        margin-bottom: var(--space-8);
+        text-align: left;
+    }
+    
+    .page-title {
+        font-size: var(--font-size-3xl);
+        line-height: var(--line-height-tight);
+    }
+    
+    .page-description {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* ============================================================================
+   MOBILE LANDSCAPE ORIENTATION
+   ============================================================================ */
+
+@media (max-width: 1023px) and (orientation: landscape) {
+    
+    /* Reduce header height in landscape */
+    .header {
+        height: 3.5rem;
+    }
+    
+    /* Adjust main content spacing */
+    .main {
+        padding: var(--space-4) 0;
+        min-height: calc(100vh - 3.5rem - var(--footer-height));
+    }
+    
+    /* Modal adjustments for landscape */
+    .modal-content {
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+@media print {
+    
+    /* Hide interactive elements */
+    .header,
+    .footer,
+    .modal,
+    .btn,
+    .auth-buttons,
+    .user-menu,
+    .loading-spinner {
+        display: none !important;
+    }
+    
+    /* Optimize for print */
+    body {
+        background-color: white !important;
+        color: black !important;
+        font-size: 12pt;
+        line-height: 1.4;
+    }
+    
+    .main {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+    
+    /* Ensure page breaks */
+    .page-break-before {
+        page-break-before: always;
+    }
+    
+    .page-break-after {
+        page-break-after: always;
+    }
+    
+    .page-break-inside-avoid {
+        page-break-inside: avoid;
+    }
+    
+    /* Print-friendly tables */
+    .table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000;
+        padding: 4pt;
+    }
+    
+    /* Show URLs for links */
+    a[href^="http"]:after {
+        content: " (" attr(href) ")";
+        font-size: smaller;
+    }
+}
+
+/* ============================================================================
+   ACCESSIBILITY & REDUCED MOTION
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    
+    /* Disable animations for users who prefer reduced motion */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    /* Keep essential loading indicators */
+    .spinner,
+    .spinner-small {
+        animation: none;
+        border: 2px solid var(--primary-color);
+        border-radius: 50%;
+    }
+}
+
+/* ============================================================================
+   HIGH CONTRAST MODE
+   ============================================================================ */
+
+@media (prefers-contrast: high) {
+    
+    /* Increase contrast for accessibility */
+    :root {
+        --gray-300: #666666;
+        --gray-400: #555555;
+        --gray-500: #444444;
+    }
+    
+    .btn-outline {
+        border-width: 2px;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        border-width: 2px;
+    }
+    
+    .table th,
+    .table td {
+        border-width: 2px;
+    }
+}

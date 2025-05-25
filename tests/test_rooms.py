@@ -1,0 +1,1 @@
+﻿# Room and booking tests
