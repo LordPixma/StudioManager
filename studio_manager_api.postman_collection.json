@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "StudioManager API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Alice\",\"email\":\"alice@example.com\",\"password\":\"password\"}"
+        },
+        "url": "{{base_url}}/api/register"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"alice@example.com\",\"password\":\"password\",\"remember_me\":true}"
+        },
+        "url": "{{base_url}}/api/login"
+      }
+    },
+    {
+      "name": "Session Info",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/session"
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/logout"
+      }
+    },
+    {
+      "name": "Validate Email",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\":\"foo@bar.com\"}"
+        },
+        "url": "{{base_url}}/api/validate/email"
+      }
+    },
+    {
+      "name": "Validate Booking",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"room_id\":1,\"start\":\"2025-05-25T14:00:00Z\",\"end\":\"2025-05-25T15:00:00Z\"}"
+        },
+        "url": "{{base_url}}/api/validate/booking"
+      }
+    }
+  ]
+}
