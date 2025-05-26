@@ -1,1 +1,169 @@
 ﻿<!-- Customer list template -->
+{% extends "base.html" %}
+
+{% block title %}Customers - StudioManager{% endblock %}
+
+{% block page_title %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1 class="page-title">Customer Management</h1>
+        <p class="page-description">Manage your studio customers and their information</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-primary" id="add-customer-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
+            </svg>
+            Add Customer
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Controls -->
+<div class="customer-controls">
+    <div class="controls-left">
+        <div class="search-box">
+            <input 
+                type="text" 
+                id="customer-search" 
+                class="form-input" 
+                placeholder="Search customers by name or email..."
+            >
+            <button class="search-btn" id="search-btn">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="controls-right">
+        <div class="sort-controls">
+            <select id="sort-select" class="form-select">
+                <option value="name">Sort by Name</option>
+                <option value="email">Sort by Email</option>
+                <option value="created_at">Sort by Date Added</option>
+            </select>
+            <button class="btn btn-outline sort-order-btn" id="sort-order-btn" data-order="asc">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M3.5 2.5a.5.5 0 0 0-1 0v8.793l-1.146-1.147a.5.5 0 0 0-.708.708l2 1.999.007.007a.497.497 0 0 0 .7-.006l2-2a.5.5 0 0 0-.707-.708L3.5 11.293V2.5zm3.5 1a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM7.5 6a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zm0 3a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3zm0 3a.5.5 0 0 0 0 1h1a.5.5 0 0 0 0-1h-1z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="view-toggle">
+            <button class="btn btn-outline view-btn active" data-view="table">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z"/>
+                </svg>
+            </button>
+            <button class="btn btn-outline view-btn" data-view="cards">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Count -->
+<div class="customer-stats">
+    <div class="stats-item">
+        <span class="stats-label">Total Customers:</span>
+        <span class="stats-value" id="total-customers">-</span>
+    </div>
+    <div class="stats-item">
+        <span class="stats-label">Showing:</span>
+        <span class="stats-value" id="showing-customers">-</span>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div id="loading-state" class="loading-state" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading customers...</p>
+</div>
+
+<!-- Table View -->
+<div id="table-view" class="customer-table-container">
+    <div class="table-container">
+        <table class="table" id="customers-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Date Added</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customers-tbody">
+                <!-- Customer rows populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Cards View -->
+<div id="cards-view" class="customer-cards-container" style="display: none;">
+    <div class="customer-cards" id="customer-cards">
+        <!-- Customer cards populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Empty State -->
+<div id="empty-state" class="empty-state" style="display: none;">
+    <div class="empty-state-icon">
+        <svg width="64" height="64" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+        </svg>
+    </div>
+    <h3>No customers found</h3>
+    <p>Get started by adding your first customer to the system.</p>
+    <button class="btn btn-primary" id="add-first-customer-btn">Add Customer</button>
+</div>
+
+<!-- Pagination -->
+<div class="pagination-container" id="pagination-container" style="display: none;">
+    <div class="pagination-info">
+        <span id="pagination-info-text">Showing 1-25 of 100 customers</span>
+    </div>
+    <div class="pagination-controls">
+        <button class="btn btn-outline pagination-btn" id="prev-page-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
+            </svg>
+            Previous
+        </button>
+        
+        <div class="page-numbers" id="page-numbers">
+            <!-- Page numbers populated by JavaScript -->
+        </div>
+        
+        <button class="btn btn-outline pagination-btn" id="next-page-btn">
+            Next
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/customers.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/customers.js') }}"></script>
+<script>
+    // Initialize customer management when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.CustomerManager) {
+            CustomerManager.init();
+        }
+    });
+</script>
+{% endblock %}

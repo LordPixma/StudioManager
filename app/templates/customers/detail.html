@@ -1,1 +1,207 @@
 ﻿<!-- Customer detail template -->
+{% extends "base.html" %}
+
+{% block title %}Customer Details - StudioManager{% endblock %}
+
+{% block page_title %}
+<div class="page-header">
+    <div class="page-header-content">
+        <div class="breadcrumb">
+            <a href="{{ url_for('customers.list') }}" class="breadcrumb-link">Customers</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" id="customer-name-breadcrumb">Customer Details</span>
+        </div>
+        <h1 class="page-title" id="customer-name-title">Loading...</h1>
+        <p class="page-description">View and manage customer information</p>
+    </div>
+    <div class="page-actions">
+        <button class="btn btn-outline" id="edit-customer-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708L9.708 9H9a.5.5 0 0 1-.5-.5V8a.5.5 0 0 1 .146-.354l6-6zm-6 6v1a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5V6a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .354.146zM5 7v1h1V7H5zM1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/>
+            </svg>
+            Edit Customer
+        </button>
+        <button class="btn btn-danger" id="delete-customer-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+            Delete
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Loading State -->
+<div id="loading-state" class="loading-state" style="display: none;">
+    <div class="spinner"></div>
+    <p>Loading customer details...</p>
+</div>
+
+<!-- Error State -->
+<div id="error-state" class="error-state" style="display: none;">
+    <div class="error-icon">
+        <svg width="64" height="64" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </svg>
+    </div>
+    <h3>Customer not found</h3>
+    <p id="error-message">The customer you're looking for doesn't exist or has been deleted.</p>
+    <button class="btn btn-primary" onclick="window.location.href='{{ url_for('customers.list') }}'">
+        Back to Customers
+    </button>
+</div>
+
+<!-- Customer Details -->
+<div id="customer-details" class="customer-details" style="display: none;">
+    <div class="customer-info-grid">
+        <!-- Basic Information Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3>Basic Information</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="info-row">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value" id="customer-name">-</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Email Address</div>
+                    <div class="info-value">
+                        <a href="#" id="customer-email" class="email-link">-</a>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Phone Number</div>
+                    <div class="info-value">
+                        <a href="#" id="customer-phone" class="phone-link">-</a>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Customer Since</div>
+                    <div class="info-value" id="customer-created">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3>Notes</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="customer-notes" id="customer-notes">
+                    <p class="no-notes">No notes available for this customer.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Summary Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3>Activity Summary</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="activity-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-bookings">-</div>
+                        <div class="stat-label">Total Bookings</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="last-booking">-</div>
+                        <div class="stat-label">Last Booking</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="customer-status">Active</div>
+                        <div class="stat-label">Status</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="info-card">
+            <div class="info-card-header">
+                <h3>Quick Actions</h3>
+            </div>
+            <div class="info-card-body">
+                <div class="quick-actions">
+                    <button class="btn btn-outline btn-full" id="create-booking-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                        </svg>
+                        Create Booking
+                    </button>
+                    <button class="btn btn-outline btn-full" id="send-email-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                        </svg>
+                        Send Email
+                    </button>
+                    <button class="btn btn-outline btn-full" id="view-history-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.396l.614-.736c.176.147.344.301.497.469l-.672.663zm.982 1.04a6.993 6.993 0 0 0-.282-.505l.776-.571c.124.169.233.347.328.534l-.822.542zm.654 1.42a6.98 6.98 0 0 0-.17-.445l.884-.392c.081.157.146.322.197.493l-.911.344zm.276 1.671c.03-.186.049-.373.058-.562l.99-.07c-.014.261-.041.52-.079.774l-.969-.142zM16 8c0-.099-.006-.197-.017-.294l.99-.072c.014.215.017.43.017.646v.064l-1-.013-.013.669zM15.925 8.738a6.956 6.956 0 0 1-.053.586l.99.07c.011-.197.019-.394.019-.592v-.086l-.956-.007V8.78zM15.707 9.747a6.97 6.97 0 0 1-.12.538l.969.142c.063-.257.101-.522.134-.793l-.983-.087z"/>
+                            <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z"/>
+                            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+                        </svg>
+                        View History
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Confirm Delete</h3>
+        </div>
+        <div class="modal-body">
+            <div class="warning-icon">
+                <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" class="text-warning">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+            </div>
+            <p>Are you sure you want to delete <strong id="delete-customer-name">this customer</strong>?</p>
+            <p class="text-warning">This action cannot be undone. All customer data and booking history will be permanently removed.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" id="cancel-delete-btn">Cancel</button>
+            <button class="btn btn-danger" id="confirm-delete-btn">
+                <span class="btn-text">Delete Customer</span>
+                <div class="btn-spinner" style="display: none;">
+                    <div class="spinner-small"></div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/customers.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/customers.js') }}"></script>
+<script>
+    // Initialize customer detail view when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.CustomerManager) {
+            // Get customer ID from URL path
+            const pathParts = window.location.pathname.split('/');
+            const customerId = pathParts[pathParts.length - 1];
+            
+            if (customerId && !isNaN(customerId)) {
+                CustomerManager.initDetailView(parseInt(customerId));
+            } else {
+                CustomerManager.showError('Invalid customer ID');
+            }
+        }
+    });
+</script>
+{% endblock %}

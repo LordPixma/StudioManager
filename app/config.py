@@ -17,3 +17,6 @@ class Config:
     SESSION_COOKIE_SECURE = True       # only send cookie over HTTPS
     SESSION_COOKIE_HTTPONLY = True     # inaccessible to JavaScript
     PERMANENT_SESSION_LIFETIME = 3600  # seconds (60 minutes)
+    
+    WTF_CSRF_SECRET_KEY = SECRET_KEY
+    WTF_CSRF_TIME_LIMIT = None

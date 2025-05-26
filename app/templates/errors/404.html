@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - StudioManager{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-container">
+        <div class="error-illustration">
+            <div class="error-code">404</div>
+            <div class="error-icon">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 9 3 3m0 0 3-3m-3 3-3-3m3 3v5"/>
+                </svg>
+            </div>
+        </div>
+        
+        <div class="error-content">
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-description">
+                Sorry, we couldn't find the page you're looking for. 
+                The page may have been moved, deleted, or you may have entered an incorrect URL.
+            </p>
+            
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="m8 3 1.293 1.293-1.086 1.086A8.002 8.002 0 0 1 2 10a8.002 8.002 0 0 1 6.207-7.793l1.086-1.086L8 3zm-.5 7a.5.5 0 0 1-.5-.5V6.5a.5.5 0 0 1 1 0V9a.5.5 0 0 1-.5.5z"/>
+                        <path d="M14 12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10z"/>
+                    </svg>
+                    Go to Dashboard
+                </a>
+                <button onclick="history.back()" class="btn btn-outline">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                    </svg>
+                    Go Back
+                </button>
+            </div>
+            
+            <div class="error-suggestions">
+                <h3>What you can do:</h3>
+                <ul>
+                    <li>Check the URL for typos</li>
+                    <li>Use the navigation menu above</li>
+                    <li>Search for what you're looking for</li>
+                    <li>Contact support if you think this is an error</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Navigation -->
+    <div class="error-navigation">
+        <h3>Quick Navigation</h3>
+        <div class="nav-grid">
+            <a href="/dashboard" class="nav-card">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">Dashboard</div>
+                <div class="nav-desc">Your main workspace</div>
+            </a>
+            
+            <a href="/customers" class="nav-card">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">Customers</div>
+                <div class="nav-desc">Manage customer profiles</div>
+            </a>
+            
+            <a href="/bookings" class="nav-card">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">Bookings</div>
+                <div class="nav-desc">Room reservations</div>
+            </a>
+            
+            <a href="/reports" class="nav-card">
+                <div class="nav-icon">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+                    </svg>
+                </div>
+                <div class="nav-title">Reports</div>
+                <div class="nav-desc">Analytics & insights</div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/errors.css') }}">
+{% endblock %}

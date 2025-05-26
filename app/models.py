@@ -2,7 +2,7 @@
 """
 SQLAlchemy models for users and studios.
 """
-
+from datetime import datetime
 from . import db
 
 class Studio(db.Model):
@@ -13,6 +13,31 @@ class Studio(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+
+class Customer(db.Model):
+    __tablename__ = 'customers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    studio_id = db.Column(db.Integer, db.ForeignKey('studios.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False, unique=True)
+    phone = db.Column(db.String(20))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "studio_id": self.studio_id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "notes": self.notes or "",
+            "created_at": self.created_at.isoformat() + "Z",
+            "updated_at": self.updated_at.isoformat() + "Z"
+        }
 
 class User(db.Model):
     """

@@ -19,7 +19,7 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <a href="{{ url_for('main.index') }}">
+                    <a href="{{ url_for('ui.root') }}">
                         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="StudioManager" class="logo-img">
                         <span class="logo-text">StudioManager</span>
                     </a>
@@ -135,5 +135,177 @@
     <script src="{{ url_for('static', filename='js/session.js') }}"></script>
     
     {% block extra_js %}{% endblock %}
+
+    <!-- ADD THIS CUSTOMER MODAL BEFORE THE CLOSING </body> TAG IN base.html -->
+
+    <!-- Customer Form Modal -->
+    <div id="customer-modal" class="modal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="customer-modal-title">Add Customer</h3>
+                <button class="modal-close" id="customer-modal-close">
+                    <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="customer-form" class="customer-form" novalidate>
+                <div class="modal-body">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" id="customer-id" name="customer_id" value="">
+                    
+                    <div class="form-grid">
+                        <!-- Name Field -->
+                        <div class="form-group">
+                            <label for="customer-name-input" class="form-label required">Full Name</label>
+                            <input 
+                                type="text" 
+                                id="customer-name-input" 
+                                name="name" 
+                                class="form-input" 
+                                required 
+                                autocomplete="name"
+                                placeholder="Enter customer's full name"
+                                maxlength="100"
+                            >
+                            <div class="field-error" id="customer-name-input-error"></div>
+                        </div>
+                        
+                        <!-- Email Field -->
+                        <div class="form-group">
+                            <label for="customer-email-input" class="form-label">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="customer-email-input" 
+                                name="email" 
+                                class="form-input" 
+                                autocomplete="email"
+                                placeholder="Enter email address (optional)"
+                                maxlength="120"
+                            >
+                            <div class="field-error" id="customer-email-input-error"></div>
+                            <div class="field-success" id="customer-email-input-success" style="display: none;">
+                                ✓ Email format is valid
+                            </div>
+                        </div>
+                        
+                        <!-- Phone Field -->
+                        <div class="form-group">
+                            <label for="customer-phone-input" class="form-label">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                id="customer-phone-input" 
+                                name="phone" 
+                                class="form-input" 
+                                autocomplete="tel"
+                                placeholder="Enter phone number (optional)"
+                                maxlength="20"
+                            >
+                            <div class="field-error" id="customer-phone-input-error"></div>
+                            <div class="field-success" id="customer-phone-input-success" style="display: none;">
+                                ✓ Phone format is valid
+                            </div>
+                        </div>
+                        
+                        <!-- Studio Assignment (for multi-studio setups) -->
+                        <div class="form-group" id="studio-assignment-group" style="display: none;">
+                            <label for="customer-studio-input" class="form-label">Assign to Studio</label>
+                            <select id="customer-studio-input" name="studio_id" class="form-select">
+                                <option value="">Select studio...</option>
+                                <!-- Options populated by JavaScript -->
+                            </select>
+                            <div class="field-error" id="customer-studio-input-error"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes Field (Full Width) -->
+                    <div class="form-group">
+                        <label for="customer-notes-input" class="form-label">Notes</label>
+                        <textarea 
+                            id="customer-notes-input" 
+                            name="notes" 
+                            class="form-textarea" 
+                            rows="4"
+                            placeholder="Add any additional notes about this customer (dietary restrictions, preferences, etc.)"
+                            maxlength="1000"
+                        ></textarea>
+                        <div class="character-count">
+                            <span id="notes-char-count">0</span>/1000 characters
+                        </div>
+                        <div class="field-error" id="customer-notes-input-error"></div>
+                    </div>
+                    
+                    <!-- Form Error Display -->
+                    <div id="customer-form-error" class="form-error" style="display: none;"></div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="customer-form-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="customer-form-submit">
+                        <span class="btn-text" id="submit-btn-text">Add Customer</span>
+                        <div class="btn-spinner" style="display: none;">
+                            <div class="spinner-small"></div>
+                        </div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Form Styles -->
+    <style>
+    /* Customer Form Specific Styles */
+    .customer-form .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .customer-form .form-group:last-of-type {
+        grid-column: 1 / -1; /* Notes field spans full width */
+    }
+
+    .character-count {
+        margin-top: var(--space-2);
+        font-size: var(--font-size-xs);
+        color: var(--gray-500);
+        text-align: right;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: var(--space-4);
+        right: var(--space-4);
+        background: none;
+        border: none;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: var(--space-2);
+        border-radius: var(--border-radius-md);
+        transition: all var(--transition-fast);
+    }
+
+    .modal-close:hover {
+        background-color: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .customer-form .form-grid {
+            grid-template-columns: 1fr;
+            gap: var(--space-4);
+        }
+        
+        .modal-content.modal-large {
+            margin: var(--space-4);
+            max-height: calc(100vh - 2rem);
+        }
+    }
+    </style>
 </body>
 </html>
