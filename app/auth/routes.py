@@ -1,14 +1,16 @@
 ﻿# /login, /logout, /register routes
 """
 Routes for user registration, login, logout, session info, and field validations.
+Updated for multi-tenant SaaS architecture.
 """
 
 from flask import Blueprint, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+import re
 
 from .. import db
-from ..models import User
+from ..models import User, Tenant, Studio
 from ..utils import make_response_payload
 
 auth_bp = Blueprint('auth', __name__)
@@ -25,73 +27,146 @@ def _format_user(user):
     """
     return {
         "id": user.id,
+        "tenant_id": user.tenant_id,
         "name": user.name,
+        "email": user.email,
         "role": user.role,
         "permissions": user.permissions,
-        "studio_id": user.studio_id
+        "studio_id": user.studio_id,
+        "is_active": user.is_active
     }
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
     """
-    Public registration endpoint.
-    - Only creates Receptionist users by default.
+    SaaS registration endpoint.
+    Creates new tenant with admin user, or adds user to existing tenant.
     """
     data = request.get_json() or {}
-    name = data.get('name')
-    email = data.get('email')
-    password = data.get('password')
+    name = data.get('name', '').strip()
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    tenant_name = data.get('tenant_name', '').strip()  # For new tenant creation
+    tenant_id = data.get('tenant_id')  # For adding to existing tenant
 
     # Basic validation
     errors = {}
-    if not name:    errors.setdefault('name', []).append('Name is required')
-    if not email:   errors.setdefault('email', []).append('Email is required')
-    if not password:errors.setdefault('password', []).append('Password is required')
-    if User.query.filter_by(email=email).first():
-        errors.setdefault('email', []).append('Email already exists')
+    if not name:
+        errors.setdefault('name', []).append('Name is required')
+    if not email:
+        errors.setdefault('email', []).append('Email is required')
+    elif not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        errors.setdefault('email', []).append('Invalid email format')
+    if not password:
+        errors.setdefault('password', []).append('Password is required')
+    elif len(password) < 8:
+        errors.setdefault('password', []).append('Password must be at least 8 characters')
+
+    # Check if user already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        errors.setdefault('email', []).append('Email already registered')
+
+    if not tenant_name and not tenant_id:
+        errors.setdefault('tenant_name', []).append('Studio/Company name is required for new registration')
 
     if errors:
         return make_response_payload(False, errors=errors), 400
 
-    # Create user
-    pw_hash = generate_password_hash(password)
-    user = User(
-        name=name,
-        email=email,
-        password_hash=pw_hash,
-        role='Receptionist',
-        permissions=['create_booking','edit_customer'],  # default perms
-        studio_id=None
-    )
-    db.session.add(user)
-    db.session.commit()
+    try:
+        if tenant_name and not tenant_id:
+            # Create new tenant (SaaS signup)
+            from ..tenants.routes import create_tenant
+            # Delegate to tenant creation endpoint
+            tenant_data = {
+                'tenant_name': tenant_name,
+                'admin_name': name,
+                'admin_email': email,
+                'admin_password': password
+            }
+            
+            # Mock request for tenant creation
+            original_json = request.json
+            request.json = tenant_data
+            result = create_tenant()
+            request.json = original_json
+            
+            if result[1] != 201:  # If tenant creation failed
+                return result
+                
+            response_data = result[0].json
+            user_data = response_data['data']['admin_user']
+            
+        else:
+            # Add user to existing tenant
+            if not tenant_id:
+                return make_response_payload(False, message="Tenant ID required"), 400
+                
+            tenant = Tenant.query.get(tenant_id)
+            if not tenant or not tenant.is_active:
+                return make_response_payload(False, message="Invalid tenant"), 400
+            
+            # Get default studio for tenant
+            studio = Studio.query.filter_by(tenant_id=tenant_id).first()
+            
+            user = User(
+                tenant_id=tenant_id,
+                studio_id=studio.id if studio else None,
+                name=name,
+                email=email,
+                password_hash=generate_password_hash(password),
+                role='Receptionist',
+                permissions=['create_booking', 'edit_customer']
+            )
+            
+            db.session.add(user)
+            db.session.commit()
+            user_data = user.to_dict()
 
-    # Establish session
-    session.clear()
-    session['user_id'] = user.id
-    session.permanent = True
+        # Establish session
+        session.clear()
+        session['user_id'] = user_data['id']
+        session.permanent = True
 
-    payload = {
-        "user": _format_user(user),
-        "session_timeout": _get_session_timeout_iso()
-    }
-    return make_response_payload(True, data=payload, message="Registration successful"), 201
+        payload = {
+            "user": user_data,
+            "session_timeout": _get_session_timeout_iso()
+        }
+        return make_response_payload(True, data=payload, message="Registration successful")
+
+    except Exception as e:
+        db.session.rollback()
+        return make_response_payload(False, message=f"Registration failed: {str(e)}"), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
     """
-    User login endpoint.
+    Multi-tenant user login endpoint.
     Accepts JSON: { email, password, remember_me }
     """
     data = request.get_json() or {}
-    email = data.get('email')
-    password = data.get('password')
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
     remember_me = bool(data.get('remember_me', False))
 
+    if not email or not password:
+        return make_response_payload(False, message="Email and password are required"), 400
+
+    # Find user by email (could be in any tenant)
     user = User.query.filter_by(email=email).first()
+    
     if not user or not check_password_hash(user.password_hash, password):
-        # Generic error for security
         return make_response_payload(False, message="Invalid email or password"), 401
+    
+    # Check if user and tenant are active
+    if not user.is_active:
+        return make_response_payload(False, message="Account is deactivated"), 401
+    
+    if user.tenant_id:
+        from ..models import Tenant
+        tenant = Tenant.query.get(user.tenant_id)
+        if not tenant or not tenant.is_active:
+            return make_response_payload(False, message="Studio account is not active"), 401
 
     # Establish session
     session.clear()

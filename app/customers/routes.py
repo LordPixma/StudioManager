@@ -22,9 +22,20 @@ def list_customers():
     if not user:
         return make_response_payload(False, message="Unauthorized"), 401
 
+    # Multi-tenant filtering
     q = Customer.query
-    if user.role != 'Admin':
-        q = q.filter(Customer.studio_id == user.studio_id)
+    if user.role == 'Admin' and not user.tenant_id:
+        # Global admin can see all customers (add tenant filter if needed)
+        pass
+    elif user.tenant_id:
+        # Tenant users can only see customers in their tenant
+        q = q.filter(Customer.tenant_id == user.tenant_id)
+        if user.role not in ['Admin', 'Studio Manager']:
+            # Further restrict to studio for non-managers
+            q = q.filter(Customer.studio_id == user.studio_id)
+    else:
+        # No tenant - should not happen in SaaS
+        return make_response_payload(False, message="Invalid user configuration"), 403
 
     # Search
     search = request.args.get('search')
@@ -68,8 +79,17 @@ def get_customer(customer_id):
     c = Customer.query.get(customer_id)
     if not c:
         return make_response_payload(False, message="Customer not found"), 404
-    if user.role != 'Admin' and c.studio_id != user.studio_id:
-        return make_response_payload(False, message="Forbidden"), 403
+    
+    # Multi-tenant access control
+    if user.role == 'Admin' and not user.tenant_id:
+        # Global admin access
+        pass
+    elif user.tenant_id and c.tenant_id == user.tenant_id:
+        # Same tenant access
+        if user.role not in ['Admin', 'Studio Manager'] and c.studio_id != user.studio_id:
+            return make_response_payload(False, message="Access denied"), 403
+    else:
+        return make_response_payload(False, message="Access denied"), 403
 
     return make_response_payload(True, data=c.to_dict())
 
@@ -80,6 +100,9 @@ def create_customer():
     if not user:
         return make_response_payload(False, message="Unauthorized"), 401
 
+    if not user.tenant_id:
+        return make_response_payload(False, message="Invalid user configuration"), 403
+
     payload = request.get_json() or {}
     errors = {}
 
@@ -89,14 +112,18 @@ def create_customer():
         errors.setdefault('name', []).append('Name is required')
     if not email:
         errors.setdefault('email', []).append('Email is required')
-    elif Customer.query.filter_by(email=email).first():
-        errors.setdefault('email', []).append('Email already exists')
+    else:
+        # Check email uniqueness within tenant
+        existing = Customer.query.filter_by(tenant_id=user.tenant_id, email=email).first()
+        if existing:
+            errors.setdefault('email', []).append('Email already exists')
 
     if errors:
         return make_response_payload(False, message="Validation failed", errors=errors), 400
 
     new_customer = Customer(
-        studio_id = user.studio_id if user.role != 'Admin' else payload.get('studio_id'),
+        tenant_id=user.tenant_id,
+        studio_id=user.studio_id if user.role not in ['Admin', 'Studio Manager'] else payload.get('studio_id', user.studio_id),
         name      = name,
         email     = email,
         phone     = payload.get('phone'),
