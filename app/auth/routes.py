@@ -67,36 +67,47 @@ def register():
     if existing_user:
         errors.setdefault('email', []).append('Email already registered')
 
+    # Backward-compat: if no tenant provided, derive a default tenant name
     if not tenant_name and not tenant_id:
-        errors.setdefault('tenant_name', []).append('Studio/Company name is required for new registration')
+        if name:
+            tenant_name = f"{name}'s Studio"
+        else:
+            errors.setdefault('tenant_name', []).append('Studio/Company name is required for new registration')
 
     if errors:
         return make_response_payload(False, errors=errors), 400
 
     try:
         if tenant_name and not tenant_id:
-            # Create new tenant (SaaS signup)
-            from ..tenants.routes import create_tenant
-            # Delegate to tenant creation endpoint
-            tenant_data = {
-                'tenant_name': tenant_name,
-                'admin_name': name,
-                'admin_email': email,
-                'admin_password': password
-            }
-            
-            # Mock request for tenant creation
-            original_json = request.json
-            request.json = tenant_data
-            result = create_tenant()
-            request.json = original_json
-            
-            if result[1] != 201:  # If tenant creation failed
-                return result
-                
-            response_data = result[0].json
-            user_data = response_data['data']['admin_user']
-            
+            # Create new tenant (SaaS signup) inline to avoid cross-call coupling
+            tenant = Tenant(name=tenant_name, subdomain=re.sub(r'[^a-zA-Z0-9-]', '-', tenant_name.lower())[:20] or 'studio', plan='free', is_active=True)
+            db.session.add(tenant)
+            db.session.flush()
+
+            # Default studio for tenant
+            studio = Studio(tenant_id=tenant.id, name=f"{tenant_name} - Main Studio")
+            db.session.add(studio)
+            db.session.flush()
+
+            # Admin user for the tenant
+            admin_user = User(
+                tenant_id=tenant.id,
+                studio_id=studio.id,
+                name=name,
+                email=email,
+                password_hash=generate_password_hash(password),
+                role='Studio Manager',
+                permissions=[
+                    'view_customers', 'create_customer', 'edit_customer', 'delete_customer',
+                    'view_bookings', 'create_booking', 'edit_booking', 'cancel_booking',
+                    'view_staff', 'create_staff', 'edit_staff',
+                    'view_reports', 'manage_studio'
+                ]
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+            user_data = admin_user.to_dict()
+
         else:
             # Add user to existing tenant
             if not tenant_id:
@@ -132,7 +143,8 @@ def register():
             "user": user_data,
             "session_timeout": _get_session_timeout_iso()
         }
-        return make_response_payload(True, data=payload, message="Registration successful")
+        # Return 201 to indicate creation (compat with tests)
+        return make_response_payload(True, data=payload, message="Registration successful"), 201
 
     except Exception as e:
         db.session.rollback()
@@ -218,8 +230,16 @@ def validate_email():
 
     if not email:
         errors['email'] = ['Email is required']
-    elif User.query.filter_by(email=email).first():
-        errors['email'] = ['Email already exists']
+    else:
+        # If a user is logged in, check within their tenant; otherwise check globally
+        from ..utils import get_current_user
+        u = get_current_user()
+        if u and u.tenant_id is not None:
+            exists = User.query.filter_by(tenant_id=u.tenant_id, email=email).first()
+        else:
+            exists = User.query.filter_by(email=email).first()
+        if exists:
+            errors['email'] = ['Email already exists']
 
     if errors:
         return make_response_payload(False, errors=errors), 400

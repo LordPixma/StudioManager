@@ -146,13 +146,19 @@ def update_customer(customer_id):
     c = Customer.query.get(customer_id)
     if not c:
         return make_response_payload(False, message="Customer not found"), 404
-    if user.role != 'Admin' and c.studio_id != user.studio_id:
+    if user.role != 'Admin':
+        # Must match tenant
+        if c.tenant_id != user.tenant_id:
+            return make_response_payload(False, message="Forbidden"), 403
+        # Non-managers limited to their studio
+        if user.role not in ['Admin', 'Studio Manager'] and c.studio_id != user.studio_id:
+            return make_response_payload(False, message="Forbidden"), 403
         return make_response_payload(False, message="Forbidden"), 403
 
     payload = request.get_json() or {}
     errors = {}
     if 'email' in payload and payload['email'] != c.email:
-        if Customer.query.filter_by(email=payload['email']).first():
+        if Customer.query.filter_by(tenant_id=user.tenant_id, email=payload['email']).first():
             errors.setdefault('email', []).append('Email already exists')
 
     if errors:

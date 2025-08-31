@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Users } from 'lucide-react'
 import { customerAPI } from '../lib/api'
 import type { Customer } from '../types'
 

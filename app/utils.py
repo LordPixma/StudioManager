@@ -3,7 +3,7 @@
 Utility functions for standardized JSON responses and error handling.
 """
 
-from flask import jsonify
+from flask import jsonify, session
 
 def make_response_payload(success, data=None, message=None, errors=None, meta=None, conflicts=None):
     """
@@ -53,3 +53,12 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def internal_error(error):
         return make_response_payload(False, message="Internal server error"), 500
+
+def get_current_user():
+    """Return the current logged-in user from session or None."""
+    user_id = session.get('user_id')
+    if not user_id:
+        return None
+    # Lazy import to avoid circular dependency at import time
+    from .models import User
+    return User.query.get(user_id)

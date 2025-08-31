@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# Git
+.git/
+.gitignore
+
+# OS
+.DS_Store
+
+# Tests and local files
+.coverage
+htmlcov/
+pytest_cache/
+
+# Docker
+Dockerfile*

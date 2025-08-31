@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 import click
 from faker import Faker
 from werkzeug.security import generate_password_hash
-from app.models import Studio, User
+from app.models import Studio, User, Tenant
 
 app = create_app()
 migrate = Migrate(app, db)
@@ -29,26 +29,32 @@ def seed():
     """
     fake = Faker()
 
-    # Create Studios
+    # Create a tenant
+    tenant = Tenant(name=fake.company(), subdomain=fake.unique.slug(), plan='free', is_active=True)
+    db.session.add(tenant)
+    db.session.flush()
+
+    # Create Studios for the tenant
     studios = []
     for _ in range(2):
-        s = Studio(name=fake.company())
+        s = Studio(tenant_id=tenant.id, name=fake.company())
         studios.append(s)
         db.session.add(s)
-    db.session.commit()
+    db.session.flush()
 
-    # Create Admin
+    # Create Global Admin (no tenant)
     admin = User(
         name="Admin User",
         email="admin@example.com",
         password_hash=generate_password_hash("password"),
         role="Admin",
         permissions=["create_booking","edit_customer","view_reports","manage_staff"],
-        studio_id=None
+        studio_id=None,
+        tenant_id=None
     )
     db.session.add(admin)
 
-    # Other roles per studio
+    # Other roles per studio within the tenant
     roles_perms = {
         "Studio Manager": ["view_reports","manage_staff"],
         "Staff/Instructor": ["create_booking"],
@@ -57,6 +63,7 @@ def seed():
     for studio in studios:
         for role, perms in roles_perms.items():
             user = User(
+                tenant_id=tenant.id,
                 name=fake.name(),
                 email=fake.unique.email(),
                 password_hash=generate_password_hash("password"),

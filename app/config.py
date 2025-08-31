@@ -13,10 +13,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///studio_manager.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Session cookie settings
-    SESSION_COOKIE_SECURE = True       # only send cookie over HTTPS
-    SESSION_COOKIE_HTTPONLY = True     # inaccessible to JavaScript
-    PERMANENT_SESSION_LIFETIME = 3600  # seconds (60 minutes)
+    # Session cookie settings (override via environment for prod)
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'true').lower() == 'true'  # HTTPS only
+    SESSION_COOKIE_HTTPONLY = os.environ.get('SESSION_COOKIE_HTTPONLY', 'true').lower() == 'true'
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    PERMANENT_SESSION_LIFETIME = int(os.environ.get('PERMANENT_SESSION_LIFETIME', '3600'))
     
     WTF_CSRF_SECRET_KEY = SECRET_KEY
     WTF_CSRF_TIME_LIMIT = None
