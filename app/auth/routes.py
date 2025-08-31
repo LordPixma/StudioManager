@@ -75,6 +75,10 @@ def register():
             errors.setdefault('tenant_name', []).append('Studio/Company name is required for new registration')
 
     if errors:
+        try:
+            print('register_validation_errors', errors)
+        except Exception:
+            pass
         return make_response_payload(False, errors=errors), 400
 
     try:

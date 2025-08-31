@@ -6,6 +6,18 @@ import os
 
 from .config import Config
 import sqlalchemy as sa
+from werkzeug import security as _wz_sec
+
+# Force pbkdf2 default for password hashing to avoid platforms without hashlib.scrypt
+_orig_generate_password_hash = _wz_sec.generate_password_hash
+
+def _generate_password_hash_compat(password, method=None, salt_length=16):
+    # If method not provided or set to scrypt, fallback to pbkdf2:sha256
+    if not method or method == 'scrypt':
+        method = 'pbkdf2:sha256'
+    return _orig_generate_password_hash(password, method=method, salt_length=salt_length)
+
+_wz_sec.generate_password_hash = _generate_password_hash_compat
 from .utils import make_response_payload
 
 # Initialize extensions
