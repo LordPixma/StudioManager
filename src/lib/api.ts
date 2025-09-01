@@ -196,3 +196,11 @@ export const adminAPI = {
     return resp.data
   },
 }
+
+// Tenant-facing announcements
+export const announcementsAPI = {
+  async list(params?: { limit?: number }) {
+    const { data } = await http.get<ApiResponse>(`/announcements`, { params })
+    return data
+  },
+}

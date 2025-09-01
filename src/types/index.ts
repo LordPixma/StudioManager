@@ -3,7 +3,7 @@ export interface User {
   id: number
   name: string
   email: string
-  role: 'Admin' | 'Studio Manager' | 'Staff/Instructor' | 'Receptionist'
+  role: 'SuperAdmin' | 'Admin' | 'Studio Manager' | 'Staff/Instructor' | 'Receptionist'
   permissions: string[]
   studio_id?: number
   tenant_id?: number // Added for multi-tenancy

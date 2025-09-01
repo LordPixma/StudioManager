@@ -1,25 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
 import { Button } from '../../components/ui/Button'
+import { useAuth } from '../../hooks/useAuth'
+import { useToast } from '../../components/ui/Toast'
 
 export function AdminUsersPage() {
+  const { user } = useAuth()
   const [userId, setUserId] = useState('')
   const [targetTenantId, setTargetTenantId] = useState('')
   const [targetStudioId, setTargetStudioId] = useState('')
   const [result, setResult] = useState<string>('')
+  const { notify } = useToast()
 
   const move = async () => {
     const uid = parseInt(userId, 10)
     const tid = parseInt(targetTenantId, 10)
     const sid = targetStudioId ? parseInt(targetStudioId, 10) : undefined
     const res = await adminAPI.moveUser({ user_id: uid, target_tenant_id: tid, target_studio_id: sid })
-    if (res.success) setResult('User moved successfully')
-    else setResult(res.message || 'Failed to move user')
+  if (res.success) { setResult('User moved successfully'); notify({ kind: 'success', message: 'User moved' }) }
+  else { const msg = res.message || 'Failed to move user'; setResult(msg); notify({ kind: 'error', message: msg }) }
   }
 
   return (
+  user?.role !== 'SuperAdmin' ? <div className="p-6">Access denied</div> :
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Move User</h1>

@@ -1,28 +1,46 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Button } from '../../components/ui/Button'
+import { useToast } from '../../components/ui/Toast'
 
 export function AdminLicensesPage() {
+  const { user } = useAuth()
   const [licenses, setLicenses] = useState<any[]>([])
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const perPage = 10
   const [plan, setPlan] = useState('basic')
   const [seats, setSeats] = useState('1')
   const [expires, setExpires] = useState('')
   const [tenantId, setTenantId] = useState('')
+  const { notify } = useToast()
 
   const load = async () => {
-    const res = await adminAPI.licensesList()
-    if (res.success) setLicenses(res.data || [])
+  const res = await adminAPI.licensesList()
+  if (res.success) setLicenses(res.data || [])
+  else notify({ kind: 'error', message: res.message || 'Failed to load licenses' })
   }
   useEffect(() => { load() }, [])
 
   const create = async () => {
     const res = await adminAPI.licensesCreate({ plan, seats: parseInt(seats, 10), expires_at: expires || undefined, tenant_id: tenantId ? parseInt(tenantId, 10) : undefined })
-    if (res.success) { setPlan('basic'); setSeats('1'); setExpires(''); setTenantId(''); load() }
+    if (res.success) { notify({ kind: 'success', message: 'License created' }); setPlan('basic'); setSeats('1'); setExpires(''); setTenantId(''); load() }
+    else notify({ kind: 'error', message: res.message || 'Failed to create license' })
   }
 
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase().trim()
+    if (!q) return licenses
+    return licenses.filter((l: any) => `${l.key} ${l.plan} ${l.tenant_id ?? ''}`.toLowerCase().includes(q))
+  }, [licenses, query])
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
+  const pageItems = filtered.slice((page - 1) * perPage, page * perPage)
+
   return (
+  user?.role !== 'SuperAdmin' ? <div className="p-6">Access denied</div> :
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Licenses</h1>
@@ -55,7 +73,11 @@ export function AdminLicensesPage() {
       </div>
       <div className="card">
         <div className="card-header"><h3 className="font-medium">Existing Licenses</h3></div>
-        <div className="card-body overflow-x-auto">
+        <div className="card-body">
+          <div className="mb-3 flex items-center gap-3">
+            <Input placeholder="Search licenses..." value={query} onChange={(e) => { setPage(1); setQuery(e.target.value) }} />
+          </div>
+          <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="text-left">
@@ -68,7 +90,7 @@ export function AdminLicensesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-              {licenses.map(l => (
+              {pageItems.map(l => (
                 <tr key={l.id}>
                   <td className="py-2 pr-4">{l.key}</td>
                   <td className="py-2 pr-4">{l.plan}</td>
@@ -80,6 +102,14 @@ export function AdminLicensesPage() {
               ))}
             </tbody>
           </table>
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-300">Page {page} of {totalPages} · {filtered.length} total</div>
+            <div className="flex gap-2">
+              <Button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+              <Button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

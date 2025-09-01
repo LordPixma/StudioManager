@@ -22,7 +22,7 @@ export function AdminDashboardPage() {
     return () => { mounted = false }
   }, [])
 
-  if (user?.role !== 'Admin') {
+  if (user?.role !== 'SuperAdmin') {
     return <div className="p-6">Access denied</div>
   }
 

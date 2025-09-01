@@ -1,4 +1,6 @@
 import { useAuth } from '../hooks/useAuth'
+import { useEffect, useState } from 'react'
+import { announcementsAPI } from '../lib/api'
 import { BarChart3, Users, Calendar, DollarSign } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 
@@ -18,9 +20,34 @@ const recentBookings = [
 
 export function DashboardPage() {
   const { user } = useAuth()
+  const [announcements, setAnnouncements] = useState<any[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const res = await announcementsAPI.list({ limit: 5 })
+      if (mounted && res.success) setAnnouncements(res.data || [])
+    })()
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className="space-y-8">
+      {/* Announcements */}
+      {announcements.length > 0 && (
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Announcements</h3></div>
+          <div className="card-body space-y-3">
+            {announcements.map(a => (
+              <div key={a.id} className="p-3 rounded border border-gray-200 dark:border-gray-800">
+                <div className="font-medium">{a.title}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{a.body}</div>
+                <div className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Welcome header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">

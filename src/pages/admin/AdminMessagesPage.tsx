@@ -1,33 +1,43 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Button } from '../../components/ui/Button'
+import { useToast } from '../../components/ui/Toast'
 
 export function AdminMessagesPage() {
+  const { user } = useAuth()
   const [messages, setMessages] = useState<any[]>([])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [tenantId, setTenantId] = useState('')
+  const { notify } = useToast()
 
   const load = async () => {
     const res = await adminAPI.messagesList()
-    if (res.success) setMessages(res.data || [])
+  if (res.success) setMessages(res.data || [])
+  else notify({ kind: 'error', message: res.message || 'Failed to load messages' })
   }
 
   useEffect(() => { load() }, [])
 
   const send = async () => {
-    const payload: any = { title, body }
+    if (!title.trim() || !body.trim()) { notify({ kind: 'error', message: 'Title and body are required' }); return }
+    const payload: any = { title: title.trim(), body: body.trim() }
     if (tenantId) payload.tenant_id = parseInt(tenantId, 10)
     const res = await adminAPI.messagesCreate(payload)
     if (res.success) {
+      notify({ kind: 'success', message: 'Announcement sent' })
       setTitle(''); setBody(''); setTenantId('');
       load()
+    } else {
+      notify({ kind: 'error', message: res.message || 'Failed to send' })
     }
   }
 
   return (
+  user?.role !== 'SuperAdmin' ? <div className="p-6">Access denied</div> :
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Broadcast Messages</h1>

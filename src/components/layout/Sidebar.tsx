@@ -24,7 +24,7 @@ export const adminNavigation = [
   { name: 'Studios', href: '/studios', icon: Building2, role: 'Admin' },
   { name: 'Settings', href: '/settings', icon: Settings },
   // Global admin
-  { name: 'Global Admin', href: '/admin', icon: Settings, role: 'Admin' },
+  { name: 'Global Admin', href: '/admin', icon: Settings, role: 'SuperAdmin' },
 ]
 
 export function Sidebar() {

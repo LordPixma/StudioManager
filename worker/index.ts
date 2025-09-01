@@ -60,11 +60,18 @@ async function ensureAdminTables(env: Env) {
     license_id INTEGER NOT NULL,
     assigned_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_user_id INTEGER NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
 }
 
 function requireGlobalAdmin(user: any): string | null {
   if (!user) return 'Unauthorized'
-  if (user.role !== 'Admin') return 'Admin access required'
+  if (user.role !== 'SuperAdmin') return 'SuperAdmin access required'
   return null
 }
 
@@ -125,7 +132,8 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
         studioId = studio.id
       }
     }
-    await dbRun(env, 'UPDATE users SET tenant_id = ?, studio_id = ? WHERE id = ?', [targetTenantId, studioId, userId])
+  await dbRun(env, 'UPDATE users SET tenant_id = ?, studio_id = ? WHERE id = ?', [targetTenantId, studioId, userId])
+  await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'move_user', JSON.stringify({ user_id: userId, target_tenant_id: targetTenantId, target_studio_id: studioId })])
     const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [userId])
     return json({ success: true, data: serializeUser(updated), message: 'User moved' })
   }
@@ -169,13 +177,15 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     if (body.user_id) {
       const userId = parseInt(body.user_id, 10)
       if (!Number.isFinite(userId)) return json({ success: false, message: 'user_id invalid' }, { status: 400 })
-      await dbRun(env, 'INSERT INTO user_licenses (user_id, license_id) VALUES (?,?)', [userId, licenseId])
+  await dbRun(env, 'INSERT INTO user_licenses (user_id, license_id) VALUES (?,?)', [userId, licenseId])
+  await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'assign_license_user', JSON.stringify({ license_id: licenseId, user_id: userId })])
       return json({ success: true, message: 'License assigned to user' })
     }
     if (body.tenant_id) {
       const tenantId = parseInt(body.tenant_id, 10)
       if (!Number.isFinite(tenantId)) return json({ success: false, message: 'tenant_id invalid' }, { status: 400 })
-      await dbRun(env, 'UPDATE licenses SET tenant_id = ? WHERE id = ?', [tenantId, licenseId])
+  await dbRun(env, 'UPDATE licenses SET tenant_id = ? WHERE id = ?', [tenantId, licenseId])
+  await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'assign_license_tenant', JSON.stringify({ license_id: licenseId, tenant_id: tenantId })])
       return json({ success: true, message: 'License assigned to tenant' })
     }
     return json({ success: false, message: 'Either user_id or tenant_id is required' }, { status: 400 })
@@ -537,7 +547,7 @@ async function handleTenants(request: Request, env: Env, url: URL): Promise<Resp
   // GET /api/tenants
   if (path === '/api/tenants' && method === 'GET') {
     const user = await getUserFromSession(request, env)
-    if (!user || user.role !== 'Admin') return json({ success: false, message: 'Admin access required' }, { status: 403 })
+    if (!user || user.role !== 'SuperAdmin') return json({ success: false, message: 'SuperAdmin access required' }, { status: 403 })
     const rows = await env.DB.prepare('SELECT * FROM tenants').all()
     const data = (rows?.results || []).map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain, plan: t.plan, is_active: !!t.is_active, created_at: t.created_at, settings: t.settings ? JSON.parse(t.settings) : {} }))
     return json({ success: true, data })
@@ -551,11 +561,11 @@ async function handleTenants(request: Request, env: Env, url: URL): Promise<Resp
     const user = await getUserFromSession(request, env)
     if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
     if (method === 'GET') {
-      if (user.role !== 'Admin' && user.tenant_id !== id) return json({ success: false, message: 'Access denied' }, { status: 403 })
+      if (user.role !== 'SuperAdmin' && user.tenant_id !== id) return json({ success: false, message: 'Access denied' }, { status: 403 })
       return json({ success: true, data: { id: tenant.id, name: tenant.name, subdomain: tenant.subdomain, plan: tenant.plan, is_active: !!tenant.is_active, created_at: tenant.created_at, settings: tenant.settings ? JSON.parse(tenant.settings) : {} } })
     } else if (method === 'PUT') {
-      const isGlobalAdmin = user.role === 'Admin'
-      const isTenantAdmin = user.role === 'Studio Manager' && user.tenant_id === id
+      const isGlobalAdmin = user.role === 'SuperAdmin'
+      const isTenantAdmin = (user.role === 'Admin' || user.role === 'Studio Manager') && user.tenant_id === id
       if (!isGlobalAdmin && !isTenantAdmin) return json({ success: false, message: 'Access denied' }, { status: 403 })
       const body = await request.json().catch(() => ({})) as any
       const updates: string[] = []
@@ -592,7 +602,7 @@ async function handleCustomers(request: Request, env: Env, url: URL): Promise<Re
     const offset = (page - 1) * perPage
     let where = 'WHERE 1=1'
     const params: any[] = []
-    if (user.role !== 'Admin' || user.tenant_id) {
+  if (user.role !== 'SuperAdmin' || user.tenant_id) {
       where += ' AND tenant_id = ?'
       params.push(user.tenant_id)
       if (!['Admin', 'Studio Manager'].includes(user.role)) {
@@ -617,7 +627,7 @@ async function handleCustomers(request: Request, env: Env, url: URL): Promise<Re
     const id = parseInt(mGet[1], 10)
     const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [id])
     if (!c) return json({ success: false, message: 'Customer not found' }, { status: 404 })
-    if (!(user.role === 'Admin' && !user.tenant_id)) {
+  if (!(user.role === 'SuperAdmin' && !user.tenant_id)) {
       if (c.tenant_id !== user.tenant_id) return json({ success: false, message: 'Access denied' }, { status: 403 })
       if (!['Admin','Studio Manager'].includes(user.role) && c.studio_id !== user.studio_id) return json({ success: false, message: 'Access denied' }, { status: 403 })
     }
@@ -694,7 +704,7 @@ async function handleRooms(request: Request, env: Env, url: URL): Promise<Respon
     const studioId = qs.get('studio_id')
     let where = ''
     const params: any[] = []
-    if (user.role !== 'Admin' || user.tenant_id) {
+  if (user.role !== 'SuperAdmin' || user.tenant_id) {
       where += ' WHERE tenant_id = ?'
       params.push(user.tenant_id)
       if (!['Admin','Studio Manager'].includes(user.role)) {
@@ -920,6 +930,33 @@ export default {
     // Global admin routes
     if (url.pathname.startsWith('/api/admin')) {
       return handleAdmin(request, env, url)
+    }
+
+    // Tenant-facing announcements
+    if (url.pathname === '/api/announcements' && request.method === 'GET') {
+      async function handleAnnouncements(request: Request, env: Env, url: URL): Promise<Response> {
+        if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+        const user = await getUserFromSession(request, env)
+        if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+        // Ensure table exists (shared with admin)
+        await ensureAdminTables(env)
+        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '10', 10)))
+        let rows: any
+        if (user.tenant_id) {
+          rows = await env.DB
+            .prepare('SELECT * FROM announcements WHERE audience = ? OR (audience = ? AND tenant_id = ?) ORDER BY created_at DESC LIMIT ?')
+            .bind('all', 'tenant', user.tenant_id, limit)
+            .all()
+        } else {
+          // No tenant context (e.g., SuperAdmin browsing app) – show global only
+          rows = await env.DB
+            .prepare('SELECT * FROM announcements WHERE audience = ? ORDER BY created_at DESC LIMIT ?')
+            .bind('all', limit)
+            .all()
+        }
+        return json({ success: true, data: rows?.results || [] })
+      }
+      return handleAnnouncements(request, env, url)
     }
 
     // Cloudflare-native API routes (incremental cutover)
