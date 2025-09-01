@@ -10,6 +10,7 @@ export interface Env {
   DB?: any
   JWT_SECRET?: string
   NODE_ENV?: string
+  ROOM_LOCK: any
 }
 
 type ApiResponse<T = any> = {
@@ -31,6 +32,32 @@ function json<T>(body: ApiResponse<T>, init?: ResponseInit) {
   // Minimal CSP; Pages handles assets, API is same-origin
   headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'")
   return new Response(JSON.stringify(body), { ...init, headers })
+}
+
+// --- Tenant resolution from Host or dev override ---
+async function resolveTenantFromRequest(env: Env, request: Request): Promise<any | null> {
+  if (!env.DB) return null
+  const url = new URL(request.url)
+  const host = request.headers.get('x-forwarded-host') || url.host
+  const overrideId = request.headers.get('x-tenant-id')
+  const overrideSub = request.headers.get('x-tenant-subdomain')
+  // Dev overrides take precedence
+  if (overrideId) {
+    const t = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [parseInt(overrideId, 10)])
+    return t || null
+  }
+  if (overrideSub) {
+    const t = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? LIMIT 1', [overrideSub.toLowerCase()])
+    return t || null
+  }
+  // Skip subdomain parsing for localhost
+  if (/localhost|127\.0\.0\.1/.test(host)) return null
+  const hostname = host.split(':')[0]
+  const parts = hostname.split('.')
+  if (parts.length < 3) return null // likely apex or www only
+  const sub = parts[0].toLowerCase()
+  const t = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? LIMIT 1', [sub])
+  return t || null
 }
 
 async function handleHealth(): Promise<Response> {
@@ -201,7 +228,30 @@ async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
   await stmt.run()
 }
 
-async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> { c
+async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const body = await request.json().catch(() => ({})) as any
+  const email = (body.email || '').toLowerCase().trim()
+  const password = body.password || ''
+  const remember = !!body.remember_me
+  if (!email || !password) return json({ success: false, message: 'Email and password are required' }, { status: 400 })
+  const user = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+  if (!user) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
+  if (!user.is_active) return json({ success: false, message: 'Account is deactivated' }, { status: 401 })
+  const ok = await verifyWerkzeugPBKDF2(password, user.password_hash)
+  if (!ok) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
+  // Enforce subdomain tenancy if present
+  const hostTenant = await resolveTenantFromRequest(env, request)
+  if (hostTenant && user.tenant_id && user.tenant_id !== hostTenant.id) {
+    return json({ success: false, message: 'Tenant mismatch for this domain' }, { status: 401 })
+  }
+  if (user.tenant_id) {
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [user.tenant_id])
+    if (!tenant || !tenant.is_active) return json({ success: false, message: 'Studio account is not active' }, { status: 401 })
+  }
+  const expSecs = remember ? 60 * 60 * 24 * 30 : 60 * 60
+  const now = Math.floor(Date.now() / 1000)
+  const payload = { sub: user.id, tid: user.tenant_id, sid: user.studio_id, role: user.role, iat: now, exp: now + expSecs }
   if (!env.JWT_SECRET) return json({ success: false, message: 'JWT secret not configured' }, { status: 500 })
   const token = await signJWT(payload, env.JWT_SECRET)
   const headers = new Headers()
@@ -507,6 +557,193 @@ async function handleCustomers(request: Request, env: Env, url: URL): Promise<Re
   return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
 }
 
+// --- Rooms API ---
+async function handleRooms(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const path = url.pathname
+  const method = request.method
+  if (path === '/api/rooms' && method === 'GET') {
+    const qs = url.searchParams
+    const studioId = qs.get('studio_id')
+    let where = ''
+    const params: any[] = []
+    if (user.role !== 'Admin' || user.tenant_id) {
+      where += ' WHERE tenant_id = ?'
+      params.push(user.tenant_id)
+      if (!['Admin','Studio Manager'].includes(user.role)) {
+        where += ' AND studio_id = ?'
+        params.push(user.studio_id)
+      } else if (studioId) {
+        where += ' AND studio_id = ?'
+        params.push(parseInt(studioId, 10))
+      }
+    }
+    const rows = await env.DB.prepare(`SELECT * FROM rooms${where}`).bind(...params).all()
+    const data = (rows?.results || []).map((r: any) => ({ id: r.id, tenant_id: r.tenant_id, studio_id: r.studio_id, name: r.name, capacity: r.capacity, hourly_rate: r.hourly_rate, equipment: r.equipment ? JSON.parse(r.equipment) : [], is_active: !!r.is_active }))
+    return json({ success: true, data })
+  }
+  if (path === '/api/rooms' && method === 'POST') {
+    const payload = await request.json().catch(() => ({})) as any
+    const equipment = JSON.stringify(payload.equipment || [])
+    await dbRun(env, 'INSERT INTO rooms (tenant_id, studio_id, name, capacity, hourly_rate, equipment, is_active) VALUES (?,?,?,?,?,?,1)', [user.tenant_id, payload.studio_id || user.studio_id, payload.name, payload.capacity || 0, payload.hourly_rate || null, equipment])
+    const created = await dbFirst(env, 'SELECT * FROM rooms WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [user.tenant_id])
+    return json({ success: true, data: created }, { status: 201 })
+  }
+  const m = path.match(/^\/api\/rooms\/(\d+)$/)
+  if (m && (method === 'PUT' || method === 'DELETE')) {
+    const id = parseInt(m[1], 10)
+    const room = await dbFirst(env, 'SELECT * FROM rooms WHERE id = ? LIMIT 1', [id])
+    if (!room) return json({ success: false, message: 'Room not found' }, { status: 404 })
+    if (room.tenant_id !== user.tenant_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    if (method === 'DELETE') {
+      await dbRun(env, 'DELETE FROM rooms WHERE id = ?', [id])
+      return json({ success: true, message: 'Room deleted' })
+    }
+    const payload = await request.json().catch(() => ({})) as any
+    const updates: string[] = []
+    const params: any[] = []
+    for (const f of ['name','capacity','hourly_rate','is_active'] as const) if (f in payload) { updates.push(`${f} = ?`); params.push(payload[f]) }
+    if ('equipment' in payload) { updates.push('equipment = ?'); params.push(JSON.stringify(payload.equipment || [])) }
+    if (updates.length === 0) return json({ success: true, data: room })
+    params.push(id)
+    await dbRun(env, `UPDATE rooms SET ${updates.join(', ')} WHERE id = ?`, params)
+    const updated = await dbFirst(env, 'SELECT * FROM rooms WHERE id = ? LIMIT 1', [id])
+    return json({ success: true, data: updated })
+  }
+  return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
+}
+
+// --- Durable Object for booking conflict serialization ---
+export class RoomLock {
+  state: any
+  env: Env
+  constructor(state: any, env: Env) {
+    this.state = state
+    this.env = env
+  }
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url)
+    if (url.pathname === '/create' && request.method === 'POST') {
+      const data = await request.json().catch(() => ({})) as any
+      // Overlap check: (start < existing.end) AND (end > existing.start)
+      const conflict = await dbFirst(this.env, 'SELECT COUNT(*) as cnt FROM bookings WHERE room_id = ? AND status = ? AND start_time < ? AND end_time > ?', [data.room_id, 'confirmed', data.end_time, data.start_time])
+      if ((conflict?.cnt || 0) > 0) {
+        return json({ success: false, message: 'Booking conflict' }, { status: 409 })
+      }
+      await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount) VALUES (?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null])
+      const created = await dbFirst(this.env, 'SELECT * FROM bookings WHERE room_id = ? ORDER BY id DESC LIMIT 1', [data.room_id])
+      return json({ success: true, data: created }, { status: 201 })
+    }
+    return json({ success: false, message: 'Not found' }, { status: 404 })
+  }
+}
+
+// --- Bookings API ---
+async function handleBookings(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const method = request.method
+  if (url.pathname === '/api/bookings' && method === 'GET') {
+    const qs = url.searchParams
+    const roomId = qs.get('room_id')
+    const studioId = qs.get('studio_id')
+    const from = qs.get('from')
+    const to = qs.get('to')
+    let where = 'WHERE tenant_id = ?'
+    const params: any[] = [user.tenant_id]
+    if (roomId) { where += ' AND room_id = ?'; params.push(parseInt(roomId, 10)) }
+    if (studioId) { where += ' AND room_id IN (SELECT id FROM rooms WHERE studio_id = ?)'; params.push(parseInt(studioId, 10)) }
+    if (from) { where += ' AND end_time > ?'; params.push(from) }
+    if (to) { where += ' AND start_time < ?'; params.push(to) }
+    const rows = await env.DB.prepare(`SELECT * FROM bookings ${where} ORDER BY start_time ASC`).bind(...params).all()
+    const data = rows?.results || []
+    return json({ success: true, data })
+  }
+  if (url.pathname === '/api/bookings' && method === 'POST') {
+    const payload = await request.json().catch(() => ({})) as any
+    // Serialize through durable object per-room
+    const id = env.ROOM_LOCK.idFromName(String(payload.room_id))
+    const stub = env.ROOM_LOCK.get(id)
+    const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', body: JSON.stringify({ ...payload, tenant_id: user.tenant_id }), headers: { 'Content-Type': 'application/json' } }))
+    return resp
+  }
+  return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
+}
+
+// --- Staff API ---
+async function handleStaff(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const path = url.pathname
+  const method = request.method
+  if (path === '/api/staff' && method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM users WHERE tenant_id = ? ORDER BY created_at DESC').bind(user.tenant_id).all()
+    const data = (rows?.results || []).map(serializeUser)
+    return json({ success: true, data })
+  }
+  if (path === '/api/staff' && method === 'POST') {
+    if (!['Admin','Studio Manager'].includes(user.role)) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    const payload = await request.json().catch(() => ({})) as any
+    const hash = await generateWerkzeugPBKDF2(payload.password || 'password')
+    await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [user.tenant_id, payload.studio_id || user.studio_id, payload.name, payload.email, hash, payload.role || 'Receptionist', JSON.stringify(payload.permissions || [])])
+    const created = await dbFirst(env, 'SELECT * FROM users WHERE tenant_id = ? AND email = ? ORDER BY id DESC LIMIT 1', [user.tenant_id, payload.email])
+    return json({ success: true, data: serializeUser(created) }, { status: 201 })
+  }
+  const m = path.match(/^\/api\/staff\/(\d+)$/)
+  if (m && (method === 'PUT' || method === 'DELETE')) {
+    const id = parseInt(m[1], 10)
+    const target = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [id])
+    if (!target || target.tenant_id !== user.tenant_id) return json({ success: false, message: 'Not found' }, { status: 404 })
+    if (!['Admin','Studio Manager'].includes(user.role)) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    if (method === 'DELETE') {
+      await dbRun(env, 'DELETE FROM users WHERE id = ?', [id])
+      return json({ success: true, message: 'Staff deleted' })
+    }
+    const payload = await request.json().catch(() => ({})) as any
+    const updates: string[] = []
+    const params: any[] = []
+    for (const f of ['name','email','role','studio_id','is_active'] as const) if (f in payload) { updates.push(`${f} = ?`); params.push(payload[f]) }
+    if ('permissions' in payload) { updates.push('permissions = ?'); params.push(JSON.stringify(payload.permissions || [])) }
+    if (updates.length === 0) return json({ success: true, data: serializeUser(target) })
+    params.push(id)
+    await dbRun(env, `UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params)
+    const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [id])
+    return json({ success: true, data: serializeUser(updated) })
+  }
+  return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
+}
+
+// --- Reports CSV ---
+async function handleReports(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return new Response('DB not bound', { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return new Response('Unauthorized', { status: 401 })
+  const headers = new Headers()
+  headers.set('Content-Type', 'text/csv; charset=utf-8')
+  headers.set('Cache-Control', 'no-store')
+  if (url.pathname.endsWith('/bookings.csv')) {
+    headers.set('Content-Disposition', 'attachment; filename="bookings.csv"')
+    const rows = await env.DB.prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY start_time ASC').bind(user.tenant_id).all()
+    const lines = ['id,room_id,customer_id,start_time,end_time,status,total_amount']
+    for (const b of (rows?.results || [])) {
+      lines.push([b.id, b.room_id, b.customer_id, b.start_time, b.end_time, b.status, b.total_amount ?? ''].join(','))
+    }
+    return new Response(lines.join('\n'), { headers })
+  }
+  if (url.pathname.endsWith('/revenue.csv')) {
+    headers.set('Content-Disposition', 'attachment; filename="revenue.csv"')
+    const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE tenant_id = ? AND status = ? GROUP BY day ORDER BY day ASC').bind(user.tenant_id, 'confirmed').all()
+    const lines = ['date,revenue']
+    for (const r of (rows?.results || [])) lines.push([r.day, r.revenue ?? 0].join(','))
+    return new Response(lines.join('\n'), { headers })
+  }
+  return new Response('Not found', { status: 404 })
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
@@ -538,6 +775,18 @@ export default {
     }
     if (url.pathname === '/api/customers' || /^\/api\/customers\//.test(url.pathname)) {
       return handleCustomers(request, env, url)
+    }
+    if (url.pathname === '/api/rooms' || /^\/api\/rooms\//.test(url.pathname)) {
+      return handleRooms(request, env, url)
+    }
+    if (url.pathname === '/api/bookings' || /^\/api\/bookings\//.test(url.pathname)) {
+      return handleBookings(request, env, url)
+    }
+    if (url.pathname === '/api/staff' || /^\/api\/staff\//.test(url.pathname)) {
+      return handleStaff(request, env, url)
+    }
+    if (url.pathname.startsWith('/api/reports/') && (url.pathname.endsWith('.csv'))) {
+      return handleReports(request, env, url)
     }
 
     // For all other /api/*, continue proxying to existing origin for now

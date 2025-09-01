@@ -24,3 +24,7 @@ binding = "DB"
 database_name = "stm-prod-01"
 # Fill in for production deployments
 # database_id = "66d2edae-930c-4af2-ac9d-4b0f42c012dc"
+
+[[durable_objects.bindings]]
+name = "ROOM_LOCK"
+class_name = "RoomLock"
