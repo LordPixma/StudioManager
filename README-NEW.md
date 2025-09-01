@@ -167,3 +167,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, email [support@studiomanager.app](mailto:support@studiomanager.app) or create an issue on GitHub.
+
+## Database & Migrations (Postgres-first)
+
+See Production Readiness: `PRODUCTION_READINESS.md` → “Migration validation status (Postgres-first)”.
+
+- Use Postgres for migrations/staging/production. SQLite can be brittle for complex batch ops.
+- Keep Alembic revision IDs short (VARCHAR(32) limitation in alembic_version).
+- Always set `DATABASE_URL` when running migrations/seeds to avoid accidental SQLite writes.
+
+Quick commands (zsh):
+```
+DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager \
+   FLASK_APP=run.py flask db upgrade
+
+DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager \
+   FLASK_APP=run.py flask seed
+
+export DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager
+export FLASK_APP=run.py
+```
