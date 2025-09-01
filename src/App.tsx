@@ -3,6 +3,7 @@ import { AuthProvider } from './hooks/useAuth'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { ToastProvider } from './components/ui/Toast'
+import { TenantSettingsProvider } from './hooks/useTenantSettings'
 
 // Pages
 import { LoginPage } from './pages/LoginPage'
@@ -14,10 +15,12 @@ import { StaffPage } from './pages/StaffPage'
 import { RoomsPage } from './pages/RoomsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 function App() {
   return (
     <AuthProvider>
+      <TenantSettingsProvider>
       <ToastProvider>
         <Routes>
         {/* Public routes */}
@@ -33,12 +36,14 @@ function App() {
           <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/staff" element={<StaffPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
         
         {/* 404 fallback */}
         <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </ToastProvider>
+      </TenantSettingsProvider>
     </AuthProvider>
   )
 }

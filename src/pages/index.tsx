@@ -9,9 +9,11 @@ import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
 import { Textarea } from '../components/ui/Textarea'
 import { useToast } from '../components/ui/Toast'
+import { useTenantSettings } from '../hooks/useTenantSettings'
 
 export function BookingsPage() {
   const { notify } = useToast()
+  const { settings } = useTenantSettings()
   const [rooms, setRooms] = useState<Room[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -22,7 +24,28 @@ export function BookingsPage() {
   const [filterDateTo, setFilterDateTo] = useState<string>('')
   const [hardDelete, setHardDelete] = useState<boolean>(false)
 
-  const { register, handleSubmit, reset } = useForm<{ room_id: number; customer_id: number; date: string; start: string; end: string; notes?: string }>()
+  const { register, handleSubmit, reset, watch } = useForm<{ room_id: number; customer_id: number; date: string; start: string; end: string; notes?: string }>()
+  const watchRoom = watch('room_id')
+  const watchDate = watch('date')
+  const watchStart = watch('start')
+  const watchEnd = watch('end')
+
+  const suggestedAmount = (() => {
+    try {
+      if (!watchRoom || !watchDate || !watchStart || !watchEnd) return null
+      const room = rooms.find(r => r.id === Number(watchRoom))
+      const start = new Date(`${watchDate}T${watchStart}:00`)
+      const end = new Date(`${watchDate}T${watchEnd}:00`)
+      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return null
+      const hours = (end.getTime() - start.getTime())/36e5
+      const rate = room?.hourly_rate ?? Number(settings?.default_hourly_rate)
+      if (!rate || !Number.isFinite(rate)) return null
+      const amount = Math.round(hours * rate * 100) / 100
+      return amount
+    } catch {
+      return null
+    }
+  })()
 
   useEffect(() => {
     let mounted = true
@@ -98,6 +121,7 @@ export function BookingsPage() {
         start_time: start_time.toISOString(),
         end_time: end_time.toISOString(),
         notes: values.notes,
+        total_amount: suggestedAmount ?? undefined,
         status: 'confirmed',
       })
       if (res.success) {
@@ -172,6 +196,12 @@ export function BookingsPage() {
                 <label className="form-label">Notes (optional)</label>
                 <Textarea placeholder="Optional notes" {...register('notes')} />
               </div>
+              {suggestedAmount != null && (
+                <div className="text-sm text-gray-600 -mt-2">
+                  Suggested amount: <span className="font-medium">${'{'}suggestedAmount.toFixed(2){'}'}</span>
+                  {rooms.find(r=>r.id===Number(watchRoom))?.hourly_rate ? ' (room rate)' : settings?.default_hourly_rate ? ' (default rate)' : ''}
+                </div>
+              )}
               <div className="flex items-center gap-3">
                 <Button type="submit" className="inline-flex items-center gap-2">
                   <Plus className="h-4 w-4" /> Create Booking

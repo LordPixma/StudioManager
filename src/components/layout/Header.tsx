@@ -4,9 +4,11 @@ import { LogOut, User, Settings, ChevronDown, Moon, Sun, Menu } from 'lucide-rea
 import { useAuth } from '../../hooks/useAuth'
 import { Link as RouterLink } from 'react-router-dom'
 import { navigation, adminNavigation } from './Sidebar'
+import { useTenantSettings } from '../../hooks/useTenantSettings'
 
 export function Header() {
   const { user, logout } = useAuth()
+  const { tenant, settings } = useTenantSettings()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   const [isDark, setIsDark] = useState(false)
@@ -27,8 +29,13 @@ export function Header() {
             <button className="mr-3 md:hidden p-2 rounded-lg hover:bg-gray-100" onClick={() => setMobileOpen(true)} aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </button>
-            <Link to="/dashboard" className="text-xl font-bold text-primary-600">
-              Studio Manager
+            <Link to="/dashboard" className="flex items-center gap-2">
+              {settings?.branding_logo_url ? (
+                <img src={settings.branding_logo_url} alt="Logo" className="h-7 w-7 rounded" />
+              ) : (
+                <span className="text-xl font-bold text-primary-600">Studio Manager</span>
+              )}
+              <span className="text-xl font-bold text-primary-600 hidden sm:block">{tenant?.name || 'Studio Manager'}</span>
             </Link>
             {user?.role === 'Admin' && (
               <span className="ml-3 px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">

@@ -76,8 +76,8 @@ export const tenantsAPI = {
     return data
   },
   async get(id: number) {
-    const { data } = await http.get<ApiResponse>(`/tenants/${id}`)
-    return data
+  const { data } = await http.get<ApiResponse>(`/tenants/${id}`)
+  return data
   },
   async update(id: number, payload: Partial<{ name: string; plan: string; is_active: boolean; settings: Record<string, any> }>) {
     const { data } = await http.put<ApiResponse>(`/tenants/${id}`, payload)
