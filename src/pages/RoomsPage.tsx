@@ -51,7 +51,7 @@ export function RoomsPage() {
       const equipment = values.equipment
         ? values.equipment.split(',').map(s => s.trim()).filter(Boolean)
         : []
-      const payload: any = {
+      const payload: Parameters<typeof roomsAPI.create>[0] = {
         name: values.name.trim(),
         capacity: values.capacity ? Number(values.capacity) : undefined,
         hourly_rate: values.hourly_rate ? Number(values.hourly_rate) : undefined,

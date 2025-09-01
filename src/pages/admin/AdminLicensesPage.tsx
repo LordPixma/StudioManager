@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
+import type { License } from '../../types'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Button } from '../../components/ui/Button'
@@ -8,7 +9,7 @@ import { useToast } from '../../components/ui/useToast'
 
 export function AdminLicensesPage() {
   const { user } = useAuth()
-  const [licenses, setLicenses] = useState<any[]>([])
+  const [licenses, setLicenses] = useState<License[]>([])
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
   const perPage = 10
@@ -20,7 +21,7 @@ export function AdminLicensesPage() {
 
   const load = useCallback(async () => {
   const res = await adminAPI.licensesList()
-  if (res.success) setLicenses(res.data || [])
+  if (res.success) setLicenses(Array.isArray(res.data) ? (res.data as License[]) : [])
   else notify({ kind: 'error', message: res.message || 'Failed to load licenses' })
   }, [notify])
   useEffect(() => { load() }, [load])
@@ -34,7 +35,7 @@ export function AdminLicensesPage() {
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()
     if (!q) return licenses
-    return licenses.filter((l: any) => `${l.key} ${l.plan} ${l.tenant_id ?? ''}`.toLowerCase().includes(q))
+    return licenses.filter((l) => `${l.key} ${l.plan} ${l.tenant_id ?? ''}`.toLowerCase().includes(q))
   }, [licenses, query])
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage))
   const pageItems = filtered.slice((page - 1) * perPage, page * perPage)

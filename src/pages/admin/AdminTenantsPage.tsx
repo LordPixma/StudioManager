@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI, tenantsAPI } from '../../lib/api'
+import type { AdminTenantListItem, AdminUser } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useToast } from '../../components/ui/useToast'
@@ -11,7 +12,7 @@ export function AdminTenantsPage() {
   const { user } = useAuth()
   // Early guard: render-only check without conditional hooks
   const isSuperAdmin = user?.role === 'SuperAdmin'
-  const [tenants, setTenants] = useState<any[]>([])
+  const [tenants, setTenants] = useState<AdminTenantListItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
@@ -29,11 +30,11 @@ export function AdminTenantsPage() {
 
   // Manage panel
   const [managingId, setManagingId] = useState<number | null>(null)
-  const [admins, setAdmins] = useState<any[]>([])
+  const [admins, setAdmins] = useState<AdminUser[]>([])
   const [adminsPage, setAdminsPage] = useState(1)
   const [adminsTotal, setAdminsTotal] = useState(0)
   const adminsPerPage = 10
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<AdminUser[]>([])
   const [usersPage, setUsersPage] = useState(1)
   const [usersTotal, setUsersTotal] = useState(0)
   const usersPerPage = 10
@@ -55,8 +56,8 @@ export function AdminTenantsPage() {
     let mounted = true
     ;(async () => {
       try {
-        const res = await adminAPI.tenants()
-        if (mounted && res.success) setTenants(res.data || [])
+  const res = await adminAPI.tenants()
+  if (mounted && res.success) setTenants(Array.isArray(res.data) ? (res.data as AdminTenantListItem[]) : [])
         else if (mounted) setError(res.message || 'Failed to load tenants')
   } catch (e: any) { if (mounted) setError(e?.message || 'Failed to load') }
     })()
@@ -89,7 +90,7 @@ export function AdminTenantsPage() {
 
   const refreshTenants = async () => {
     const res = await adminAPI.tenants()
-    if (res.success) setTenants(res.data || [])
+  if (res.success) setTenants(Array.isArray(res.data) ? (res.data as AdminTenantListItem[]) : [])
   }
 
   const createCompany = async () => {
@@ -101,15 +102,15 @@ export function AdminTenantsPage() {
     else notify({ kind: 'error', message: res.message || 'Failed to create company' })
   }
 
-  const openManage = async (t: any) => {
+  const openManage = async (t: AdminTenantListItem) => {
     setManagingId(t.id)
     setEditName(t.name)
     setEditPlan(t.plan)
     setEditActive(!!t.is_active)
   const res = await adminAPI.tenantAdminsList(t.id, { page: 1, per_page: adminsPerPage })
-    if (res.success) { setAdmins(res.data || []); setAdminsTotal(res.meta?.total_count || (res.data?.length || 0)); setAdminsPage(1) }
+    if (res.success) { const items = Array.isArray(res.data) ? (res.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((res.meta?.total_count as number) || items.length); setAdminsPage(1) }
     const ur = await adminAPI.tenantUsersList(t.id, { page: 1, per_page: usersPerPage })
-    if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)); setUsersPage(1) }
+    if (ur.success) { const items = Array.isArray(ur.data) ? (ur.data as AdminUser[]) : []; setUsers(items); setUsersTotal((ur.meta?.total_count as number) || items.length); setUsersPage(1) }
   }
 
   const saveCompany = async () => {
@@ -119,14 +120,14 @@ export function AdminTenantsPage() {
     else notify({ kind: 'error', message: res.message || 'Failed to update' })
   }
 
-  const toggleTenantActive = async (t: any) => {
+  const toggleTenantActive = async (t: AdminTenantListItem) => {
     const action = t.is_active ? adminAPI.tenantSuspend : adminAPI.tenantEnable
     const res = await action(t.id)
     if (res.success) { notify({ kind: 'success', message: t.is_active ? 'Suspended' : 'Enabled' }); await refreshTenants() }
     else notify({ kind: 'error', message: res.message || 'Failed to update' })
   }
 
-  const deleteTenant = async (t: any) => {
+  const deleteTenant = async (t: AdminTenantListItem) => {
     if (!confirm(`Delete ${t.name}? This cannot be undone.`)) return
     const res = await adminAPI.tenantDelete(t.id)
     if (res.success) { notify({ kind: 'success', message: 'Tenant deleted' }); await refreshTenants() }
@@ -139,7 +140,7 @@ export function AdminTenantsPage() {
     if (res.success) {
       notify({ kind: 'success', message: 'Admin added' }); setNewAdminName(''); setNewAdminEmail(''); setNewAdminPassword('');
   const list = await adminAPI.tenantAdminsList(managingId, { page: 1, per_page: adminsPerPage })
-      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)); setAdminsPage(1) }
+      if (list.success) { const items = Array.isArray(list.data) ? (list.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((list.meta?.total_count as number) || items.length); setAdminsPage(1) }
     }
     else notify({ kind: 'error', message: res.message || 'Failed to add admin' })
   }
@@ -150,7 +151,7 @@ export function AdminTenantsPage() {
     if (res.success) {
       notify({ kind: 'success', message: 'Admin removed' });
   const list = await adminAPI.tenantAdminsList(managingId, { page: adminsPage, per_page: adminsPerPage })
-      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) }
+      if (list.success) { const items = Array.isArray(list.data) ? (list.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((list.meta?.total_count as number) || items.length) }
     }
     else notify({ kind: 'error', message: res.message || 'Failed to remove admin' })
   }
@@ -161,7 +162,7 @@ export function AdminTenantsPage() {
     if (res.success) {
       notify({ kind: 'success', message: 'Role updated' });
   const list = await adminAPI.tenantAdminsList(managingId, { page: adminsPage, per_page: adminsPerPage })
-      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) }
+      if (list.success) { const items = Array.isArray(list.data) ? (list.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((list.meta?.total_count as number) || items.length) }
     }
     else notify({ kind: 'error', message: res.message || 'Failed to update role' })
   }
@@ -172,7 +173,7 @@ export function AdminTenantsPage() {
     if (res.success) {
       notify({ kind: 'success', message: 'User added' }); setNewUserName(''); setNewUserEmail(''); setNewUserPassword(''); setNewUserRole('Receptionist')
       const ur = await adminAPI.tenantUsersList(managingId, { page: 1, per_page: usersPerPage })
-      if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)); setUsersPage(1) }
+      if (ur.success) { const items = Array.isArray(ur.data) ? (ur.data as AdminUser[]) : []; setUsers(items); setUsersTotal((ur.meta?.total_count as number) || items.length); setUsersPage(1) }
     }
     else notify({ kind: 'error', message: res.message || 'Failed to add user' })
   }
@@ -284,8 +285,8 @@ export function AdminTenantsPage() {
               <div className="flex items-center justify-between mt-2">
                 <div className="text-sm text-gray-600 dark:text-gray-300">Page {adminsPage} of {Math.max(1, Math.ceil(adminsTotal / adminsPerPage))} · {adminsTotal} total</div>
                 <div className="flex gap-2">
-                  <Button disabled={adminsPage <= 1} onClick={async () => { const p = adminsPage - 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) } }}>Prev</Button>
-                  <Button disabled={adminsPage >= Math.max(1, Math.ceil(adminsTotal / adminsPerPage))} onClick={async () => { const p = adminsPage + 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) } }}>Next</Button>
+                  <Button disabled={adminsPage <= 1} onClick={async () => { const p = adminsPage - 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { const items = Array.isArray(list.data) ? (list.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((list.meta?.total_count as number) || items.length) } }}>Prev</Button>
+                  <Button disabled={adminsPage >= Math.max(1, Math.ceil(adminsTotal / adminsPerPage))} onClick={async () => { const p = adminsPage + 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { const items = Array.isArray(list.data) ? (list.data as AdminUser[]) : []; setAdmins(items); setAdminsTotal((list.meta?.total_count as number) || items.length) } }}>Next</Button>
                 </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-3 mt-3">
@@ -318,8 +319,8 @@ export function AdminTenantsPage() {
                 <div className="flex items-center justify-between mt-2">
                   <div className="text-sm text-gray-600 dark:text-gray-300">Page {usersPage} of {Math.max(1, Math.ceil(usersTotal / usersPerPage))} · {usersTotal} total</div>
                   <div className="flex gap-2">
-                    <Button disabled={usersPage <= 1} onClick={async () => { const p = usersPage - 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)) } }}>Prev</Button>
-                    <Button disabled={usersPage >= Math.max(1, Math.ceil(usersTotal / usersPerPage))} onClick={async () => { const p = usersPage + 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)) } }}>Next</Button>
+                    <Button disabled={usersPage <= 1} onClick={async () => { const p = usersPage - 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { const items = Array.isArray(ur.data) ? (ur.data as AdminUser[]) : []; setUsers(items); setUsersTotal((ur.meta?.total_count as number) || items.length) } }}>Prev</Button>
+                    <Button disabled={usersPage >= Math.max(1, Math.ceil(usersTotal / usersPerPage))} onClick={async () => { const p = usersPage + 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { const items = Array.isArray(ur.data) ? (ur.data as AdminUser[]) : []; setUsers(items); setUsersTotal((ur.meta?.total_count as number) || items.length) } }}>Next</Button>
                   </div>
                 </div>
               </div>

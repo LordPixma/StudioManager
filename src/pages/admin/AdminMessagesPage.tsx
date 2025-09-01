@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
+import type { Announcement } from '../../types'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Button } from '../../components/ui/Button'
@@ -8,7 +9,7 @@ import { useToast } from '../../components/ui/useToast'
 
 export function AdminMessagesPage() {
   const { user } = useAuth()
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Announcement[]>([])
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [tenantId, setTenantId] = useState('')
@@ -16,7 +17,7 @@ export function AdminMessagesPage() {
 
   const load = useCallback(async () => {
     const res = await adminAPI.messagesList()
-  if (res.success) setMessages(res.data || [])
+  if (res.success) setMessages(Array.isArray(res.data) ? (res.data as Announcement[]) : [])
   else notify({ kind: 'error', message: res.message || 'Failed to load messages' })
   }, [notify])
 
@@ -24,9 +25,9 @@ export function AdminMessagesPage() {
 
   const send = async () => {
     if (!title.trim() || !body.trim()) { notify({ kind: 'error', message: 'Title and body are required' }); return }
-    const payload: any = { title: title.trim(), body: body.trim() }
-    if (tenantId) payload.tenant_id = parseInt(tenantId, 10)
-    const res = await adminAPI.messagesCreate(payload)
+  const payload: { title: string; body: string; tenant_id?: number } = { title: title.trim(), body: body.trim() }
+  if (tenantId) payload.tenant_id = parseInt(tenantId, 10)
+  const res = await adminAPI.messagesCreate(payload)
     if (res.success) {
       notify({ kind: 'success', message: 'Announcement sent' })
       setTitle(''); setBody(''); setTenantId('');

@@ -245,8 +245,8 @@ function AddCustomerModal({ onClose, onCreated }: { onClose: () => void; onCreat
     try {
       await customerAPI.create({ name: form.name.trim(), email: form.email.trim(), phone: form.phone || undefined, notes: form.notes || undefined })
       onCreated()
-    } catch (err: any) {
-      const backendErrors = err?.response?.data?.errors
+    } catch (err) {
+      const backendErrors = (err as { response?: { data?: { errors?: Record<string, string[] | string> } } })?.response?.data?.errors
       if (backendErrors && typeof backendErrors === 'object') {
         const mapped: Record<string, string> = {}
         for (const key of Object.keys(backendErrors)) {

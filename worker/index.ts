@@ -1,3 +1,16 @@
+// Minimal Cloudflare types for TS without external deps
+type D1Result<T = unknown> = { results: T[] } | null
+type D1PreparedStatement = {
+  bind: (...values: unknown[]) => D1PreparedStatement
+  first: <T = unknown>() => Promise<T | null>
+  run: () => Promise<unknown>
+  all: <T = unknown>() => Promise<D1Result<T>>
+}
+interface D1Database { prepare: (query: string) => D1PreparedStatement }
+type DurableObjectId = unknown
+type DurableObjectStub = { fetch: (req: Request) => Promise<Response> }
+type DurableObjectNamespace = { idFromName: (name: string) => DurableObjectId; get: (id: DurableObjectId) => DurableObjectStub }
+
 type AssetFetcher = {
   fetch: (request: Request) => Promise<Response>
 }
@@ -6,18 +19,18 @@ type AssetFetcher = {
 export interface Env {
   ASSETS: AssetFetcher
   // Bind a D1 database as "DB" in wrangler.toml when ready
-  DB?: any
+  DB?: D1Database
   JWT_SECRET?: string
   NODE_ENV?: string
-  ROOM_LOCK: any
+  ROOM_LOCK: DurableObjectNamespace
 }
 
-type ApiResponse<T = any> = {
+type ApiResponse<T = unknown> = {
   success: boolean
   data?: T
   message?: string
   errors?: Record<string, string[]>
-  meta?: any
+  meta?: Record<string, unknown>
 }
 
 function json<T>(body: ApiResponse<T>, init?: ResponseInit) {
@@ -69,7 +82,7 @@ async function ensureAdminTables(env: Env) {
   )`).run()
 }
 
-function requireGlobalAdmin(user: any): string | null {
+function requireGlobalAdmin(user: { role?: string } | null): string | null {
   if (!user) return 'Unauthorized'
   if (user.role !== 'SuperAdmin') return 'SuperAdmin access required'
   return null
@@ -103,8 +116,8 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   // Aliases to tenant management
   if (path === '/api/admin/tenants' && method === 'GET') {
-    const rows = await env.DB.prepare('SELECT * FROM tenants ORDER BY created_at DESC').all()
-    const data = (rows?.results || []).map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain, plan: t.plan, is_active: !!t.is_active, created_at: t.created_at }))
+  const rows = await env.DB.prepare('SELECT * FROM tenants ORDER BY created_at DESC').all()
+  const data = (rows?.results || []).map((t) => ({ id: (t as any).id, name: (t as any).name, subdomain: (t as any).subdomain, plan: (t as any).plan, is_active: !!(t as any).is_active, created_at: (t as any).created_at }))
     return json({ success: true, data })
   }
   if (path === '/api/admin/tenants' && method === 'POST') {
@@ -136,10 +149,10 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   }
   if (mAdmins && method === 'POST') {
     const tenantId = parseInt(mAdmins[1], 10)
-    const body = await request.json().catch(() => ({})) as any
-    const name = (body.name || '').trim()
-    const email = (body.email || '').toLowerCase().trim()
-    const password = body.password || ''
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const name = String(body.name ?? '').trim()
+    const email = String(body.email ?? '').toLowerCase().trim()
+    const password = String(body.password ?? '')
     if (!name || !email || !password) return json({ success: false, message: 'name, email, password required' }, { status: 400 })
     const adminCount = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE tenant_id = ? AND role = ?', [tenantId, 'Admin'])
     if ((adminCount?.cnt || 0) >= 2) return json({ success: false, message: 'Tenant already has 2 Admins' }, { status: 400 })
@@ -167,8 +180,8 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
       return json({ success: true, message: 'Company admin deleted' })
     }
     if (method === 'POST' && mAdminAction[3] === 'role') {
-      const body = await request.json().catch(() => ({})) as any
-      const newRole = String(body.role || '').trim()
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+      const newRole = String(body.role ?? '').trim()
       const allowed = ['Admin','Studio Manager','Receptionist','Staff/Instructor']
       if (!allowed.includes(newRole)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
       const u = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
@@ -195,7 +208,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     const perPage = Math.min(100, Math.max(1, parseInt(qs.get('per_page') || '25', 10)))
     const offset = (page - 1) * perPage
     let where = 'WHERE tenant_id = ?'
-    const params: any[] = [tenantId]
+  const params: unknown[] = [tenantId]
     if (search) { where += ' AND (name LIKE ? OR email LIKE ?)'; params.push(`%${search}%`, `%${search}%`) }
     const total = await dbFirst(env, `SELECT COUNT(*) as cnt FROM users ${where}`, params)
     const rows = await env.DB.prepare(`SELECT * FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...params, perPage, offset).all()
@@ -204,11 +217,11 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   }
   if (mUsersCreate && method === 'POST') {
     const tenantId = parseInt(mUsersCreate[1], 10)
-    const body = await request.json().catch(() => ({})) as any
-    const name = (body.name || '').trim()
-    const email = (body.email || '').toLowerCase().trim()
-    const password = body.password || ''
-    const role = String(body.role || 'Receptionist')
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const name = String(body.name ?? '').trim()
+    const email = String(body.email ?? '').toLowerCase().trim()
+    const password = String(body.password ?? '')
+    const role = String(body.role ?? 'Receptionist')
     const allowedRoles = ['Admin','Studio Manager','Staff/Instructor','Receptionist']
     if (!name || !email || !password) return json({ success: false, message: 'name, email, password required' }, { status: 400 })
     if (!allowedRoles.includes(role)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
@@ -259,10 +272,10 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   // POST /api/admin/users/move
   if (path === '/api/admin/users/move' && method === 'POST') {
-    const body = await request.json().catch(() => ({})) as any
-    const userId = parseInt(body.user_id, 10)
-    const targetTenantId = parseInt(body.target_tenant_id, 10)
-    const targetStudioId = body.target_studio_id ? parseInt(body.target_studio_id, 10) : null
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const userId = parseInt(String(body.user_id), 10)
+    const targetTenantId = parseInt(String(body.target_tenant_id), 10)
+    const targetStudioId = body.target_studio_id != null ? parseInt(String(body.target_studio_id), 10) : null
     if (!Number.isFinite(userId) || !Number.isFinite(targetTenantId)) return json({ success: false, message: 'user_id and target_tenant_id are required' }, { status: 400 })
     const targetTenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [targetTenantId])
     if (!targetTenant) return json({ success: false, message: 'Target tenant not found' }, { status: 404 })
@@ -285,9 +298,9 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   // POST /api/admin/users/role { user_id, role }
   if (path === '/api/admin/users/role' && method === 'POST') {
-    const body = await request.json().catch(() => ({})) as any
-    const targetUserId = parseInt(body.user_id, 10)
-    const newRole = String(body.role || '').trim()
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const targetUserId = parseInt(String(body.user_id), 10)
+    const newRole = String(body.role ?? '').trim()
     if (!Number.isFinite(targetUserId) || !newRole) return json({ success: false, message: 'user_id and role are required' }, { status: 400 })
     const allowedRoles = ['SuperAdmin','Admin','Studio Manager','Staff/Instructor','Receptionist']
     if (!allowedRoles.includes(newRole)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
@@ -313,10 +326,10 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     return json({ success: true, data: rows?.results || [] })
   }
   if (path === '/api/admin/messages' && method === 'POST') {
-    const body = await request.json().catch(() => ({})) as any
-    const title = (body.title || '').trim()
-    const message = (body.body || '').trim()
-    const tenantId = body.tenant_id ? parseInt(body.tenant_id, 10) : null
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const title = String(body.title ?? '').trim()
+    const message = String(body.body ?? '').trim()
+    const tenantId = body.tenant_id != null ? parseInt(String(body.tenant_id), 10) : null
     if (!title || !message) return json({ success: false, message: 'title and body are required' }, { status: 400 })
     await dbRun(env, 'INSERT INTO announcements (title, body, audience, tenant_id) VALUES (?,?,?,?)', [title, message, tenantId ? 'tenant' : 'all', tenantId])
     const created = await dbFirst(env, 'SELECT * FROM announcements ORDER BY id DESC LIMIT 1')
@@ -325,33 +338,33 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   // Licenses
   if (path === '/api/admin/licenses' && method === 'GET') {
-    const rows = await env.DB.prepare('SELECT * FROM licenses ORDER BY created_at DESC').all()
+  const rows = await env.DB.prepare('SELECT * FROM licenses ORDER BY created_at DESC').all()
     return json({ success: true, data: rows?.results || [] })
   }
   if (path === '/api/admin/licenses' && method === 'POST') {
-    const body = await request.json().catch(() => ({})) as any
-    const plan = (body.plan || 'basic').toString()
-    const seats = Number(body.seats || 1)
-    const expires = body.expires_at ? String(body.expires_at) : null
-    const tenantId = body.tenant_id ? parseInt(body.tenant_id, 10) : null
-    const key = (body.key && String(body.key)) || `LIC-${Math.random().toString(36).slice(2,8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const plan = String(body.plan ?? 'basic')
+    const seats = Number(body.seats ?? 1)
+    const expires = body.expires_at != null ? String(body.expires_at) : null
+    const tenantId = body.tenant_id != null ? parseInt(String(body.tenant_id), 10) : null
+    const key = (body.key ? String(body.key) : '') || `LIC-${Math.random().toString(36).slice(2,8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`
     await dbRun(env, 'INSERT INTO licenses (key, plan, seats, expires_at, tenant_id, is_active) VALUES (?,?,?,?,?,1)', [key, plan, seats, expires, tenantId])
     const created = await dbFirst(env, 'SELECT * FROM licenses WHERE key = ? LIMIT 1', [key])
     return json({ success: true, data: created, message: 'License created' }, { status: 201 })
   }
   if (path === '/api/admin/licenses/assign' && method === 'POST') {
-    const body = await request.json().catch(() => ({})) as any
-    const licenseId = parseInt(body.license_id, 10)
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const licenseId = parseInt(String(body.license_id), 10)
     if (!Number.isFinite(licenseId)) return json({ success: false, message: 'license_id required' }, { status: 400 })
-    if (body.user_id) {
-      const userId = parseInt(body.user_id, 10)
+    if (body.user_id != null) {
+      const userId = parseInt(String(body.user_id), 10)
       if (!Number.isFinite(userId)) return json({ success: false, message: 'user_id invalid' }, { status: 400 })
   await dbRun(env, 'INSERT INTO user_licenses (user_id, license_id) VALUES (?,?)', [userId, licenseId])
   await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'assign_license_user', JSON.stringify({ license_id: licenseId, user_id: userId })])
       return json({ success: true, message: 'License assigned to user' })
     }
-    if (body.tenant_id) {
-      const tenantId = parseInt(body.tenant_id, 10)
+    if (body.tenant_id != null) {
+      const tenantId = parseInt(String(body.tenant_id), 10)
       if (!Number.isFinite(tenantId)) return json({ success: false, message: 'tenant_id invalid' }, { status: 400 })
   await dbRun(env, 'UPDATE licenses SET tenant_id = ? WHERE id = ?', [tenantId, licenseId])
   await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'assign_license_tenant', JSON.stringify({ license_id: licenseId, tenant_id: tenantId })])
@@ -363,16 +376,16 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   // Platform-wide CSV reports
   if (path === '/api/admin/reports/bookings.csv' && method === 'GET') {
     const headers = new Headers({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="platform-bookings.csv"' })
-    const rows = await env.DB.prepare('SELECT * FROM bookings ORDER BY start_time ASC').all()
-    const lines = ['id,tenant_id,room_id,customer_id,start_time,end_time,status,total_amount']
-    for (const b of (rows?.results || [])) lines.push([b.id, b.tenant_id, b.room_id, b.customer_id, b.start_time, b.end_time, b.status, b.total_amount ?? ''].join(','))
+  const rows = await env.DB.prepare('SELECT * FROM bookings ORDER BY start_time ASC').all()
+  const lines = ['id,tenant_id,room_id,customer_id,start_time,end_time,status,total_amount']
+  for (const b of ((rows?.results as any[]) || [])) lines.push([b.id, b.tenant_id, b.room_id, b.customer_id, b.start_time, b.end_time, b.status, b.total_amount ?? ''].join(','))
     return new Response(lines.join('\n'), { headers })
   }
   if (path === '/api/admin/reports/revenue.csv' && method === 'GET') {
     const headers = new Headers({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="platform-revenue.csv"' })
-    const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE status = ? GROUP BY day ORDER BY day ASC').bind('confirmed').all()
+  const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE status = ? GROUP BY day ORDER BY day ASC').bind('confirmed').all()
     const lines = ['date,revenue']
-    for (const r of (rows?.results || [])) lines.push([r.day, r.revenue ?? 0].join(','))
+  for (const r of ((rows?.results as any[]) || [])) lines.push([r.day, r.revenue ?? 0].join(','))
     return new Response(lines.join('\n'), { headers })
   }
 
@@ -380,7 +393,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 }
 
 // --- Tenant resolution from Host or dev override ---
-async function resolveTenantFromRequest(env: Env, request: Request): Promise<any | null> {
+async function resolveTenantFromRequest(env: Env, request: Request): Promise<Record<string, unknown> | null> {
   if (!env.DB) return null
   const url = new URL(request.url)
   const host = request.headers.get('x-forwarded-host') || url.host
@@ -565,16 +578,18 @@ async function generateWerkzeugPBKDF2(password: string, iterations = 100000): Pr
 }
 
 // DB helpers
-async function dbFirst(env: Env, sql: string, params: any[] = []): Promise<any | null> {
-  let stmt: any = env.DB.prepare(sql)
+async function dbFirst<T = any>(env: Env, sql: string, params: unknown[] = []): Promise<T | null> {
+  const db = env.DB as D1Database
+  let stmt: D1PreparedStatement = db.prepare(sql)
   if (params.length) {
     stmt = stmt.bind(...params)
   }
-  return (stmt.first ? await stmt.first() : null) as any
+  return (stmt.first ? await stmt.first<T>() : null)
 }
 
-async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
-  let stmt: any = env.DB.prepare(sql)
+async function dbRun(env: Env, sql: string, params: unknown[] = []): Promise<void> {
+  const db = env.DB as D1Database
+  let stmt: D1PreparedStatement = db.prepare(sql)
   if (params.length) {
     stmt = stmt.bind(...params)
   }
@@ -1098,18 +1113,18 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
   headers.set('Cache-Control', 'no-store')
   if (url.pathname.endsWith('/bookings.csv')) {
     headers.set('Content-Disposition', 'attachment; filename="bookings.csv"')
-    const rows = await env.DB.prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY start_time ASC').bind(user.tenant_id).all()
+  const rows = await env.DB.prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY start_time ASC').bind(user.tenant_id).all()
     const lines = ['id,room_id,customer_id,start_time,end_time,status,total_amount']
-    for (const b of (rows?.results || [])) {
+  for (const b of ((rows?.results as any[]) || [])) {
       lines.push([b.id, b.room_id, b.customer_id, b.start_time, b.end_time, b.status, b.total_amount ?? ''].join(','))
     }
     return new Response(lines.join('\n'), { headers })
   }
   if (url.pathname.endsWith('/revenue.csv')) {
     headers.set('Content-Disposition', 'attachment; filename="revenue.csv"')
-    const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE tenant_id = ? AND status = ? GROUP BY day ORDER BY day ASC').bind(user.tenant_id, 'confirmed').all()
+  const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE tenant_id = ? AND status = ? GROUP BY day ORDER BY day ASC').bind(user.tenant_id, 'confirmed').all()
     const lines = ['date,revenue']
-    for (const r of (rows?.results || [])) lines.push([r.day, r.revenue ?? 0].join(','))
+  for (const r of ((rows?.results as any[]) || [])) lines.push([r.day, r.revenue ?? 0].join(','))
     return new Response(lines.join('\n'), { headers })
   }
   return new Response('Not found', { status: 404 })

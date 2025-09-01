@@ -160,3 +160,46 @@ export interface FilterOptions {
   per_page?: number
   [key: string]: unknown
 }
+
+// Announcements and admin types
+export interface Announcement {
+  id: number
+  title: string
+  body: string
+  audience: 'all' | 'tenant'
+  tenant_id?: number | null
+  created_at: string
+}
+
+export interface AdminSummary {
+  tenants: number
+  active_tenants: number
+  users: number
+  bookings: number
+  revenue: number
+}
+
+export interface AdminTenantListItem {
+  id: number
+  name: string
+  subdomain: string
+  plan: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface License {
+  id: number
+  key: string
+  plan: string
+  seats: number
+  tenant_id?: number | null
+  expires_at?: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export type AdminUser = User & {
+  is_active: boolean
+  created_at: string
+}

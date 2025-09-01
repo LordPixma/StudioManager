@@ -1,6 +1,7 @@
 import { useAuth } from '../hooks/useAuthHook'
 import { useEffect, useState } from 'react'
 import { announcementsAPI } from '../lib/api'
+import type { Announcement } from '../types'
 import { BarChart3, Users, Calendar, DollarSign } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 
@@ -20,13 +21,13 @@ const recentBookings = [
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
       const res = await announcementsAPI.list({ limit: 5 })
-      if (mounted && res.success) setAnnouncements(res.data || [])
+      if (mounted && res.success) setAnnouncements(Array.isArray(res.data) ? (res.data as Announcement[]) : [])
     })()
     return () => { mounted = false }
   }, [])

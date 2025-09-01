@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
+import type { AdminSummary } from '../../types'
 import { Button } from '../../components/ui/Button'
 
 export function AdminDashboardPage() {
   const { user } = useAuth()
-  const [summary, setSummary] = useState<any | null>(null)
+  const [summary, setSummary] = useState<AdminSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     ;(async () => {
       try {
-        const res = await adminAPI.summary()
-        if (mounted && res.success) setSummary(res.data)
+  const res = await adminAPI.summary()
+  if (mounted && res.success) setSummary(res.data as AdminSummary)
         else if (mounted && !res.success) setError(res.message || 'Failed to load summary')
       } catch (e: any) {
         if (mounted) setError(e?.message || 'Failed to load')
