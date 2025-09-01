@@ -102,10 +102,16 @@ Serves the frontend from `dist` and proxies `/api/*` to your Flask API.
 
 1. Build frontend: `npm run build`
 2. Configure variables:
-   - `wrangler vars put API_ORIGIN --value https://api.your-domain.com`
-   - `wrangler vars put NODE_ENV --value production`
+   - Deploy-time override: `wrangler deploy --var API_ORIGIN=https://api.your-domain.com --var NODE_ENV=production`
+   - Or keep in `wrangler.toml` under `[vars]`. For local dev, you can use a `.dev.vars` file with `KEY=VALUE` lines.
 3. Deploy: `wrangler deploy`
 4. Visit the Worker URL
+
+If you hit macOS permission errors writing Wrangler logs, fix ownership:
+```
+sudo chown -R "$USER":staff "$HOME/Library/Preferences/.wrangler"
+chmod -R u+rwX "$HOME/Library/Preferences/.wrangler"
+```
 
 #### Backend API
 - Host Flask API (Heroku, Railway, DO, AWS, etc.) and point `API_ORIGIN` at it.

@@ -13,8 +13,25 @@ npm run build
 
 2) Set variables (replace with your API origin, no trailing slash)
 ```
-wrangler vars put API_ORIGIN --value https://api.your-domain.com
-wrangler vars put NODE_ENV --value production
+You can set variables in wrangler.toml under `[vars]`, or override at deploy time:
+
+# Option A: keep values in wrangler.toml [vars]
+
+# Option B: override on deploy
+wrangler deploy --var API_ORIGIN=https://api.your-domain.com --var NODE_ENV=production
+
+# Option C (local dev only): create a .dev.vars file with KEY=VALUE lines
+# .dev.vars
+API_ORIGIN=https://localhost:5000
+NODE_ENV=development
+```
+
+If you see EACCES errors writing Wrangler logs on macOS, fix directory ownership:
+
+```
+sudo chown -R "$USER":staff "$HOME/Library/Preferences/.wrangler"
+chmod -R u+rwX "$HOME/Library/Preferences/.wrangler"
+```
 ```
 
 3) Publish

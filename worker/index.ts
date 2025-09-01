@@ -14,14 +14,18 @@ export default {
     // Proxy API requests to the configured origin
     if (url.pathname.startsWith('/api/')) {
       const target = new URL(url.pathname + url.search, env.API_ORIGIN)
+      // Clone and sanitize headers (do not set forbidden headers like "host")
+      const headers = new Headers(request.headers)
+      headers.delete('host')
+      headers.delete('content-length')
+      headers.delete('accept-encoding')
+
       const init: RequestInit = {
         method: request.method,
-        headers: new Headers(request.headers),
+        headers,
         body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.clone().arrayBuffer(),
         redirect: 'manual',
       }
-      // Ensure host header matches target origin
-      ;(init.headers as Headers).set('host', new URL(env.API_ORIGIN).host)
       const resp = await fetch(target.toString(), init)
 
       // Pass-through response including cookies and headers from origin
