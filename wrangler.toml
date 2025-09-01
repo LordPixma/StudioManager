@@ -9,8 +9,8 @@ command = "npm run build"
 [vars]
 NODE_ENV = "production"
 # API origin the worker will proxy /api/* to (include scheme and host, no trailing slash)
-# Temporary during development: Cloudflare Tunnel to local API
-API_ORIGIN = "https://sci-knights-weapon-fellowship.trycloudflare.com"
+# Permanent API via Cloudflare Named Tunnel
+API_ORIGIN = "https://api.lgger.com"
 
 [assets]
 directory = "dist"
