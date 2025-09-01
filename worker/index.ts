@@ -188,9 +188,11 @@ async function generateWerkzeugPBKDF2(password: string, iterations = 260000): Pr
 
 // DB helpers
 async function dbFirst(env: Env, sql: string, params: any[] = []): Promise<any | null> {
-  const stmt = env.DB.prepare(sql)
-  const bound = params.reduce((acc, p, i) => acc.bind?.(p) || acc, stmt)
-  return (bound.first ? await bound.first() : null) as any
+  let stmt: any = env.DB.prepare(sql)
+  if (params.length) {
+    stmt = stmt.bind(...params)
+  }
+  return (stmt.first ? await stmt.first() : null) as any
 }
 
 async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
