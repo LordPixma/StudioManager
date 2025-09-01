@@ -425,6 +425,29 @@ async function handleReadiness(env: Env): Promise<Response> {
   }
 }
 
+async function handleAnnouncements(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  // Ensure table exists (shared with admin)
+  await ensureAdminTables(env)
+  const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '10', 10)))
+  let rows: any
+  if (user.tenant_id) {
+    rows = await env.DB
+      .prepare('SELECT * FROM announcements WHERE audience = ? OR (audience = ? AND tenant_id = ?) ORDER BY created_at DESC LIMIT ?')
+      .bind('all', 'tenant', user.tenant_id, limit)
+      .all()
+  } else {
+    // No tenant context (e.g., SuperAdmin browsing app) – show global only
+    rows = await env.DB
+      .prepare('SELECT * FROM announcements WHERE audience = ? ORDER BY created_at DESC LIMIT ?')
+      .bind('all', limit)
+      .all()
+  }
+  return json({ success: true, data: rows?.results || [] })
+}
+
 // (Proxy to legacy API removed) Unknown /api routes will return 404.
 
 // --- Auth helpers (JWT in httpOnly cookie) ---
@@ -1095,8 +1118,8 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url)
-    // Bootstrap first SuperAdmin (one-time or with key)
+  const url = new URL(request.url)
+  // Bootstrap first SuperAdmin (one-time or with key)
     if (url.pathname === '/api/bootstrap-superadmin' && request.method === 'POST') {
       if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
       await ensureAdminTables(env)
@@ -1127,28 +1150,6 @@ export default {
 
     // Tenant-facing announcements
     if (url.pathname === '/api/announcements' && request.method === 'GET') {
-      async function handleAnnouncements(request: Request, env: Env, url: URL): Promise<Response> {
-        if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
-        const user = await getUserFromSession(request, env)
-        if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
-        // Ensure table exists (shared with admin)
-        await ensureAdminTables(env)
-        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '10', 10)))
-        let rows: any
-        if (user.tenant_id) {
-          rows = await env.DB
-            .prepare('SELECT * FROM announcements WHERE audience = ? OR (audience = ? AND tenant_id = ?) ORDER BY created_at DESC LIMIT ?')
-            .bind('all', 'tenant', user.tenant_id, limit)
-            .all()
-        } else {
-          // No tenant context (e.g., SuperAdmin browsing app) – show global only
-          rows = await env.DB
-            .prepare('SELECT * FROM announcements WHERE audience = ? ORDER BY created_at DESC LIMIT ?')
-            .bind('all', limit)
-            .all()
-        }
-        return json({ success: true, data: rows?.results || [] })
-      }
       return handleAnnouncements(request, env, url)
     }
 

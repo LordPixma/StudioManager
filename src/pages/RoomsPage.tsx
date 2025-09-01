@@ -4,7 +4,7 @@ import { roomsAPI } from '../lib/api'
 import type { Room } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { Select } from '../components/ui/Select'
+// import { Select } from '../components/ui/Select'
 import { useToast } from '../components/ui/Toast'
 import { Plus, RefreshCw, Trash2, Edit } from 'lucide-react'
 
@@ -37,7 +37,6 @@ export function RoomsPage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onCreate = handleSubmit(async (values) => {
