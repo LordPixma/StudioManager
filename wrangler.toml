@@ -11,8 +11,15 @@ NODE_ENV = "production"
 # API origin the worker will proxy /api/* to (include scheme and host, no trailing slash)
 # Permanent API via Cloudflare Named Tunnel
 API_ORIGIN = "https://api.lgger.com"
+JWT_SECRET = "change-me-in-production"
 
 [assets]
 directory = "dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+
+# Bind a D1 database when ready
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "studio-manager"
+# database_id = "<uuid-from-cloudflare>"

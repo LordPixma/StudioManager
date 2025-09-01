@@ -2,45 +2,341 @@ type AssetFetcher = {
   fetch: (request: Request) => Promise<Response>
 }
 
+// D1Database is available in the Workers runtime types
 export interface Env {
   ASSETS: AssetFetcher
   API_ORIGIN: string
+  // Bind a D1 database as "DB" in wrangler.toml when ready
+  DB?: any
+  JWT_SECRET?: string
+}
+
+type ApiResponse<T = any> = {
+  success: boolean
+  data?: T
+  message?: string
+  errors?: Record<string, string[]>
+  meta?: any
+}
+
+function json<T>(body: ApiResponse<T>, init?: ResponseInit) {
+  const headers = new Headers(init?.headers)
+  headers.set('Content-Type', 'application/json; charset=utf-8')
+  // Security headers (aligned with Flask app)
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Referrer-Policy', 'no-referrer')
+  headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+  // Minimal CSP; Pages handles assets, API is same-origin
+  headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'")
+  return new Response(JSON.stringify(body), { ...init, headers })
+}
+
+async function handleHealth(): Promise<Response> {
+  return json({ success: true, data: { status: 'healthy' } })
+}
+
+async function handleReadiness(env: Env): Promise<Response> {
+  if (!env.DB) {
+    return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  }
+  try {
+    // Simple readiness query compatible with D1
+  const row: any = await env.DB.prepare('SELECT 1 as ok').first()
+    if (row && row.ok === 1) {
+      return json({ success: true, data: { db: 'ok' } })
+    }
+    return json({ success: false, message: 'DB check failed' }, { status: 503 })
+  } catch (e: any) {
+    return json({ success: false, message: `DB not ready: ${e?.message || String(e)}` }, { status: 503 })
+  }
+}
+
+async function proxyApi(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const target = new URL(url.pathname + url.search, env.API_ORIGIN)
+  const headers = new Headers(request.headers)
+  headers.delete('host')
+  headers.delete('content-length')
+  headers.delete('accept-encoding')
+  const init: RequestInit = {
+    method: request.method,
+    headers,
+    body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.clone().arrayBuffer(),
+    redirect: 'manual',
+  }
+  const resp = await fetch(target.toString(), init)
+  return new Response(resp.body, {
+    status: resp.status,
+    statusText: resp.statusText,
+    headers: resp.headers,
+  })
+}
+
+// --- Auth helpers (JWT in httpOnly cookie) ---
+const SESSION_COOKIE = 'sm_session'
+
+function base64UrlEncode(input: ArrayBuffer | Uint8Array): string {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+  const b64 = btoa(bin)
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function base64UrlDecodeToUint8Array(input: string): Uint8Array {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((input.length + 3) % 4)
+  const bin = atob(b64)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+async function signJWT(payload: Record<string, any>, secret: string): Promise<string> {
+  const header = { alg: 'HS256', typ: 'JWT' }
+  const enc = new TextEncoder()
+  const headerB64 = base64UrlEncode(enc.encode(JSON.stringify(header)))
+  const payloadB64 = base64UrlEncode(enc.encode(JSON.stringify(payload)))
+  const data = `${headerB64}.${payloadB64}`
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data))
+  const sigB64 = base64UrlEncode(sig)
+  return `${data}.${sigB64}`
+}
+
+async function verifyJWT(token: string, secret: string): Promise<Record<string, any> | null> {
+  try {
+    const [h, p, s] = token.split('.')
+    if (!h || !p || !s) return null
+    const data = `${h}.${p}`
+    const enc = new TextEncoder()
+    const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
+    const sigBytes = base64UrlDecodeToUint8Array(s)
+  const ok = await crypto.subtle.verify('HMAC', key, sigBytes.buffer as ArrayBuffer, enc.encode(data).buffer as ArrayBuffer)
+    if (!ok) return null
+    const payload = JSON.parse(new TextDecoder().decode(base64UrlDecodeToUint8Array(p)))
+    if (payload.exp && Date.now() / 1000 > payload.exp) return null
+    return payload
+  } catch {
+    return null
+  }
+}
+
+function sessionCookie(token: string, url: URL, maxAgeSeconds: number): string {
+  const secure = url.protocol === 'https:'
+  const parts = [
+    `${SESSION_COOKIE}=${token}`,
+    `Path=/`,
+    `HttpOnly`,
+    `SameSite=Lax`,
+  ]
+  if (secure) parts.push('Secure')
+  if (maxAgeSeconds > 0) parts.push(`Max-Age=${maxAgeSeconds}`)
+  return parts.join('; ')
+}
+
+function clearSessionCookie(url: URL): string {
+  const secure = url.protocol === 'https:'
+  const parts = [
+    `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+  ]
+  if (secure) parts.push('Secure')
+  return parts.join('; ')
+}
+
+function isoPlusMinutes(mins: number): string {
+  return new Date(Date.now() + mins * 60_000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
+// Werkzeug-compatible PBKDF2: pbkdf2:sha256[:iter]\$salt\$hash(base64)
+async function verifyWerkzeugPBKDF2(password: string, hashStr: string): Promise<boolean> {
+  try {
+    const parts = hashStr.split('$')
+    if (parts.length !== 3) return false
+    const [methodPart, salt, stored] = parts
+    const methodBits = methodPart.split(':')
+    if (methodBits[0] !== 'pbkdf2' || methodBits[1] !== 'sha256') return false
+    const iterations = parseInt(methodBits[2] || '260000', 10)
+    const enc = new TextEncoder()
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new TextEncoder().encode(salt), iterations }, keyMaterial, 256)
+    const derivedB64 = base64UrlEncode(bits).replace(/-/g, '+').replace(/_/g, '/') // convert to standard b64
+    // stored is standard base64 (no url-safe); strip any padding before compare
+    const s1 = (stored || '').replace(/=+$/, '')
+    const s2 = derivedB64.replace(/=+$/, '')
+    return s1 === s2
+  } catch {
+    return false
+  }
+}
+
+async function generateWerkzeugPBKDF2(password: string, iterations = 260000): Promise<string> {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let salt = ''
+  for (let i = 0; i < 16; i++) salt += alphabet[Math.floor(Math.random() * alphabet.length)]
+  const enc = new TextEncoder()
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(salt), iterations }, keyMaterial, 256)
+  // Standard base64 for storage
+  const bytes = new Uint8Array(bits)
+  let bin = ''
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
+  const b64 = btoa(bin)
+  return `pbkdf2:sha256:${iterations}$${salt}$${b64}`
+}
+
+// DB helpers
+async function dbFirst(env: Env, sql: string, params: any[] = []): Promise<any | null> {
+  const stmt = env.DB.prepare(sql)
+  const bound = params.reduce((acc, p, i) => acc.bind?.(p) || acc, stmt)
+  return (bound.first ? await bound.first() : null) as any
+}
+
+async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
+  let stmt: any = env.DB.prepare(sql)
+  for (const p of params) stmt = stmt.bind(p)
+  await stmt.run()
+}
+
+async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const body = await request.json().catch(() => ({})) as any
+  const email = (body.email || '').toLowerCase().trim()
+  const password = body.password || ''
+  const remember = !!body.remember_me
+  if (!email || !password) return json({ success: false, message: 'Email and password are required' }, { status: 400 })
+  const user = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+  if (!user) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
+  if (!user.is_active) return json({ success: false, message: 'Account is deactivated' }, { status: 401 })
+  const ok = await verifyWerkzeugPBKDF2(password, user.password_hash)
+  if (!ok) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
+  if (user.tenant_id) {
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [user.tenant_id])
+    if (!tenant || !tenant.is_active) return json({ success: false, message: 'Studio account is not active' }, { status: 401 })
+  }
+  const expSecs = remember ? 60 * 60 * 24 * 30 : 60 * 60
+  const now = Math.floor(Date.now() / 1000)
+  const payload = { sub: user.id, tid: user.tenant_id, sid: user.studio_id, role: user.role, iat: now, exp: now + expSecs }
+  if (!env.JWT_SECRET) return json({ success: false, message: 'JWT secret not configured' }, { status: 500 })
+  const token = await signJWT(payload, env.JWT_SECRET)
+  const headers = new Headers()
+  headers.append('Set-Cookie', sessionCookie(token, url, expSecs))
+  return json({ success: true, data: { user: serializeUser(user), session_timeout: isoPlusMinutes(60) }, message: 'Login successful' }, { headers })
+}
+
+function serializeUser(u: any) {
+  const permissions = (() => { try { return JSON.parse(u.permissions || '[]') } catch { return [] } })()
+  return { id: u.id, tenant_id: u.tenant_id, name: u.name, email: u.email, role: u.role, permissions, studio_id: u.studio_id, is_active: !!u.is_active, created_at: u.created_at }
+}
+
+async function getUserFromSession(request: Request, env: Env): Promise<any | null> {
+  const url = new URL(request.url)
+  const cookie = request.headers.get('Cookie') || ''
+  const m = cookie.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))
+  if (!m) return null
+  const token = m[1]
+  if (!env.JWT_SECRET) return null
+  const payload = await verifyJWT(token, env.JWT_SECRET)
+  if (!payload) return null
+  const user = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [payload.sub])
+  return user || null
+}
+
+async function handleSession(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  return json({ success: true, data: { user: serializeUser(user), session_timeout: isoPlusMinutes(60) } })
+}
+
+async function handleLogout(request: Request): Promise<Response> {
+  const url = new URL(request.url)
+  const headers = new Headers()
+  headers.append('Set-Cookie', clearSessionCookie(url))
+  return json({ success: true, message: 'Logged out' }, { headers })
+}
+
+async function handleRegister(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const data = await request.json().catch(() => ({})) as any
+  const name = (data.name || '').trim()
+  const email = (data.email || '').toLowerCase().trim()
+  const password = data.password || ''
+  let tenant_name = (data.tenant_name || '').trim()
+  const tenant_id = data.tenant_id
+  const errors: Record<string, string[]> = {}
+  const addErr = (k: string, v: string) => { (errors[k] ||= []).push(v) }
+  if (!name) addErr('name', 'Name is required')
+  if (!email) addErr('email', 'Email is required')
+  else if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) addErr('email', 'Invalid email format')
+  if (!password) addErr('password', 'Password is required')
+  else if (password.length < 8) addErr('password', 'Password must be at least 8 characters')
+  const existing = await dbFirst(env, 'SELECT id FROM users WHERE email = ? LIMIT 1', [email])
+  if (existing) addErr('email', 'Email already registered')
+  if (!tenant_name && !tenant_id) tenant_name = name ? `${name}'s Studio` : ''
+  if (!tenant_name && !tenant_id) addErr('tenant_name', 'Studio/Company name is required for new registration')
+  if (Object.keys(errors).length) return json({ success: false, errors }, { status: 400 })
+
+  try {
+    if (tenant_name && !tenant_id) {
+      const subdomain = (tenant_name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 20) || 'studio')
+      await dbRun(env, 'INSERT INTO tenants (name, subdomain, plan, is_active) VALUES (?,?,?,1)', [tenant_name, subdomain, 'free'])
+      const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? ORDER BY id DESC LIMIT 1', [subdomain])
+      await dbRun(env, 'INSERT INTO studios (tenant_id, name) VALUES (?, ?)', [tenant.id, `${tenant_name} - Main Studio`])
+      const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [tenant.id])
+      const hash = await generateWerkzeugPBKDF2(password)
+      await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, name, email, hash, 'Studio Manager', JSON.stringify(['view_customers','create_customer','edit_customer','delete_customer','view_bookings','create_booking','edit_booking','cancel_booking','view_staff','create_staff','edit_staff','view_reports','manage_studio'])])
+      const user = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+      const payload = { user: serializeUser(user), session_timeout: isoPlusMinutes(60) }
+      return json({ success: true, data: payload, message: 'Registration successful' }, { status: 201 })
+    } else {
+      if (!tenant_id) return json({ success: false, message: 'Tenant ID required' }, { status: 400 })
+      const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [tenant_id])
+      if (!tenant || !tenant.is_active) return json({ success: false, message: 'Invalid tenant' }, { status: 400 })
+      const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [tenant_id])
+      const hash = await generateWerkzeugPBKDF2(password)
+      await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant_id, studio?.id ?? null, name, email, hash, 'Receptionist', JSON.stringify(['create_booking','edit_customer'])])
+      const user = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+      const payload = { user: serializeUser(user), session_timeout: isoPlusMinutes(60) }
+      return json({ success: true, data: payload, message: 'Registration successful' }, { status: 201 })
+    }
+  } catch (e: any) {
+    return json({ success: false, message: `Registration failed: ${e?.message || String(e)}` }, { status: 500 })
+  }
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
-    // Proxy API requests to the configured origin
+    // Cloudflare-native API routes (incremental cutover)
+    if (url.pathname === '/api/health') {
+      return handleHealth()
+    }
+    if (url.pathname === '/api/readiness') {
+      return handleReadiness(env)
+    }
+    if (url.pathname === '/api/login' && request.method === 'POST') {
+      return handleLogin(request, env, url)
+    }
+    if (url.pathname === '/api/logout' && request.method === 'POST') {
+      return handleLogout(request)
+    }
+    if (url.pathname === '/api/session' && request.method === 'GET') {
+      return handleSession(request, env)
+    }
+    if (url.pathname === '/api/register' && request.method === 'POST') {
+      return handleRegister(request, env)
+    }
+
+    // For all other /api/*, continue proxying to existing origin for now
     if (url.pathname.startsWith('/api/')) {
-      const target = new URL(url.pathname + url.search, env.API_ORIGIN)
-      // Clone and sanitize headers (do not set forbidden headers like "host")
-      const headers = new Headers(request.headers)
-      headers.delete('host')
-      headers.delete('content-length')
-      headers.delete('accept-encoding')
-
-      const init: RequestInit = {
-        method: request.method,
-        headers,
-        body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.clone().arrayBuffer(),
-        redirect: 'manual',
-      }
-      const resp = await fetch(target.toString(), init)
-
-      // Pass-through response including cookies and headers from origin
-      const out = new Response(resp.body, {
-        status: resp.status,
-        statusText: resp.statusText,
-        headers: resp.headers,
-      })
-      return out
+      return proxyApi(request, env)
     }
 
     // Serve static assets (SPA fallback)
     const assetResp = await env.ASSETS.fetch(request)
     if (assetResp.status === 404 && request.method === 'GET') {
-      // Fallback to index.html for SPA routes
       const indexUrl = new URL('/index.html', url.origin)
       return env.ASSETS.fetch(new Request(indexUrl.toString(), request))
     }
