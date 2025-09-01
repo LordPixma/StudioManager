@@ -618,7 +618,6 @@ function serializeUser(u: any) {
 }
 
 async function getUserFromSession(request: Request, env: Env): Promise<any | null> {
-  const url = new URL(request.url)
   const cookie = request.headers.get('Cookie') || ''
   const m = cookie.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))
   if (!m) return null
@@ -951,7 +950,7 @@ export class RoomLock {
     this.env = env
   }
   async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url)
+  const url = new URL(request.url)
     if (url.pathname === '/create' && request.method === 'POST') {
       const data = await request.json().catch(() => ({})) as any
       // Overlap check: (start < existing.end) AND (end > existing.start)

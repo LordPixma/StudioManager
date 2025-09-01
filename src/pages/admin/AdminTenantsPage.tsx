@@ -9,6 +9,8 @@ import { Modal } from '../../components/ui/Modal'
 
 export function AdminTenantsPage() {
   const { user } = useAuth()
+  // Early guard: render-only check without conditional hooks
+  const isSuperAdmin = user?.role === 'SuperAdmin'
   const [tenants, setTenants] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -71,8 +73,6 @@ export function AdminTenantsPage() {
     }
   }
   useEffect(() => { loadLiveCounts() }, [])
-
-  if (user?.role !== 'SuperAdmin') return <div className="p-6">Access denied</div>
 
   useEffect(() => {
     if (error) notify({ kind: 'error', message: error })
@@ -183,6 +183,10 @@ export function AdminTenantsPage() {
     const res = await adminAPI.messagesCreate({ title: notifyTitle.trim(), body: notifyBody.trim(), tenant_id: managingId })
     if (res.success) { notify({ kind: 'success', message: 'Notification sent' }); setNotifyTitle(''); setNotifyBody('') }
     else notify({ kind: 'error', message: res.message || 'Failed to send' })
+  }
+
+  if (!isSuperAdmin) {
+    return <div className="p-6">Access denied</div>
   }
 
   return (

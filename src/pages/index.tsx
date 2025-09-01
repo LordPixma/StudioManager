@@ -572,7 +572,7 @@ export function ReportsPage() {
       const blob = kind === 'bookings' ? await reportsAPI.downloadBookingsCsv() : await reportsAPI.downloadRevenueCsv()
       downloadBlobAsFile(blob, `${kind}.csv`)
       notify({ kind: 'success', message: `${kind === 'bookings' ? 'Bookings' : 'Revenue'} report downloaded` })
-    } catch (e) {
+  } catch {
       notify({ kind: 'error', message: 'Failed to download report' })
     } finally {
       setDownloading(null)
