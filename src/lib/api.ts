@@ -113,7 +113,7 @@ export const bookingsAPI = {
     const { data } = await http.post<ApiResponse>(`/bookings`, payload)
     return data
   },
-  async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string }>) {
+  async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string; total_amount: number }>) {
     const { data } = await http.put<ApiResponse>(`/bookings/${id}`, payload)
     return data
   },

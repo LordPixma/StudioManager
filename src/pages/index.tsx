@@ -20,6 +20,7 @@ export function BookingsPage() {
   const [filterRoomId, setFilterRoomId] = useState<number | ''>('')
   const [filterDateFrom, setFilterDateFrom] = useState<string>('')
   const [filterDateTo, setFilterDateTo] = useState<string>('')
+  const [hardDelete, setHardDelete] = useState<boolean>(false)
 
   const { register, handleSubmit, reset } = useForm<{ room_id: number; customer_id: number; date: string; start: string; end: string; notes?: string }>()
 
@@ -183,8 +184,12 @@ export function BookingsPage() {
         </div>
 
   <div className="card">
-          <div className="card-header">
+          <div className="card-header flex items-center justify-between">
             <h3 className="text-lg font-medium">Upcoming Bookings</h3>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" className="rounded" checked={hardDelete} onChange={(e) => setHardDelete(e.target.checked)} />
+              Hard delete
+            </label>
           </div>
           <div className="card-body space-y-4">
             <div className="grid md:grid-cols-4 gap-3">
@@ -213,7 +218,7 @@ export function BookingsPage() {
               <div className="text-center text-gray-500 py-8">No bookings yet</div>
             ) : (
               <ul className="divide-y divide-gray-200">
-                {bookings.map((b) => {
+        {bookings.map((b) => {
                   const room = rooms.find((r) => r.id === b.room_id)
                   const customer = customers.find((c) => c.id === b.customer_id)
                   const start = new Date(b.start_time)
@@ -226,7 +231,8 @@ export function BookingsPage() {
                       customerName={customer?.name}
                       durationHrs={durationHrs}
                       onUpdated={async () => { await reloadBookings(); notify({ kind: 'success', message: 'Booking updated' }) }}
-                      onDeleted={async () => { await reloadBookings(); notify({ kind: 'success', message: 'Booking cancelled' }) }}
+          onDeleted={async () => { await reloadBookings(); }}
+          hardDelete={hardDelete}
                     />
                   )
                 })}
@@ -243,19 +249,40 @@ export function BookingsPage() {
           <span className="text-sm text-gray-500">Month grid preview</span>
         </div>
         <div className="card-body">
-          <BasicMonthCalendar bookings={bookings} />
+          <BasicMonthCalendar bookings={bookings} onMove={async (bk, isoDate) => {
+            try {
+              const origStart = new Date(bk.start_time)
+              const origEnd = new Date(bk.end_time)
+              const duration = origEnd.getTime() - origStart.getTime()
+              const target = new Date(`${isoDate}T00:00:00`)
+              const newStart = new Date(target)
+              newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0)
+              const newEnd = new Date(newStart.getTime() + duration)
+              const res = await bookingsAPI.update(bk.id, { start_time: newStart.toISOString(), end_time: newEnd.toISOString() })
+              if (res.success) {
+                await reloadBookings()
+                notify({ kind: 'success', message: 'Booking moved' })
+              } else {
+                notify({ kind: 'error', message: res.message || 'Move failed' })
+              }
+            } catch (e: any) {
+              const status = e?.response?.status
+              notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : (e?.message || 'Move failed') })
+            }
+          }} />
         </div>
       </div>
     </div>
   )
 }
 
-function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void }) {
+function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted, hardDelete }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void; hardDelete: boolean }) {
   const { notify } = useToast()
   const [editing, setEditing] = useState(false)
   const [start, setStart] = useState(() => booking.start_time.slice(0,16))
   const [end, setEnd] = useState(() => booking.end_time.slice(0,16))
   const [notes, setNotes] = useState(booking.notes || '')
+  const [amount, setAmount] = useState<string>(booking.total_amount != null ? String(booking.total_amount) : '')
   const statusColor = booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
 
   const save = async () => {
@@ -263,6 +290,14 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
       const payload: any = { notes }
       if (start) payload.start_time = new Date(start).toISOString()
       if (end) payload.end_time = new Date(end).toISOString()
+      if (amount !== '') {
+        const parsed = Number(amount)
+        if (!Number.isFinite(parsed) || parsed < 0) {
+          notify({ kind: 'error', message: 'Invalid amount' })
+          return
+        }
+        payload.total_amount = parsed
+      }
       const res = await bookingsAPI.update(booking.id, payload)
       if (res.success) { setEditing(false); onUpdated() }
       else notify({ kind: 'error', message: res.message || 'Update failed' })
@@ -272,13 +307,19 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
     }
   }
 
-  const cancel = async () => {
+  const cancelOrDelete = async () => {
     try {
-      const res = await bookingsAPI.update(booking.id, { status: 'cancelled' })
-      if (res.success) onDeleted()
-      else notify({ kind: 'error', message: res.message || 'Cancel failed' })
+      if (hardDelete) {
+        const res = await bookingsAPI.remove(booking.id)
+        if (res.success) onDeleted()
+        else notify({ kind: 'error', message: res.message || 'Delete failed' })
+      } else {
+        const res = await bookingsAPI.update(booking.id, { status: 'cancelled' })
+        if (res.success) onDeleted()
+        else notify({ kind: 'error', message: res.message || 'Cancel failed' })
+      }
     } catch (e: any) {
-      notify({ kind: 'error', message: e?.message || 'Cancel failed' })
+      notify({ kind: 'error', message: e?.message || (hardDelete ? 'Delete failed' : 'Cancel failed') })
     }
   }
 
@@ -292,9 +333,10 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
             {new Date(booking.start_time).toLocaleString()} – {new Date(booking.end_time).toLocaleTimeString()} · {durationHrs.toFixed(1)}h{price != null ? ` · $${price}` : ''}
           </div>
           {editing ? (
-            <div className="mt-2 grid md:grid-cols-3 gap-2">
+            <div className="mt-2 grid md:grid-cols-4 gap-2">
               <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
               <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <Input type="number" step="0.01" placeholder="Amount ($)" value={amount} onChange={(e) => setAmount(e.target.value)} />
               <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
           ) : booking.notes ? (
@@ -311,7 +353,7 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
           ) : (
             <>
               {booking.status !== 'cancelled' && <Button variant="secondary" onClick={() => setEditing(true)} className="p-2"><Edit className="h-4 w-4"/></Button>}
-              {booking.status !== 'cancelled' && <Button variant="secondary" onClick={cancel} className="p-2"><Trash2 className="h-4 w-4"/></Button>}
+              {booking.status !== 'cancelled' && <Button variant="secondary" onClick={cancelOrDelete} className="p-2"><Trash2 className="h-4 w-4"/></Button>}
             </>
           )}
         </div>
@@ -320,7 +362,7 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
   )
 }
 
-function BasicMonthCalendar({ bookings }: { bookings: Booking[] }) {
+function BasicMonthCalendar({ bookings, onMove }: { bookings: Booking[]; onMove: (booking: Booking, isoDate: string) => void | Promise<void> }) {
   const today = new Date()
   const year = today.getFullYear()
   const month = today.getMonth()
@@ -342,13 +384,33 @@ function BasicMonthCalendar({ bookings }: { bookings: Booking[] }) {
         <div key={d} className="text-xs font-medium text-gray-500 text-center">{d}</div>
       ))}
       {cells.map((c, idx) => (
-        <div key={idx} className="min-h-[96px] border rounded-lg p-2 bg-white">
+        <div
+          key={idx}
+          className="min-h-[96px] border rounded-lg p-2 bg-white"
+          onDragOver={(e) => { if (c) { e.preventDefault() } }}
+          onDrop={(e) => {
+            if (!c) return
+            e.preventDefault()
+            const data = e.dataTransfer.getData('application/x-booking-id') || e.dataTransfer.getData('text/plain')
+            const id = Number(data)
+            if (!Number.isFinite(id)) return
+            const bk = bookings.find(b => b.id === id)
+            if (!bk) return
+            const isoDay = c.date.toISOString().slice(0, 10)
+            onMove(bk, isoDay)
+          }}
+        >
           {c && (
             <>
               <div className="text-xs font-medium text-gray-700">{c.date.getDate()}</div>
               <div className="mt-1 space-y-1">
                 {c.bookings.slice(0, 3).map((b) => (
-                  <div key={b.id} className="text-[11px] px-2 py-1 rounded bg-primary-50 text-primary-700 truncate">
+                  <div
+                    key={b.id}
+                    draggable
+                    onDragStart={(e) => { e.dataTransfer.setData('application/x-booking-id', String(b.id)) }}
+                    className="text-[11px] px-2 py-1 rounded bg-primary-50 text-primary-700 truncate cursor-move"
+                  >
                     {new Date(b.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · R{b.room_id}
                   </div>
                 ))}

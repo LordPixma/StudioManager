@@ -641,10 +641,11 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const newStart = payload.start_time ? String(payload.start_time) : null
     const newEnd = payload.end_time ? String(payload.end_time) : null
     const newStatus = payload.status ? String(payload.status) : null
-    if (newStart) { updates.push('start_time = ?'); params.push(newStart) }
-    if (newEnd) { updates.push('end_time = ?'); params.push(newEnd) }
+  if (newStart) { updates.push('start_time = ?'); params.push(newStart) }
+  if (newEnd) { updates.push('end_time = ?'); params.push(newEnd) }
     if (typeof payload.notes !== 'undefined') { updates.push('notes = ?'); params.push(payload.notes || null) }
     if (newStatus) { updates.push('status = ?'); params.push(newStatus) }
+  if (typeof payload.total_amount !== 'undefined') { updates.push('total_amount = ?'); params.push(payload.total_amount ?? null) }
     if (updates.length === 0) {
       return json({ success: true, data: existing, message: 'No changes' })
     }
