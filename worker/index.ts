@@ -198,19 +198,21 @@ async function verifyWerkzeugPBKDF2(password: string, hashStr: string): Promise<
   }
 }
 
-async function generateWerkzeugPBKDF2(password: string, iterations = 260000): Promise<string> {
+// Cloudflare Workers WebCrypto limits PBKDF2 iterations to 100000; cap generation accordingly.
+async function generateWerkzeugPBKDF2(password: string, iterations = 100000): Promise<string> {
+  const iters = Math.min(iterations, 100000)
   const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   let salt = ''
   for (let i = 0; i < 16; i++) salt += alphabet[Math.floor(Math.random() * alphabet.length)]
   const enc = new TextEncoder()
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(salt), iterations }, keyMaterial, 256)
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(salt), iterations: iters }, keyMaterial, 256)
   // Standard base64 for storage
   const bytes = new Uint8Array(bits)
   let bin = ''
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
   const b64 = btoa(bin)
-  return `pbkdf2:sha256:${iterations}$${salt}$${b64}`
+  return `pbkdf2:sha256:${iters}$${salt}$${b64}`
 }
 
 // DB helpers
