@@ -137,10 +137,10 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
-# Dependencies
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Dependencies (track lock files for reproducible builds and CI)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
 
 # Logs
 logs
