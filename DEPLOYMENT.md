@@ -1,6 +1,40 @@
 # Studio Manager SaaS Deployment Guide
 
+> Deprecation (2025-09-01): Legacy proxying via `API_ORIGIN` and Cloudflare Tunnels has been removed. All `/api/*` endpoints are now served directly by the Cloudflare Worker. Remove any remaining tunnel/proxy configs.
+
 ## Cloudflare Workers (Full stack: static + API on Workers)
+
+### Migration checklist: remove legacy tunnels/proxy
+
+Use this when decommissioning Cloudflare Tunnels (or any legacy API proxy) after moving to the Workers-native API.
+
+- Inventory
+    - List active tunnels and mapped hostnames.
+    - Note any DNS records that point traffic to the tunnel.
+
+- Disable and delete tunnel (on the old API host)
+    - Stop service: macOS (brew): `brew services stop cloudflared`; Linux (systemd): `sudo systemctl stop cloudflared`.
+    - Remove DNS route: `cloudflared tunnel route dns delete <tunnel-name> <hostname>` or delete the DNS record in Cloudflare dashboard.
+    - Delete tunnel: `cloudflared tunnel delete <tunnel-name>`.
+    - Clean local config: remove `~/.cloudflared/config.yml` and tunnel credentials JSON.
+
+- Repo/config cleanup
+    - `wrangler.toml`: ensure `API_ORIGIN` is removed (done) and Durable Object migrations are present.
+    - Worker code: proxy fallback removed (done). Unknown `/api/*` returns 404.
+    - Vite dev proxy: remove or point to `wrangler dev` if you keep a dev proxy.
+    - Frontend env: prefer same-origin; `VITE_API_URL` can be unset or set to `/api`.
+
+- Observability and ops
+    - Update monitoring checks to hit the Worker route (health: `/api/health`, readiness: `/api/readiness`).
+    - Remove alerts targeting the tunnel hostname.
+    - Rotate or remove any secrets no longer used by the legacy backend.
+
+- Verification
+    - GET `/api/health` -> 200.
+    - GET `/api/readiness` -> `{ db: 'ok' }`.
+    - Auth flow: register → login → session.
+    - CRUD smoke: customers create/list/update/delete.
+    - Optional: rooms/bookings conflict path, staff CRUD, reports CSV.
 
 This repo includes a Cloudflare Worker at `worker/index.ts` that serves the React build from `dist` and implements the API natively on Workers. Data is stored in Cloudflare D1, and booking conflict control uses Durable Objects.
 

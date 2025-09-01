@@ -48,4 +48,99 @@ export const customerAPI = {
     }
     return data
   },
+  async getById(id: number) {
+    const { data } = await http.get<ApiResponse>(`/customers/${id}`)
+    return data
+  },
+  async create(payload: { name: string; email: string; phone?: string; notes?: string; studio_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/customers`, payload)
+    return data
+  },
+  async update(id: number, payload: Partial<{ name: string; email: string; phone: string; notes: string }>) {
+    const { data } = await http.put<ApiResponse>(`/customers/${id}`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/customers/${id}`)
+    return data
+  },
+}
+
+export const tenantsAPI = {
+  async create(payload: { tenant_name: string; subdomain?: string; admin_name: string; admin_email: string; admin_password: string; plan?: string }) {
+    const { data } = await http.post<ApiResponse>(`/tenants`, payload)
+    return data
+  },
+  async list() {
+    const { data } = await http.get<ApiResponse>(`/tenants`)
+    return data
+  },
+  async get(id: number) {
+    const { data } = await http.get<ApiResponse>(`/tenants/${id}`)
+    return data
+  },
+  async update(id: number, payload: Partial<{ name: string; plan: string; is_active: boolean; settings: Record<string, any> }>) {
+    const { data } = await http.put<ApiResponse>(`/tenants/${id}`, payload)
+    return data
+  },
+}
+
+export const roomsAPI = {
+  async list(params?: { studio_id?: number }) {
+    const { data } = await http.get<ApiResponse>(`/rooms`, { params })
+    return data
+  },
+  async create(payload: { name: string; studio_id?: number; capacity?: number; hourly_rate?: number; equipment?: any[] }) {
+    const { data } = await http.post<ApiResponse>(`/rooms`, payload)
+    return data
+  },
+  async update(id: number, payload: Partial<{ name: string; capacity: number; hourly_rate: number; is_active: boolean; equipment: any[] }>) {
+    const { data } = await http.put<ApiResponse>(`/rooms/${id}`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/rooms/${id}`)
+    return data
+  },
+}
+
+export const bookingsAPI = {
+  async list(params?: { room_id?: number; studio_id?: number; from?: string; to?: string }) {
+    const { data } = await http.get<ApiResponse>(`/bookings`, { params })
+    return data
+  },
+  async create(payload: { room_id: number; customer_id: number; start_time: string; end_time: string; status?: 'confirmed' | 'cancelled'; notes?: string; total_amount?: number }) {
+    const { data } = await http.post<ApiResponse>(`/bookings`, payload)
+    return data
+  },
+}
+
+export const staffAPI = {
+  async list() {
+    const { data } = await http.get<ApiResponse>(`/staff`)
+    return data
+  },
+  async create(payload: { name: string; email: string; password?: string; role?: string; studio_id?: number; permissions?: string[] }) {
+    const { data } = await http.post<ApiResponse>(`/staff`, payload)
+    return data
+  },
+  async update(id: number, payload: Partial<{ name: string; email: string; role: string; studio_id: number; is_active: boolean; permissions: string[] }>) {
+    const { data } = await http.put<ApiResponse>(`/staff/${id}`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/staff/${id}`)
+    return data
+  },
+}
+
+export const reportsAPI = {
+  async downloadBookingsCsv(): Promise<Blob> {
+    const resp = await http.get(`/reports/bookings.csv`, { responseType: 'blob' })
+    return resp.data
+  },
+  async downloadRevenueCsv(): Promise<Blob> {
+    const resp = await http.get(`/reports/revenue.csv`, { responseType: 'blob' })
+    return resp.data
+  },
 }
