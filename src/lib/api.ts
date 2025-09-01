@@ -207,12 +207,16 @@ export const adminAPI = {
     const resp = await http.get(`/admin/reports/revenue.csv`, { responseType: 'blob' })
     return resp.data
   },
-  async tenantAdminsList(tenantId: number) {
-    const { data } = await http.get<ApiResponse>(`/admin/tenants/${tenantId}/admins`)
+  async tenantAdminsList(tenantId: number, params?: { page?: number; per_page?: number; search?: string }) {
+  const { data } = await http.get<ApiResponse>(`/admin/tenants/${tenantId}/admins`, { params })
     return data
   },
   async tenantAdminsCreate(tenantId: number, payload: { name: string; email: string; password: string }) {
     const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/admins`, payload)
+    return data
+  },
+  async tenantUsersList(tenantId: number, params?: { page?: number; per_page?: number; search?: string }) {
+    const { data } = await http.get<ApiResponse>(`/admin/tenants/${tenantId}/users`, { params })
     return data
   },
   async tenantAdminDelete(tenantId: number, userId: number) {

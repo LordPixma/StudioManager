@@ -126,9 +126,13 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   const mAdmins = path.match(/^\/api\/admin\/tenants\/(\d+)\/admins$/)
   if (mAdmins && method === 'GET') {
     const tenantId = parseInt(mAdmins[1], 10)
-    const rows = await env.DB.prepare('SELECT * FROM users WHERE tenant_id = ? AND role = ? ORDER BY created_at ASC').bind(tenantId, 'Admin').all()
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10))
+    const perPage = Math.min(50, Math.max(1, parseInt(url.searchParams.get('per_page') || '25', 10)))
+    const offset = (page - 1) * perPage
+    const total = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE tenant_id = ? AND role = ?', [tenantId, 'Admin'])
+    const rows = await env.DB.prepare('SELECT * FROM users WHERE tenant_id = ? AND role = ? ORDER BY created_at ASC LIMIT ? OFFSET ?').bind(tenantId, 'Admin', perPage, offset).all()
     const data = (rows?.results || []).map(serializeUser)
-    return json({ success: true, data })
+    return json({ success: true, data, meta: { total_count: total?.cnt || data.length, page, per_page: perPage } })
   }
   if (mAdmins && method === 'POST') {
     const tenantId = parseInt(mAdmins[1], 10)
@@ -183,6 +187,21 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
 
   // Create arbitrary user in tenant
   const mUsersCreate = path.match(/^\/api\/admin\/tenants\/(\d+)\/users$/)
+  if (mUsersCreate && method === 'GET') {
+    const tenantId = parseInt(mUsersCreate[1], 10)
+    const qs = url.searchParams
+    const search = (qs.get('search') || '').trim()
+    const page = Math.max(1, parseInt(qs.get('page') || '1', 10))
+    const perPage = Math.min(100, Math.max(1, parseInt(qs.get('per_page') || '25', 10)))
+    const offset = (page - 1) * perPage
+    let where = 'WHERE tenant_id = ?'
+    const params: any[] = [tenantId]
+    if (search) { where += ' AND (name LIKE ? OR email LIKE ?)'; params.push(`%${search}%`, `%${search}%`) }
+    const total = await dbFirst(env, `SELECT COUNT(*) as cnt FROM users ${where}`, params)
+    const rows = await env.DB.prepare(`SELECT * FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(...params, perPage, offset).all()
+    const data = (rows?.results || []).map(serializeUser)
+    return json({ success: true, data, meta: { total_count: total?.cnt || data.length, page, per_page: perPage } })
+  }
   if (mUsersCreate && method === 'POST') {
     const tenantId = parseInt(mUsersCreate[1], 10)
     const body = await request.json().catch(() => ({})) as any

@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { useToast } from '../../components/ui/Toast'
 import { Select } from '../../components/ui/Select'
+import { Modal } from '../../components/ui/Modal'
 
 export function AdminTenantsPage() {
   const { user } = useAuth()
@@ -27,6 +28,13 @@ export function AdminTenantsPage() {
   // Manage panel
   const [managingId, setManagingId] = useState<number | null>(null)
   const [admins, setAdmins] = useState<any[]>([])
+  const [adminsPage, setAdminsPage] = useState(1)
+  const [adminsTotal, setAdminsTotal] = useState(0)
+  const adminsPerPage = 10
+  const [users, setUsers] = useState<any[]>([])
+  const [usersPage, setUsersPage] = useState(1)
+  const [usersTotal, setUsersTotal] = useState(0)
+  const usersPerPage = 10
   const [newAdminName, setNewAdminName] = useState('')
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [newAdminPassword, setNewAdminPassword] = useState('')
@@ -37,6 +45,9 @@ export function AdminTenantsPage() {
   const [editName, setEditName] = useState('')
   const [editPlan, setEditPlan] = useState('free')
   const [editActive, setEditActive] = useState(true)
+  // Tenant notification
+  const [notifyTitle, setNotifyTitle] = useState('')
+  const [notifyBody, setNotifyBody] = useState('')
 
   useEffect(() => {
     let mounted = true
@@ -95,8 +106,10 @@ export function AdminTenantsPage() {
     setEditName(t.name)
     setEditPlan(t.plan)
     setEditActive(!!t.is_active)
-    const res = await adminAPI.tenantAdminsList(t.id)
-    if (res.success) setAdmins(res.data || [])
+  const res = await adminAPI.tenantAdminsList(t.id, { page: 1, per_page: adminsPerPage })
+    if (res.success) { setAdmins(res.data || []); setAdminsTotal(res.meta?.total_count || (res.data?.length || 0)); setAdminsPage(1) }
+    const ur = await adminAPI.tenantUsersList(t.id, { page: 1, per_page: usersPerPage })
+    if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)); setUsersPage(1) }
   }
 
   const saveCompany = async () => {
@@ -123,29 +136,53 @@ export function AdminTenantsPage() {
   const addCompanyAdmin = async () => {
     if (!managingId) return
     const res = await adminAPI.tenantAdminsCreate(managingId, { name: newAdminName.trim(), email: newAdminEmail.trim(), password: newAdminPassword })
-    if (res.success) { notify({ kind: 'success', message: 'Admin added' }); setNewAdminName(''); setNewAdminEmail(''); setNewAdminPassword(''); const list = await adminAPI.tenantAdminsList(managingId); if (list.success) setAdmins(list.data || []) }
+    if (res.success) {
+      notify({ kind: 'success', message: 'Admin added' }); setNewAdminName(''); setNewAdminEmail(''); setNewAdminPassword('');
+  const list = await adminAPI.tenantAdminsList(managingId, { page: 1, per_page: adminsPerPage })
+      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)); setAdminsPage(1) }
+    }
     else notify({ kind: 'error', message: res.message || 'Failed to add admin' })
   }
 
   const removeCompanyAdmin = async (uid: number) => {
     if (!managingId) return
     const res = await adminAPI.tenantAdminDelete(managingId, uid)
-    if (res.success) { notify({ kind: 'success', message: 'Admin removed' }); const list = await adminAPI.tenantAdminsList(managingId); if (list.success) setAdmins(list.data || []) }
+    if (res.success) {
+      notify({ kind: 'success', message: 'Admin removed' });
+  const list = await adminAPI.tenantAdminsList(managingId, { page: adminsPage, per_page: adminsPerPage })
+      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) }
+    }
     else notify({ kind: 'error', message: res.message || 'Failed to remove admin' })
   }
 
   const changeAdminRole = async (uid: number, role: string) => {
     if (!managingId) return
     const res = await adminAPI.tenantAdminChangeRole(managingId, uid, role)
-    if (res.success) { notify({ kind: 'success', message: 'Role updated' }); const list = await adminAPI.tenantAdminsList(managingId); if (list.success) setAdmins(list.data || []) }
+    if (res.success) {
+      notify({ kind: 'success', message: 'Role updated' });
+  const list = await adminAPI.tenantAdminsList(managingId, { page: adminsPage, per_page: adminsPerPage })
+      if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) }
+    }
     else notify({ kind: 'error', message: res.message || 'Failed to update role' })
   }
 
   const addUser = async () => {
     if (!managingId) return
     const res = await adminAPI.tenantUsersCreate(managingId, { name: newUserName.trim(), email: newUserEmail.trim(), password: newUserPassword, role: newUserRole })
-    if (res.success) { notify({ kind: 'success', message: 'User added' }); setNewUserName(''); setNewUserEmail(''); setNewUserPassword(''); setNewUserRole('Receptionist') }
+    if (res.success) {
+      notify({ kind: 'success', message: 'User added' }); setNewUserName(''); setNewUserEmail(''); setNewUserPassword(''); setNewUserRole('Receptionist')
+      const ur = await adminAPI.tenantUsersList(managingId, { page: 1, per_page: usersPerPage })
+      if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)); setUsersPage(1) }
+    }
     else notify({ kind: 'error', message: res.message || 'Failed to add user' })
+  }
+
+  const sendTenantNotification = async () => {
+    if (!managingId) return
+    if (!notifyTitle.trim() || !notifyBody.trim()) { notify({ kind: 'error', message: 'Title and body are required' }); return }
+    const res = await adminAPI.messagesCreate({ title: notifyTitle.trim(), body: notifyBody.trim(), tenant_id: managingId })
+    if (res.success) { notify({ kind: 'success', message: 'Notification sent' }); setNotifyTitle(''); setNotifyBody('') }
+    else notify({ kind: 'error', message: res.message || 'Failed to send' })
   }
 
   return (
@@ -155,24 +192,7 @@ export function AdminTenantsPage() {
         <p className="text-gray-600 dark:text-gray-300 mt-1">Manage all tenants.</p>
       </div>
       {/* Create Company */}
-      <div className="card">
-        <div className="card-header flex items-center justify-between">
-          <h3 className="font-medium">Add Company</h3>
-          <Button onClick={() => setShowCreate((v) => !v)}>{showCreate ? 'Hide' : 'Show'}</Button>
-        </div>
-        {showCreate && (
-          <div className="card-body grid sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-3"><label className="form-label">Company Name</label><Input value={tenantName} onChange={(e) => setTenantName(e.target.value)} /></div>
-            <div><label className="form-label">Subdomain</label><Input value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="optional" /></div>
-            <div><label className="form-label">Plan</label><Select value={plan} onChange={(e) => setPlan(e.target.value)}><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></Select></div>
-            <div className="sm:col-span-3 border-t border-gray-200 dark:border-gray-800 pt-3 font-medium">Company Admin</div>
-            <div><label className="form-label">Admin Name</label><Input value={adminName} onChange={(e) => setAdminName(e.target.value)} /></div>
-            <div><label className="form-label">Admin Email</label><Input value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} /></div>
-            <div><label className="form-label">Admin Password</label><Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} /></div>
-            <div className="sm:col-span-3"><Button onClick={createCompany}>Create Company</Button></div>
-          </div>
-        )}
-      </div>
+  <div className="flex justify-end"><Button onClick={() => setShowCreate(true)}>Add Company</Button></div>
       <div className="card">
         <div className="card-body">
           <div className="mb-3 flex items-center gap-3">
@@ -220,14 +240,24 @@ export function AdminTenantsPage() {
           </div>
         </div>
       </div>
-      {/* Manage panel */}
-      {managingId && (
-        <div className="card">
-          <div className="card-header flex items-center justify-between">
-            <h3 className="font-medium">Manage Company (ID {managingId})</h3>
-            <Button onClick={() => setManagingId(null)}>Close</Button>
+      {/* Modals */}
+      {showCreate && (
+        <Modal title="Add Company" onClose={() => setShowCreate(false)}>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-3"><label className="form-label">Company Name</label><Input value={tenantName} onChange={(e) => setTenantName(e.target.value)} /></div>
+            <div><label className="form-label">Subdomain</label><Input value={subdomain} onChange={(e) => setSubdomain(e.target.value)} placeholder="optional" /></div>
+            <div><label className="form-label">Plan</label><Select value={plan} onChange={(e) => setPlan(e.target.value)}><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></Select></div>
+            <div className="sm:col-span-3 border-t border-gray-200 dark:border-gray-800 pt-3 font-medium">Company Admin</div>
+            <div><label className="form-label">Admin Name</label><Input value={adminName} onChange={(e) => setAdminName(e.target.value)} /></div>
+            <div><label className="form-label">Admin Email</label><Input value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} /></div>
+            <div><label className="form-label">Admin Password</label><Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} /></div>
+            <div className="sm:col-span-3 flex justify-end gap-2"><Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button><Button onClick={createCompany}>Create Company</Button></div>
           </div>
-          <div className="card-body space-y-6">
+        </Modal>
+      )}
+      {managingId && (
+        <Modal title={`Manage Company (ID ${managingId})`} onClose={() => setManagingId(null)}>
+          <div className="space-y-6">
             <div className="grid sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2"><label className="form-label">Name</label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
               <div><label className="form-label">Plan</label><Select value={editPlan} onChange={(e) => setEditPlan(e.target.value)}><option value="free">Free</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></Select></div>
@@ -247,11 +277,18 @@ export function AdminTenantsPage() {
                   </tbody>
                 </table>
               </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="text-sm text-gray-600 dark:text-gray-300">Page {adminsPage} of {Math.max(1, Math.ceil(adminsTotal / adminsPerPage))} · {adminsTotal} total</div>
+                <div className="flex gap-2">
+                  <Button disabled={adminsPage <= 1} onClick={async () => { const p = adminsPage - 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) } }}>Prev</Button>
+                  <Button disabled={adminsPage >= Math.max(1, Math.ceil(adminsTotal / adminsPerPage))} onClick={async () => { const p = adminsPage + 1; setAdminsPage(p); const list = await adminAPI.tenantAdminsList(managingId!, { page: p, per_page: adminsPerPage }); if (list.success) { setAdmins(list.data || []); setAdminsTotal(list.meta?.total_count || (list.data?.length || 0)) } }}>Next</Button>
+                </div>
+              </div>
               <div className="grid sm:grid-cols-3 gap-3 mt-3">
                 <div><label className="form-label">Admin Name</label><Input value={newAdminName} onChange={(e) => setNewAdminName(e.target.value)} /></div>
                 <div><label className="form-label">Admin Email</label><Input value={newAdminEmail} onChange={(e) => setNewAdminEmail(e.target.value)} /></div>
                 <div><label className="form-label">Admin Password</label><Input type="password" value={newAdminPassword} onChange={(e) => setNewAdminPassword(e.target.value)} /></div>
-                <div className="sm:col-span-3"><Button onClick={addCompanyAdmin} disabled={admins.length >= 2}>Add Admin</Button></div>
+                <div className="sm:col-span-3"><Button onClick={addCompanyAdmin} disabled={adminsTotal >= 2}>Add Admin</Button></div>
               </div>
             </div>
 
@@ -264,9 +301,36 @@ export function AdminTenantsPage() {
                 <div><label className="form-label">Role</label><Select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)}><option value="Receptionist">Receptionist</option><option value="Studio Manager">Studio Manager</option><option value="Staff/Instructor">Staff/Instructor</option><option value="Admin">Admin</option></Select></div>
                 <div className="sm:col-span-4"><Button onClick={addUser}>Add User</Button></div>
               </div>
+              <div className="mt-4">
+                <h5 className="font-medium mb-2">Users</h5>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead><tr className="text-left"><th className="py-2 pr-4">Name</th><th className="py-2 pr-4">Email</th><th className="py-2 pr-4">Role</th><th className="py-2 pr-4">Active</th></tr></thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                      {users.map(u => (<tr key={u.id}><td className="py-2 pr-4">{u.name}</td><td className="py-2 pr-4">{u.email}</td><td className="py-2 pr-4">{u.role}</td><td className="py-2 pr-4">{u.is_active ? 'Yes' : 'No'}</td></tr>))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Page {usersPage} of {Math.max(1, Math.ceil(usersTotal / usersPerPage))} · {usersTotal} total</div>
+                  <div className="flex gap-2">
+                    <Button disabled={usersPage <= 1} onClick={async () => { const p = usersPage - 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)) } }}>Prev</Button>
+                    <Button disabled={usersPage >= Math.max(1, Math.ceil(usersTotal / usersPerPage))} onClick={async () => { const p = usersPage + 1; setUsersPage(p); const ur = await adminAPI.tenantUsersList(managingId!, { page: p, per_page: usersPerPage }); if (ur.success) { setUsers(ur.data || []); setUsersTotal(ur.meta?.total_count || (ur.data?.length || 0)) } }}>Next</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium mb-2">Send Notification to this Tenant</h4>
+              <div className="grid sm:grid-cols-1 gap-3">
+                <div><label className="form-label">Title</label><Input value={notifyTitle} onChange={(e) => setNotifyTitle(e.target.value)} /></div>
+                <div><label className="form-label">Body</label><textarea className="h-28 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm" value={notifyBody} onChange={(e) => setNotifyBody(e.target.value)} /></div>
+                <div><Button onClick={sendTenantNotification}>Send Notification</Button></div>
+              </div>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
       {error && <div className="text-red-600">{error}</div>}
     </div>
