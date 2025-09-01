@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { cn } from '../lib/utils'
+import { Input } from '../components/ui/Input'
+import { Button } from '../components/ui/Button'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -63,12 +65,11 @@ export function LoginPage() {
               <label htmlFor="email" className="form-label">
                 Email address
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className="form-input"
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
@@ -79,12 +80,11 @@ export function LoginPage() {
               <label htmlFor="password" className="form-label">
                 Password
               </label>
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className="form-input"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
@@ -115,16 +115,13 @@ export function LoginPage() {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className={cn(
-                'w-full btn-primary',
-                isLoading && 'opacity-50 cursor-not-allowed'
-              )}
+              className={cn('w-full', isLoading && 'opacity-50 cursor-not-allowed')}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
+            </Button>
           </div>
           
           <div className="text-center">

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { cn } from '../lib/utils'
+import { Input } from '../components/ui/Input'
+import { Button } from '../components/ui/Button'
 
 export function RegisterPage() {
   const navigate = useNavigate()
@@ -113,12 +115,11 @@ export function RegisterPage() {
               <label htmlFor="tenant_name" className="form-label">
                 Studio/Company Name *
               </label>
-              <input
+              <Input
                 id="tenant_name"
                 name="tenant_name"
                 type="text"
                 required
-                className={cn('form-input', errors.tenant_name && 'border-red-300')}
                 placeholder="Enter your studio name"
                 value={formData.tenant_name}
                 onChange={handleChange}
@@ -132,12 +133,11 @@ export function RegisterPage() {
               <label htmlFor="name" className="form-label">
                 Your Full Name *
               </label>
-              <input
+              <Input
                 id="name"
                 name="name"
                 type="text"
                 required
-                className={cn('form-input', errors.name && 'border-red-300')}
                 placeholder="Enter your full name"
                 value={formData.name}
                 onChange={handleChange}
@@ -151,12 +151,11 @@ export function RegisterPage() {
               <label htmlFor="email" className="form-label">
                 Email Address *
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 required
-                className={cn('form-input', errors.email && 'border-red-300')}
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
@@ -170,12 +169,11 @@ export function RegisterPage() {
               <label htmlFor="password" className="form-label">
                 Password *
               </label>
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
                 required
-                className={cn('form-input', errors.password && 'border-red-300')}
                 placeholder="Create a password (min 8 characters)"
                 value={formData.password}
                 onChange={handleChange}
@@ -189,12 +187,11 @@ export function RegisterPage() {
               <label htmlFor="confirmPassword" className="form-label">
                 Confirm Password *
               </label>
-              <input
+              <Input
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
                 required
-                className={cn('form-input', errors.confirmPassword && 'border-red-300')}
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -206,16 +203,13 @@ export function RegisterPage() {
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className={cn(
-                'w-full btn-primary',
-                isLoading && 'opacity-50 cursor-not-allowed'
-              )}
+              className={cn('w-full', isLoading && 'opacity-50 cursor-not-allowed')}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
-            </button>
+            </Button>
           </div>
           
           <div className="text-center">

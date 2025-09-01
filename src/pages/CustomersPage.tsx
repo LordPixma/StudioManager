@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Search, Edit, Trash2, Users } from 'lucide-react'
 import { customerAPI } from '../lib/api'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 import type { Customer } from '../types'
 
 export function CustomersPage() {
@@ -55,13 +57,10 @@ export function CustomersPage() {
             Manage your studio customers and their information.
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-primary flex items-center"
-        >
+        <Button onClick={() => setShowModal(true)} className="flex items-center">
           <Plus className="h-5 w-5 mr-2" />
           Add Customer
-        </button>
+        </Button>
       </div>
 
       {/* Search and filters */}
@@ -69,10 +68,10 @@ export function CustomersPage() {
         <div className="card-body">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search customers by name or email..."
-              className="form-input pl-10"
+              className="pl-10"
               value={searchTerm}
               onChange={handleSearch}
             />
@@ -99,12 +98,7 @@ export function CustomersPage() {
               <p className="text-gray-600 mb-4">
                 {searchTerm ? 'No customers match your search criteria.' : 'Get started by adding your first customer.'}
               </p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="btn-primary"
-              >
-                Add Customer
-              </button>
+              <Button onClick={() => setShowModal(true)}>Add Customer</Button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -182,23 +176,21 @@ export function CustomersPage() {
             Showing {((page - 1) * 25) + 1} to {Math.min(page * 25, total)} of {total} results
           </div>
           <div className="flex items-center space-x-2">
-            <button
+            <Button variant="secondary"
               onClick={() => setPage(prev => Math.max(1, prev - 1))}
               disabled={page === 1}
-              className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
-            </button>
+            </Button>
             <span className="text-sm text-gray-700">
               Page {page} of {totalPages}
             </span>
-            <button
+            <Button variant="secondary"
               onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
               disabled={page === totalPages}
-              className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -212,13 +204,8 @@ export function CustomersPage() {
               Customer form will be implemented here.
             </p>
             <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button className="btn-primary">Save</button>
+              <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+              <Button>Save</Button>
             </div>
           </div>
         </div>
