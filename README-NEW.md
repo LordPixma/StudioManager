@@ -97,15 +97,18 @@ A comprehensive multi-tenant SaaS web application for managing fitness, music, d
 
 ### Production Deployment
 
-#### Cloudflare Pages (Frontend)
-1. Connect your GitHub repository to Cloudflare Pages
-2. Set build command: `npm run build`
-3. Set publish directory: `dist`
-4. Deploy automatically on git push
+#### Cloudflare Workers (Full stack)
+Serves the frontend from `dist` and proxies `/api/*` to your Flask API.
+
+1. Build frontend: `npm run build`
+2. Configure variables:
+   - `wrangler vars put API_ORIGIN --value https://api.your-domain.com`
+   - `wrangler vars put NODE_ENV --value production`
+3. Deploy: `wrangler deploy`
+4. Visit the Worker URL
 
 #### Backend API
-- **Option 1**: Traditional hosting (Heroku, DigitalOcean, AWS)
-- **Option 2**: Cloudflare Workers (coming soon)
+- Host Flask API (Heroku, Railway, DO, AWS, etc.) and point `API_ORIGIN` at it.
 
 ## Development
 

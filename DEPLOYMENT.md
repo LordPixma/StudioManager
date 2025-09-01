@@ -1,5 +1,36 @@
 # Studio Manager SaaS Deployment Guide
 
+## Cloudflare Workers (Full stack: static + API proxy)
+
+This repo includes a Worker at `worker/index.ts` that serves the React build from `dist` and proxies `/api/*` to your Flask API origin.
+
+### Configure
+
+1) Build frontend
+```
+npm run build
+```
+
+2) Set variables (replace with your API origin, no trailing slash)
+```
+wrangler vars put API_ORIGIN --value https://api.your-domain.com
+wrangler vars put NODE_ENV --value production
+```
+
+3) Publish
+```
+wrangler deploy
+```
+
+The Worker will:
+- Serve static assets from `dist` via the `ASSETS` binding
+- Proxy `/api/*` to `API_ORIGIN`
+- SPA fallback to `/index.html` for non-file routes
+
+Note: ensure your backend CORS allows the Worker’s domain if cookies are used.
+
+---
+
 ## Cloudflare Pages (Frontend)
 
 ### 1. Connect Repository
@@ -13,11 +44,12 @@
 - **Build output directory**: `dist`
 - **Root directory**: `/` (leave empty if repo root)
 
-### 3. Environment Variables
-Add these environment variables in Cloudflare Pages:
+### 3. Environment Variables (Cloudflare Pages)
+Add these build-time environment variables in Cloudflare Pages (Project → Settings → Environment variables):
 ```
 NODE_ENV=production
-VITE_API_URL=https://your-api-domain.com
+# IMPORTANT: include the /api suffix, as the backend serves under /api
+VITE_API_URL=https://your-api-domain.com/api
 ```
 
 ### 4. Custom Domain (Optional)
@@ -125,3 +157,36 @@ ALTER TABLE customers ADD CONSTRAINT fk_customers_tenant
 2. Review and approve changes
 3. Merge triggers production deployment
 4. Monitor deployment and health checks
+
+## Cloudflare Pages Project Variables (recap)
+
+- Framework preset: Custom
+- Build command: `npm run build`
+- Output directory: `dist`
+- Root directory: `/`
+- Environment variables:
+   - `NODE_ENV=production`
+   - `VITE_API_URL=https://your-api-domain.com/api`
+
+## Post-deploy smoke checklist (Pages + API)
+
+1) Frontend
+- Visit your Pages URL. Confirm index loads (200) and assets load without console errors.
+- Verify redirects: direct-link to a route (e.g., /dashboard) loads via SPA fallback.
+
+2) CORS + cookies
+- In the browser devtools Network tab, try hitting a protected flow (login/register).
+- Confirm requests include `Cookie` and responses set `Set-Cookie`.
+- Check cookie flags: `Secure`, `HttpOnly`, `SameSite=None` in production.
+
+3) API endpoints
+- Registration flow: create an account; expect 201 and user in response.
+- Login: expect success and session established; call `/api/session` to verify.
+- Customers list: `/api/customers` returns data or empty list without errors.
+
+4) Security headers
+- Inspect a response; confirm `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` present.
+
+5) Backend readiness
+- `GET /api/readiness` returns `{ db: "ok" }`.
+- Migrations applied on Postgres; errors should be 0.
