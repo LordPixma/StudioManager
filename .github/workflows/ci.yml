@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend - Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: studio_manager
+          POSTGRES_USER: studio_user
+          POSTGRES_PASSWORD: studio_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studio_user -d studio_manager" 
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: |
+          python -m pytest -q
+
+      - name: Alembic upgrade (Postgres)
+        env:
+          FLASK_APP: run:app
+          DATABASE_URL: postgresql://studio_user:studio_pass@localhost:5432/studio_manager
+          SESSION_COOKIE_SECURE: 'false'
+        run: |
+          python -m flask db upgrade
+
+  frontend:
+    name: Frontend - Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+
+      - name: Type check
+        run: |
+          npx tsc -p tsconfig.json --noEmit
+
+      - name: Build
+        env:
+          VITE_API_URL: https://example-api.invalid
+        run: |
+          npm run build
