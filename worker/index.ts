@@ -201,25 +201,7 @@ async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
   await stmt.run()
 }
 
-async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
-  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
-  const body = await request.json().catch(() => ({})) as any
-  const email = (body.email || '').toLowerCase().trim()
-  const password = body.password || ''
-  const remember = !!body.remember_me
-  if (!email || !password) return json({ success: false, message: 'Email and password are required' }, { status: 400 })
-  const user = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
-  if (!user) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
-  if (!user.is_active) return json({ success: false, message: 'Account is deactivated' }, { status: 401 })
-  const ok = await verifyWerkzeugPBKDF2(password, user.password_hash)
-  if (!ok) return json({ success: false, message: 'Invalid email or password' }, { status: 401 })
-  if (user.tenant_id) {
-    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [user.tenant_id])
-    if (!tenant || !tenant.is_active) return json({ success: false, message: 'Studio account is not active' }, { status: 401 })
-  }
-  const expSecs = remember ? 60 * 60 * 24 * 30 : 60 * 60
-  const now = Math.floor(Date.now() / 1000)
-  const payload = { sub: user.id, tid: user.tenant_id, sid: user.studio_id, role: user.role, iat: now, exp: now + expSecs }
+async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> { c
   if (!env.JWT_SECRET) return json({ success: false, message: 'JWT secret not configured' }, { status: 500 })
   const token = await signJWT(payload, env.JWT_SECRET)
   const headers = new Headers()
