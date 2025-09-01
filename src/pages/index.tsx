@@ -8,8 +8,8 @@ import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
 import { Textarea } from '../components/ui/Textarea'
-import { useToast } from '../components/ui/Toast'
-import { useTenantSettings } from '../hooks/useTenantSettings'
+import { useToast } from '../components/ui/useToast'
+import { useTenantSettings } from '../hooks/useTenantSettingsHook'
 
 export function BookingsPage() {
   const { notify } = useToast()

@@ -5,7 +5,7 @@ import type { Room } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 // import { Select } from '../components/ui/Select'
-import { useToast } from '../components/ui/Toast'
+import { useToast } from '../components/ui/useToast'
 import { Plus, RefreshCw, Trash2, Edit } from 'lucide-react'
 
 type RoomForm = {

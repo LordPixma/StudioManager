@@ -5,7 +5,7 @@ import { customerAPI } from '../lib/api'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Textarea } from '../components/ui/Textarea'
-import { useToast } from '../components/ui/Toast'
+import { useToast } from '../components/ui/useToast'
 import type { Customer } from '../types'
 
 export function CustomersPage() {

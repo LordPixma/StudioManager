@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
 import { Button } from '../../components/ui/Button'
-import { useAuth } from '../../hooks/useAuth'
-import { useToast } from '../../components/ui/Toast'
+import { useAuth } from '../../hooks/useAuthHook'
+import { useToast } from '../../components/ui/useToast'
 
 export function AdminUsersPage() {
   const { user } = useAuth()

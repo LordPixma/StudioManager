@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, ReactNode } from 'react'
+import { createContext, useEffect, ReactNode } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { authAPI } from '../lib/api'
 import type { User, LoginCredentials, RegisterData } from '../types'
 import type { ApiResponse } from '../lib/api'
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
@@ -15,15 +15,7 @@ interface AuthContextType {
   checkSession: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+export const AuthContext = createContext<AuthContextType | null>(null)
 
 interface AuthProviderProps {
   children: ReactNode
@@ -38,7 +30,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { refetch: checkSession } = useQuery<User | null>({
     queryKey: ['session'],
     queryFn: async () => {
-      const response: ApiResponse<SessionResponse> = await authAPI.getSession()
+  const response = await authAPI.getSession() as ApiResponse<SessionResponse>
       if (response.success && response.data?.user) {
         setAuth(response.data.user, token || '')
         if (response.data.session_timeout) {
@@ -56,7 +48,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Login mutation
   const loginMutation = useMutation<ApiResponse<SessionResponse>, Error, LoginCredentials>({
-    mutationFn: authAPI.login,
+    mutationFn: (creds) => authAPI.login(creds) as Promise<ApiResponse<SessionResponse>>,
     onSuccess: (response: ApiResponse<SessionResponse>) => {
       if (response.success && response.data?.user) {
         const authToken = response.data.token || token || 'session'
@@ -69,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(response.message || 'Login failed')
       }
     },
-    onError: (error: any) => {
+  onError: (error: unknown) => {
       console.error('Login error:', error)
       throw error
     },
@@ -77,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Register mutation
   const registerMutation = useMutation<ApiResponse<SessionResponse>, Error, RegisterData>({
-    mutationFn: authAPI.register,
+    mutationFn: (data) => authAPI.register(data) as Promise<ApiResponse<SessionResponse>>,
     onSuccess: (response: ApiResponse<SessionResponse>) => {
       if (response.success && response.data?.user) {
         const authToken = response.data.token || 'session'
@@ -87,7 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(response.message || 'Registration failed')
       }
     },
-    onError: (error: any) => {
+  onError: (error: unknown) => {
       console.error('Registration error:', error)
       throw error
     },
@@ -106,10 +98,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Initialize token from localStorage if needed
     const storedToken = localStorage.getItem('auth_token')
-    if (storedToken && !token) {
-      setAuth(user || ({} as User), storedToken)
+    if (storedToken && !token && user) {
+      setAuth(user, storedToken)
     }
-  }, [])
+  }, [token, user, setAuth])
 
   const contextValue: AuthContextType = {
     user,

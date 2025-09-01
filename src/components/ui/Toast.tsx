@@ -1,10 +1,8 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
+import { ToastContext, ToastInput } from './ToastContext'
 
-export type ToastKind = 'success' | 'error' | 'info'
-export type Toast = { id: number; title?: string; message: string; kind?: ToastKind; timeout?: number }
-
-const ToastContext = createContext<{ notify: (t: Omit<Toast, 'id'>) => void } | null>(null)
+type Toast = { id: number } & ToastInput
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -55,8 +53,3 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   )
 }
 
-export function useToast() {
-  const ctx = useContext(ToastContext)
-  if (!ctx) throw new Error('useToast must be used within ToastProvider')
-  return ctx
-}

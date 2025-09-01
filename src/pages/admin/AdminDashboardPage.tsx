@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
 import { Button } from '../../components/ui/Button'
 

@@ -1,24 +1,21 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { createContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { tenantsAPI } from '../lib/api'
-import { useAuth } from './useAuth'
+import { useAuth } from './useAuthHook'
 import type { Tenant } from '../types'
 
-type TenantSettings = Record<string, any>
+type TenantSettings = {
+  branding_primary?: string
+  branding_logo_url?: string
+} & Record<string, unknown>
 
-interface TenantSettingsContextType {
+export interface TenantSettingsContextType {
   tenant: Tenant | null
   settings: TenantSettings
   isLoading: boolean
   refresh: () => Promise<void>
 }
 
-const TenantSettingsContext = createContext<TenantSettingsContextType | null>(null)
-
-export function useTenantSettings() {
-  const ctx = useContext(TenantSettingsContext)
-  if (!ctx) throw new Error('useTenantSettings must be used within TenantSettingsProvider')
-  return ctx
-}
+export const TenantSettingsContext = createContext<TenantSettingsContextType | null>(null)
 
 function clamp(n: number, min = 0, max = 100) { return Math.min(max, Math.max(min, n)) }
 
@@ -119,7 +116,7 @@ export function TenantSettingsProvider({ children }: { children: React.ReactNode
     injectThemeCSS(palette)
   }
 
-  const fetchIt = async () => {
+  const fetchIt = useCallback(async () => {
     if (!user?.tenant_id) return
     setIsLoading(true)
     try {
@@ -134,14 +131,13 @@ export function TenantSettingsProvider({ children }: { children: React.ReactNode
     } finally {
       setIsLoading(false)
     }
-  }
-
-  useEffect(() => { fetchIt() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.tenant_id])
+
+  useEffect(() => { fetchIt() }, [fetchIt])
 
   // Re-apply branding when settings change
   useEffect(() => { applyBranding(settings) }, [settings])
 
-  const value = useMemo(() => ({ tenant, settings, isLoading, refresh: fetchIt }), [tenant, settings, isLoading])
+  const value = useMemo(() => ({ tenant, settings, isLoading, refresh: fetchIt }), [tenant, settings, isLoading, fetchIt])
   return <TenantSettingsContext.Provider value={value}>{children}</TenantSettingsContext.Provider>
 }

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
 import { Textarea } from '../../components/ui/Textarea'
 import { Button } from '../../components/ui/Button'
-import { useToast } from '../../components/ui/Toast'
+import { useToast } from '../../components/ui/useToast'
 
 export function AdminMessagesPage() {
   const { user } = useAuth()

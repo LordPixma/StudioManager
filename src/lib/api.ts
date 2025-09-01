@@ -11,12 +11,12 @@ export const http = axios.create({
 })
 
 // Response shape from backend
-export type ApiResponse<T = any> = {
+export type ApiResponse<T = unknown> = {
   success: boolean
   data?: T
   message?: string
   errors?: Record<string, string[]>
-  meta?: any
+  meta?: Record<string, unknown>
 }
 
 export const authAPI = {

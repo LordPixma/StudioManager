@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../hooks/useAuthHook'
 import { cn } from '../lib/utils'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
-import { useToast } from '../components/ui/Toast'
+import { useToast } from '../components/ui/useToast'
 
 export function RegisterPage() {
   const navigate = useNavigate()

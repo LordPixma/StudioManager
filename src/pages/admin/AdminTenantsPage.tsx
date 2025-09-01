@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI, tenantsAPI } from '../../lib/api'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { useToast } from '../../components/ui/Toast'
+import { useToast } from '../../components/ui/useToast'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
 

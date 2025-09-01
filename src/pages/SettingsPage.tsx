@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { tenantsAPI } from '../lib/api'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../hooks/useAuthHook'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
-import { useToast } from '../components/ui/Toast'
+import { useToast } from '../components/ui/useToast'
 
 type TenantSettingsForm = {
   name: string

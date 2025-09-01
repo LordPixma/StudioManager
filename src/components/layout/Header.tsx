@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LogOut, User, Settings, ChevronDown, Moon, Sun, Menu } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuthHook'
 import { Link as RouterLink } from 'react-router-dom'
 import { navigation, adminNavigation } from './Sidebar'
-import { useTenantSettings } from '../../hooks/useTenantSettings'
+import { useTenantSettings } from '../../hooks/useTenantSettingsHook'
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -30,8 +30,8 @@ export function Header() {
               <Menu className="h-5 w-5" />
             </button>
             <Link to="/dashboard" className="flex items-center gap-2">
-              {settings?.branding_logo_url ? (
-                <img src={settings.branding_logo_url} alt="Logo" className="h-7 w-7 rounded" />
+              {typeof settings?.branding_logo_url === 'string' && settings.branding_logo_url ? (
+                <img src={settings.branding_logo_url as string} alt="Logo" className="h-7 w-7 rounded" />
               ) : (
                 <span className="text-xl font-bold text-primary-600">Studio Manager</span>
               )}

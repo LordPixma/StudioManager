@@ -8,10 +8,12 @@ import {
   Building2,
   Settings 
 } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../hooks/useAuthHook'
 import { cn } from '../../lib/utils'
 
-export const navigation = [
+type IconType = React.ComponentType<{ className?: string }>
+type NavItem = { name: string; href: string; icon: IconType; role?: string; permission?: string }
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users, permission: 'view_customers' },
   { name: 'Bookings', href: '/bookings', icon: Calendar, permission: 'view_bookings' },
@@ -20,7 +22,7 @@ export const navigation = [
   { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'view_reports' },
 ]
 
-export const adminNavigation = [
+const adminNavigation: NavItem[] = [
   { name: 'Studios', href: '/studios', icon: Building2, role: 'Admin' },
   { name: 'Settings', href: '/settings', icon: Settings },
   // Global admin
@@ -30,7 +32,7 @@ export const adminNavigation = [
 export function Sidebar() {
   const { user } = useAuth()
 
-  const canAccess = (item: any) => {
+  const canAccess = (item: NavItem) => {
     if (item.role && user?.role !== item.role) return false
     if (item.permission && !user?.permissions.includes(item.permission)) return false
     return true
