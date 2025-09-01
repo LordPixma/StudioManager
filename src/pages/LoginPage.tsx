@@ -4,10 +4,12 @@ import { useAuth } from '../hooks/useAuth'
 import { cn } from '../lib/utils'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { useToast } from '../components/ui/Toast'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const { login, isAuthenticated, isLoading } = useAuth()
+  const { notify } = useToast()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -27,7 +29,8 @@ export function LoginPage() {
 
     try {
       await login(formData)
-      navigate('/dashboard')
+  notify({ kind: 'success', title: 'Welcome back', message: 'Signed in successfully.' })
+  navigate('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
     }
@@ -44,7 +47,8 @@ export function LoginPage() {
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-gray-50">
       {/* Left: Branding */}
-      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 gradient-mesh opacity-70" />
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">SM</div>
@@ -60,7 +64,7 @@ export function LoginPage() {
 
       {/* Right: Form */}
       <div className="flex items-center justify-center px-6 py-12 md:px-12 bg-white">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-fade-slide-up">
           <div className="mb-8 md:hidden text-center">
             <div className="text-2xl font-bold text-gray-900">Studio Manager</div>
             <div className="text-gray-600">Sign in to your account</div>

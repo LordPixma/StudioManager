@@ -4,10 +4,12 @@ import { useAuth } from '../hooks/useAuth'
 import { cn } from '../lib/utils'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { useToast } from '../components/ui/Toast'
 
 export function RegisterPage() {
   const navigate = useNavigate()
   const { register, isAuthenticated, isLoading } = useAuth()
+  const { notify } = useToast()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -66,10 +68,18 @@ export function RegisterPage() {
         password: formData.password,
         tenant_name: formData.tenant_name,
       })
+      notify({ kind: 'success', title: 'Account created', message: 'Welcome! Your account is ready.' })
       navigate('/dashboard')
     } catch (err: any) {
-      if (err.response?.data?.errors) {
-        setErrors(err.response.data.errors)
+      const backendErrors = err.response?.data?.errors
+      if (backendErrors && typeof backendErrors === 'object') {
+        // Map array-shaped errors to first string, keep strings as-is
+        const mapped: Record<string, string> = {}
+        for (const key of Object.keys(backendErrors)) {
+          const val = backendErrors[key]
+          mapped[key] = Array.isArray(val) ? String(val[0]) : String(val)
+        }
+        setErrors(mapped)
       } else {
         setErrors({ general: err.message || 'Registration failed. Please try again.' })
       }
@@ -91,7 +101,8 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-gray-50">
       {/* Left: Branding */}
-      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 gradient-mesh opacity-70" />
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">SM</div>
@@ -107,7 +118,7 @@ export function RegisterPage() {
 
       {/* Right: Form */}
       <div className="flex items-center justify-center px-6 py-12 md:px-12 bg-white">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md animate-fade-slide-up">
           <div className="mb-8 md:hidden text-center">
             <div className="text-2xl font-bold text-gray-900">Studio Manager</div>
             <div className="text-gray-600">Create your account</div>

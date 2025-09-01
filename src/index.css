@@ -50,3 +50,30 @@
     @apply p-6;
   }
 }
+
+@layer utilities {
+  /* Subtle gradient mesh backdrop */
+  .gradient-mesh {
+    background-image:
+      radial-gradient(1200px 600px at -10% -10%, rgba(59,130,246,0.15), transparent 60%),
+      radial-gradient(800px 400px at 110% 0%, rgba(147,51,234,0.12), transparent 60%),
+      radial-gradient(600px 300px at 10% 110%, rgba(16,185,129,0.10), transparent 60%),
+      radial-gradient(700px 350px at 100% 100%, rgba(236,72,153,0.10), transparent 60%);
+    filter: blur(10px);
+  }
+
+  @keyframes fade-slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-slide-up {
+    animation: fade-slide-up 380ms ease-out both;
+  }
+}
