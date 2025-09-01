@@ -1,14 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, User, Settings, ChevronDown } from 'lucide-react'
+import { LogOut, User, Settings, ChevronDown, Moon, Sun } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export function Header() {
   const { user, logout } = useAuth()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    if (isDark) document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+  }, [isDark])
+
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-200">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -23,6 +30,14 @@ export function Header() {
           </div>
 
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Toggle theme"
+              title="Toggle theme"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
             {/* User menu */}
             <div className="relative">
               <button

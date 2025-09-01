@@ -34,8 +34,19 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-[calc(100vh-73px)]">
-      <nav className="p-4 space-y-1">
+    <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-lg min-h-[calc(100vh-73px)]">
+      <div className="sticky top-0 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
+            <Building2 className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Studio Manager</h1>
+            <p className="text-xs text-gray-500">SaaS Platform</p>
+          </div>
+        </div>
+      </div>
+      <nav className="px-4 pb-6 space-y-1">
         {navigation.map((item) => {
           if (!canAccess(item)) return null
           
