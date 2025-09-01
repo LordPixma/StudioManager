@@ -15,6 +15,7 @@ export const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users, permission: 'view_customers' },
   { name: 'Bookings', href: '/bookings', icon: Calendar, permission: 'view_bookings' },
+  { name: 'Rooms', href: '/rooms', icon: Building2, permission: 'view_bookings' },
   { name: 'Staff', href: '/staff', icon: UserCheck, permission: 'view_staff' },
   { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'view_reports' },
 ]
