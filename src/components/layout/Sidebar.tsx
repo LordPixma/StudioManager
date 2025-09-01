@@ -11,7 +11,7 @@ import {
 import { useAuth } from '../../hooks/useAuth'
 import { cn } from '../../lib/utils'
 
-const navigation = [
+export const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users, permission: 'view_customers' },
   { name: 'Bookings', href: '/bookings', icon: Calendar, permission: 'view_bookings' },
@@ -19,7 +19,7 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'view_reports' },
 ]
 
-const adminNavigation = [
+export const adminNavigation = [
   { name: 'Studios', href: '/studios', icon: Building2, role: 'Admin' },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]

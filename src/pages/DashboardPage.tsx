@@ -1,5 +1,6 @@
 import { useAuth } from '../hooks/useAuth'
 import { BarChart3, Users, Calendar, DollarSign } from 'lucide-react'
+import { Button } from '../components/ui/Button'
 
 // Mock data for demonstration
 const stats = [
@@ -31,12 +32,12 @@ export function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.name} className="card">
-              <div className="card-body">
+    <div key={stat.name} className="card transition-transform duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div className="card-body">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <Icon className={`h-8 w-8 ${stat.color}`} />
@@ -123,7 +124,7 @@ export function DashboardPage() {
             <Users className="h-12 w-12 text-blue-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Add Customer</h3>
             <p className="text-gray-600 mb-4">Register a new customer to your studio</p>
-            <button className="btn-primary">Add Customer</button>
+            <Button>Add Customer</Button>
           </div>
         </div>
         
@@ -132,7 +133,7 @@ export function DashboardPage() {
             <Calendar className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">New Booking</h3>
             <p className="text-gray-600 mb-4">Schedule a new room booking</p>
-            <button className="btn-primary">Create Booking</button>
+            <Button>Create Booking</Button>
           </div>
         </div>
         
@@ -141,7 +142,7 @@ export function DashboardPage() {
             <BarChart3 className="h-12 w-12 text-purple-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">View Reports</h3>
             <p className="text-gray-600 mb-4">Analyze your studio performance</p>
-            <button className="btn-primary">Open Reports</button>
+            <Button>Open Reports</Button>
           </div>
         </div>
       </div>

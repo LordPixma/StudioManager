@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { ToastProvider } from './components/ui/Toast'
 
 // Pages
 import { LoginPage } from './pages/LoginPage'
@@ -16,7 +17,8 @@ import { NotFoundPage } from './pages/NotFoundPage'
 function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <ToastProvider>
+        <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -33,7 +35,8 @@ function App() {
         
         {/* 404 fallback */}
         <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+        </Routes>
+      </ToastProvider>
     </AuthProvider>
   )
 }

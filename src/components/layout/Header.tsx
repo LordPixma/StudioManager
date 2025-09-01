@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LogOut, User, Settings, ChevronDown, Moon, Sun } from 'lucide-react'
+import { LogOut, User, Settings, ChevronDown, Moon, Sun, Menu } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { Link as RouterLink } from 'react-router-dom'
+import { navigation, adminNavigation } from './Sidebar'
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -14,11 +16,17 @@ export function Header() {
     else document.documentElement.classList.remove('dark')
   }, [isDark])
 
+  const [mobileOpen, setMobileOpen] = useState(false)
+
   return (
     <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-200">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
+            {/* Mobile menu button */}
+            <button className="mr-3 md:hidden p-2 rounded-lg hover:bg-gray-100" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+              <Menu className="h-5 w-5" />
+            </button>
             <Link to="/dashboard" className="text-xl font-bold text-primary-600">
               Studio Manager
             </Link>
@@ -82,6 +90,26 @@ export function Header() {
           </div>
         </div>
       </div>
+      {/* Mobile sheet */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-xl p-4">
+            <div className="mb-4 text-xs font-semibold text-gray-500 px-2">Navigation</div>
+            <nav className="flex flex-col gap-1">
+              {[...navigation, ...adminNavigation].map((item) => {
+                const Icon = item.icon
+                return (
+                  <RouterLink key={item.name} to={item.href} onClick={() => setMobileOpen(false)} className="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+                    <Icon className="h-5 w-5 mr-3" />
+                    {item.name}
+                  </RouterLink>
+                )
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

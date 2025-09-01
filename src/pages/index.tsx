@@ -4,8 +4,14 @@ import { useForm } from 'react-hook-form'
 import { bookingsAPI, customerAPI, roomsAPI, staffAPI, reportsAPI } from '../lib/api'
 import type { Booking, Room, Customer } from '../types'
 import { downloadBlobAsFile } from '../lib/utils'
+import { Button } from '../components/ui/Button'
+import { Select } from '../components/ui/Select'
+import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
+import { useToast } from '../components/ui/Toast'
 
 export function BookingsPage() {
+  const { notify } = useToast()
   const [rooms, setRooms] = useState<Room[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -64,6 +70,8 @@ export function BookingsPage() {
     } catch (e: any) {
       setError(e?.message || 'Failed to create booking')
     }
+    if (!error) notify({ kind: 'success', message: 'Booking created' })
+    else notify({ kind: 'error', message: error })
   })
 
   return (
@@ -73,9 +81,9 @@ export function BookingsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="text-gray-600 mt-1">Manage room bookings and reservations.</p>
         </div>
-        <button onClick={() => window.location.reload()} className="btn btn-secondary inline-flex items-center gap-2">
+        <Button variant="secondary" onClick={() => window.location.reload()} className="inline-flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
+        </Button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -87,44 +95,44 @@ export function BookingsPage() {
             <form onSubmit={onCreate} className="space-y-4">
               <div>
                 <label className="form-label">Room</label>
-                <select className="form-input" {...register('room_id', { required: true, valueAsNumber: true })}>
+                <Select {...register('room_id', { required: true, valueAsNumber: true })}>
                   <option value="">Select a room</option>
                   {rooms.map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="form-label">Customer</label>
-                <select className="form-input" {...register('customer_id', { required: true, valueAsNumber: true })}>
+                <Select {...register('customer_id', { required: true, valueAsNumber: true })}>
                   <option value="">Select a customer</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="form-label">Date</label>
-                  <input type="date" className="form-input" {...register('date', { required: true })} />
+                  <Input type="date" {...register('date', { required: true })} />
                 </div>
                 <div>
                   <label className="form-label">Start</label>
-                  <input type="time" className="form-input" step="900" {...register('start', { required: true })} />
+                  <Input type="time" step="900" {...register('start', { required: true })} />
                 </div>
                 <div>
                   <label className="form-label">End</label>
-                  <input type="time" className="form-input" step="900" {...register('end', { required: true })} />
+                  <Input type="time" step="900" {...register('end', { required: true })} />
                 </div>
               </div>
               <div>
                 <label className="form-label">Notes (optional)</label>
-                <input type="text" className="form-input" placeholder="Optional notes" {...register('notes')} />
+                <Textarea placeholder="Optional notes" {...register('notes')} />
               </div>
               <div className="flex items-center gap-3">
-                <button type="submit" className="btn btn-primary inline-flex items-center gap-2">
+                <Button type="submit" className="inline-flex items-center gap-2">
                   <Plus className="h-4 w-4" /> Create Booking
-                </button>
+                </Button>
                 {loading && <span className="text-gray-500 text-sm">Loading…</span>}
                 {error && <span className="text-red-600 text-sm">{error}</span>}
               </div>
@@ -168,6 +176,7 @@ export function BookingsPage() {
 }
 
 export function StaffPage() {
+  const { notify } = useToast()
   const [staff, setStaff] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -204,6 +213,8 @@ export function StaffPage() {
     } catch (e: any) {
       setError(e?.message || 'Failed to add staff')
     }
+    if (!error) notify({ kind: 'success', message: 'Staff member added' })
+    else notify({ kind: 'error', message: error })
   })
 
   return (
@@ -213,7 +224,7 @@ export function StaffPage() {
           <h1 className="text-2xl font-bold text-gray-900">Staff</h1>
           <p className="text-gray-600 mt-1">Manage staff members and session assignments.</p>
         </div>
-        <button onClick={() => window.location.reload()} className="btn btn-secondary inline-flex items-center gap-2"><RefreshCw className="h-4 w-4"/> Refresh</button>
+  <Button variant="secondary" onClick={() => window.location.reload()} className="inline-flex items-center gap-2"><RefreshCw className="h-4 w-4"/> Refresh</Button>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -223,22 +234,22 @@ export function StaffPage() {
             <form onSubmit={onCreate} className="space-y-4">
               <div>
                 <label className="form-label">Name</label>
-                <input className="form-input" {...register('name', { required: true })} />
+                <Input {...register('name', { required: true })} />
               </div>
               <div>
                 <label className="form-label">Email</label>
-                <input type="email" className="form-input" {...register('email', { required: true })} />
+                <Input type="email" {...register('email', { required: true })} />
               </div>
               <div>
                 <label className="form-label">Role</label>
-                <select className="form-input" {...register('role')}>
+                <Select {...register('role')}>
                   <option>Staff/Instructor</option>
                   <option>Receptionist</option>
                   <option>Studio Manager</option>
-                </select>
+                </Select>
               </div>
               <div className="flex items-center gap-3">
-                <button type="submit" className="btn btn-primary inline-flex items-center gap-2"><Plus className="h-4 w-4"/> Add</button>
+                <Button type="submit" className="inline-flex items-center gap-2"><Plus className="h-4 w-4"/> Add</Button>
                 {loading && <span className="text-gray-500 text-sm">Loading…</span>}
                 {error && <span className="text-red-600 text-sm">{error}</span>}
               </div>
@@ -273,13 +284,15 @@ export function StaffPage() {
 
 export function ReportsPage() {
   const [downloading, setDownloading] = useState<'bookings' | 'revenue' | null>(null)
+  const { notify } = useToast()
   const handleDownload = async (kind: 'bookings' | 'revenue') => {
     try {
       setDownloading(kind)
       const blob = kind === 'bookings' ? await reportsAPI.downloadBookingsCsv() : await reportsAPI.downloadRevenueCsv()
       downloadBlobAsFile(blob, `${kind}.csv`)
+      notify({ kind: 'success', message: `${kind === 'bookings' ? 'Bookings' : 'Revenue'} report downloaded` })
     } catch (e) {
-      // noop basic UI
+      notify({ kind: 'error', message: 'Failed to download report' })
     } finally {
       setDownloading(null)
     }
@@ -296,17 +309,17 @@ export function ReportsPage() {
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Bookings CSV</h3></div>
           <div className="card-body">
-            <button disabled={downloading === 'bookings'} onClick={() => handleDownload('bookings')} className="btn btn-primary inline-flex items-center gap-2">
+            <Button disabled={downloading === 'bookings'} onClick={() => handleDownload('bookings')} className="inline-flex items-center gap-2">
               <Download className="h-4 w-4"/> {downloading === 'bookings' ? 'Downloading…' : 'Download'}
-            </button>
+            </Button>
           </div>
         </div>
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Revenue CSV</h3></div>
           <div className="card-body">
-            <button disabled={downloading === 'revenue'} onClick={() => handleDownload('revenue')} className="btn btn-primary inline-flex items-center gap-2">
+            <Button disabled={downloading === 'revenue'} onClick={() => handleDownload('revenue')} className="inline-flex items-center gap-2">
               <Download className="h-4 w-4"/> {downloading === 'revenue' ? 'Downloading…' : 'Download'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
