@@ -113,3 +113,25 @@ Top 5 blockers:
 - `gunicorn.conf.py` with safe defaults (tunable via env)
 - `.dockerignore` for tighter images and faster builds
 
+## Migration validation status (Postgres-first)
+- Target DB: Postgres (recommended for prod/staging). Complex SQLite batch ops can be brittle and are not required for prod.
+- Local validation: Alembic upgrade applied successfully against Postgres. Seed populated tenants, studios, and users.
+- Caveat: Alembic stores the revision in a VARCHAR(32). Overly long revision IDs can overflow this on Postgres. We resolved this by introducing a short revision ID for the multitenancy migration and a no-op follow-up to collapse duplicate heads.
+- Guidance:
+  - Prefer short hex-like revision IDs for manual migrations.
+  - Always ensure `DATABASE_URL` points to Postgres when running migrations/seeds to avoid accidental SQLite usage.
+
+### Handy commands (zsh)
+```
+# One-off migration and seed against local Postgres
+DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager \
+  FLASK_APP=run.py flask db upgrade
+
+DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager \
+  FLASK_APP=run.py flask seed
+
+# Persist env for the shell session
+export DATABASE_URL=postgresql://studio_user:studio_pass@localhost:54329/studio_manager
+export FLASK_APP=run.py
+```
+
