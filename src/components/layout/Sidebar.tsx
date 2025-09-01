@@ -23,6 +23,8 @@ export const navigation = [
 export const adminNavigation = [
   { name: 'Studios', href: '/studios', icon: Building2, role: 'Admin' },
   { name: 'Settings', href: '/settings', icon: Settings },
+  // Global admin
+  { name: 'Global Admin', href: '/admin', icon: Settings, role: 'Admin' },
 ]
 
 export function Sidebar() {
@@ -35,15 +37,15 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-72 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-lg min-h-[calc(100vh-73px)]">
+    <aside className="w-72 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-800/50 shadow-lg min-h-[calc(100vh-73px)]">
       <div className="sticky top-0 p-6">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl flex items-center justify-center">
             <Building2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Studio Manager</h1>
-            <p className="text-xs text-gray-500">SaaS Platform</p>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">Studio Manager</h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">SaaS Platform</p>
           </div>
         </div>
       </div>
@@ -60,8 +62,8 @@ export function Sidebar() {
                 cn(
                   'flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
                   isActive
-                    ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-primary-500 border-r-2 border-primary-600'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                 )
               }
             >
@@ -84,8 +86,8 @@ export function Sidebar() {
                   cn(
                     'flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors',
                     isActive
-                      ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary-50 dark:bg-gray-800 text-primary-700 dark:text-primary-500 border-r-2 border-primary-600'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                   )
                 }
               >

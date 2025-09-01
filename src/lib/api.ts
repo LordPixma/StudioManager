@@ -152,3 +152,47 @@ export const reportsAPI = {
     return resp.data
   },
 }
+
+// Global Admin APIs
+export const adminAPI = {
+  async summary() {
+    const { data } = await http.get<ApiResponse>(`/admin/summary`)
+    return data
+  },
+  async tenants() {
+    const { data } = await http.get<ApiResponse>(`/admin/tenants`)
+    return data
+  },
+  async moveUser(payload: { user_id: number; target_tenant_id: number; target_studio_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/admin/users/move`, payload)
+    return data
+  },
+  async messagesList() {
+    const { data } = await http.get<ApiResponse>(`/admin/messages`)
+    return data
+  },
+  async messagesCreate(payload: { title: string; body: string; tenant_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/admin/messages`, payload)
+    return data
+  },
+  async licensesList() {
+    const { data } = await http.get<ApiResponse>(`/admin/licenses`)
+    return data
+  },
+  async licensesCreate(payload: { key?: string; plan: string; seats?: number; expires_at?: string; tenant_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/admin/licenses`, payload)
+    return data
+  },
+  async licensesAssign(payload: { license_id: number; user_id?: number; tenant_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/admin/licenses/assign`, payload)
+    return data
+  },
+  async downloadBookingsCsv(): Promise<Blob> {
+    const resp = await http.get(`/admin/reports/bookings.csv`, { responseType: 'blob' })
+    return resp.data
+  },
+  async downloadRevenueCsv(): Promise<Blob> {
+    const resp = await http.get(`/admin/reports/revenue.csv`, { responseType: 'blob' })
+    return resp.data
+  },
+}

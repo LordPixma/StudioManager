@@ -33,6 +33,173 @@ function json<T>(body: ApiResponse<T>, init?: ResponseInit) {
   return new Response(JSON.stringify(body), { ...init, headers })
 }
 
+// --- Global Admin Helpers ---
+async function ensureAdminTables(env: Env) {
+  if (!env.DB) return
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    audience TEXT DEFAULT 'all',
+    tenant_id INTEGER NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS licenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT UNIQUE,
+    plan TEXT NOT NULL,
+    seats INTEGER DEFAULT 1,
+    expires_at TEXT NULL,
+    tenant_id INTEGER NULL,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_licenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    license_id INTEGER NOT NULL,
+    assigned_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
+}
+
+function requireGlobalAdmin(user: any): string | null {
+  if (!user) return 'Unauthorized'
+  if (user.role !== 'Admin') return 'Admin access required'
+  return null
+}
+
+async function handleAdmin(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  const err = requireGlobalAdmin(user)
+  if (err) return json({ success: false, message: err }, { status: err === 'Unauthorized' ? 401 : 403 })
+
+  const path = url.pathname
+  const method = request.method
+  await ensureAdminTables(env)
+
+  // GET /api/admin/summary
+  if (path === '/api/admin/summary' && method === 'GET') {
+    const tenants = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM tenants')
+    const activeTenants = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM tenants WHERE is_active = 1')
+    const users = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users')
+    const bookings = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM bookings')
+    const revenue = await dbFirst(env, 'SELECT IFNULL(SUM(total_amount),0) as sum FROM bookings WHERE status = ?', ['confirmed'])
+    return json({ success: true, data: {
+      tenants: tenants?.cnt || 0,
+      active_tenants: activeTenants?.cnt || 0,
+      users: users?.cnt || 0,
+      bookings: bookings?.cnt || 0,
+      revenue: revenue?.sum || 0
+    } })
+  }
+
+  // Aliases to tenant management
+  if (path === '/api/admin/tenants' && method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM tenants ORDER BY created_at DESC').all()
+    const data = (rows?.results || []).map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain, plan: t.plan, is_active: !!t.is_active, created_at: t.created_at }))
+    return json({ success: true, data })
+  }
+  if (path === '/api/admin/tenants' && method === 'POST') {
+    // Proxy to existing creation logic
+    return handleTenants(new Request(url.origin + '/api/tenants', { method: 'POST', headers: request.headers, body: await request.clone().text() }), env, new URL(url.origin + '/api/tenants'))
+  }
+
+  // POST /api/admin/users/move
+  if (path === '/api/admin/users/move' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const userId = parseInt(body.user_id, 10)
+    const targetTenantId = parseInt(body.target_tenant_id, 10)
+    const targetStudioId = body.target_studio_id ? parseInt(body.target_studio_id, 10) : null
+    if (!Number.isFinite(userId) || !Number.isFinite(targetTenantId)) return json({ success: false, message: 'user_id and target_tenant_id are required' }, { status: 400 })
+    const targetTenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [targetTenantId])
+    if (!targetTenant) return json({ success: false, message: 'Target tenant not found' }, { status: 404 })
+    let studioId = targetStudioId
+    if (!studioId) {
+      const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [targetTenantId])
+      if (!studio) {
+        await dbRun(env, 'INSERT INTO studios (tenant_id, name) VALUES (?, ?)', [targetTenantId, `${targetTenant.name} - Main Studio`])
+        const created = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [targetTenantId])
+        studioId = created.id
+      } else {
+        studioId = studio.id
+      }
+    }
+    await dbRun(env, 'UPDATE users SET tenant_id = ?, studio_id = ? WHERE id = ?', [targetTenantId, studioId, userId])
+    const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [userId])
+    return json({ success: true, data: serializeUser(updated), message: 'User moved' })
+  }
+
+  // Messages
+  if (path === '/api/admin/messages' && method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200').all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+  if (path === '/api/admin/messages' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const title = (body.title || '').trim()
+    const message = (body.body || '').trim()
+    const tenantId = body.tenant_id ? parseInt(body.tenant_id, 10) : null
+    if (!title || !message) return json({ success: false, message: 'title and body are required' }, { status: 400 })
+    await dbRun(env, 'INSERT INTO announcements (title, body, audience, tenant_id) VALUES (?,?,?,?)', [title, message, tenantId ? 'tenant' : 'all', tenantId])
+    const created = await dbFirst(env, 'SELECT * FROM announcements ORDER BY id DESC LIMIT 1')
+    return json({ success: true, data: created, message: 'Message broadcasted' }, { status: 201 })
+  }
+
+  // Licenses
+  if (path === '/api/admin/licenses' && method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM licenses ORDER BY created_at DESC').all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+  if (path === '/api/admin/licenses' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const plan = (body.plan || 'basic').toString()
+    const seats = Number(body.seats || 1)
+    const expires = body.expires_at ? String(body.expires_at) : null
+    const tenantId = body.tenant_id ? parseInt(body.tenant_id, 10) : null
+    const key = (body.key && String(body.key)) || `LIC-${Math.random().toString(36).slice(2,8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`
+    await dbRun(env, 'INSERT INTO licenses (key, plan, seats, expires_at, tenant_id, is_active) VALUES (?,?,?,?,?,1)', [key, plan, seats, expires, tenantId])
+    const created = await dbFirst(env, 'SELECT * FROM licenses WHERE key = ? LIMIT 1', [key])
+    return json({ success: true, data: created, message: 'License created' }, { status: 201 })
+  }
+  if (path === '/api/admin/licenses/assign' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const licenseId = parseInt(body.license_id, 10)
+    if (!Number.isFinite(licenseId)) return json({ success: false, message: 'license_id required' }, { status: 400 })
+    if (body.user_id) {
+      const userId = parseInt(body.user_id, 10)
+      if (!Number.isFinite(userId)) return json({ success: false, message: 'user_id invalid' }, { status: 400 })
+      await dbRun(env, 'INSERT INTO user_licenses (user_id, license_id) VALUES (?,?)', [userId, licenseId])
+      return json({ success: true, message: 'License assigned to user' })
+    }
+    if (body.tenant_id) {
+      const tenantId = parseInt(body.tenant_id, 10)
+      if (!Number.isFinite(tenantId)) return json({ success: false, message: 'tenant_id invalid' }, { status: 400 })
+      await dbRun(env, 'UPDATE licenses SET tenant_id = ? WHERE id = ?', [tenantId, licenseId])
+      return json({ success: true, message: 'License assigned to tenant' })
+    }
+    return json({ success: false, message: 'Either user_id or tenant_id is required' }, { status: 400 })
+  }
+
+  // Platform-wide CSV reports
+  if (path === '/api/admin/reports/bookings.csv' && method === 'GET') {
+    const headers = new Headers({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="platform-bookings.csv"' })
+    const rows = await env.DB.prepare('SELECT * FROM bookings ORDER BY start_time ASC').all()
+    const lines = ['id,tenant_id,room_id,customer_id,start_time,end_time,status,total_amount']
+    for (const b of (rows?.results || [])) lines.push([b.id, b.tenant_id, b.room_id, b.customer_id, b.start_time, b.end_time, b.status, b.total_amount ?? ''].join(','))
+    return new Response(lines.join('\n'), { headers })
+  }
+  if (path === '/api/admin/reports/revenue.csv' && method === 'GET') {
+    const headers = new Headers({ 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="platform-revenue.csv"' })
+    const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE status = ? GROUP BY day ORDER BY day ASC').bind('confirmed').all()
+    const lines = ['date,revenue']
+    for (const r of (rows?.results || [])) lines.push([r.day, r.revenue ?? 0].join(','))
+    return new Response(lines.join('\n'), { headers })
+  }
+
+  return json({ success: false, message: 'Admin endpoint not found' }, { status: 404 })
+}
+
 // --- Tenant resolution from Host or dev override ---
 async function resolveTenantFromRequest(env: Env, request: Request): Promise<any | null> {
   if (!env.DB) return null
@@ -750,6 +917,10 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
+    // Global admin routes
+    if (url.pathname.startsWith('/api/admin')) {
+      return handleAdmin(request, env, url)
+    }
 
     // Cloudflare-native API routes (incremental cutover)
     if (url.pathname === '/api/health') {

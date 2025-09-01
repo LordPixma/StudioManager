@@ -21,12 +21,12 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
-    <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-200">
+    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-sm border-b border-gray-200 dark:border-gray-800">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             {/* Mobile menu button */}
-            <button className="mr-3 md:hidden p-2 rounded-lg hover:bg-gray-100" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+            <button className="mr-3 md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setMobileOpen(true)} aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </button>
             <Link to="/dashboard" className="flex items-center gap-2">
@@ -47,7 +47,7 @@ export function Header() {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setIsDark(!isDark)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               aria-label="Toggle theme"
               title="Toggle theme"
             >
@@ -57,7 +57,7 @@ export function Header() {
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+                className="flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
               >
                 <User className="h-5 w-5" />
                 <span>{user?.name}</span>
@@ -65,16 +65,16 @@ export function Header() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 border border-gray-200">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-800">
                   <div className="py-1">
-                    <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-100">
+                    <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-800">
                       <div className="font-medium">{user?.name}</div>
                       <div className="text-xs">{user?.email}</div>
                       <div className="text-xs text-primary-600">{user?.role}</div>
                     </div>
                     <Link
                       to="/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       <Settings className="h-4 w-4 mr-2" />
@@ -85,7 +85,7 @@ export function Header() {
                         setIsDropdownOpen(false)
                         logout()
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
@@ -101,13 +101,13 @@ export function Header() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-xl p-4">
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white dark:bg-gray-900 shadow-xl p-4">
             <div className="mb-4 text-xs font-semibold text-gray-500 px-2">Navigation</div>
             <nav className="flex flex-col gap-1">
               {[...navigation, ...adminNavigation].map((item) => {
                 const Icon = item.icon
                 return (
-                  <RouterLink key={item.name} to={item.href} onClick={() => setMobileOpen(false)} className="flex items-center px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50">
+                  <RouterLink key={item.name} to={item.href} onClick={() => setMobileOpen(false)} className="flex items-center px-3 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800">
                     <Icon className="h-5 w-5 mr-3" />
                     {item.name}
                   </RouterLink>

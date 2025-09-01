@@ -16,6 +16,12 @@ import { RoomsPage } from './pages/RoomsPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+import { AdminTenantsPage } from './pages/admin/AdminTenantsPage'
+import { AdminUsersPage } from './pages/admin/AdminUsersPage'
+import { AdminMessagesPage } from './pages/admin/AdminMessagesPage'
+import { AdminLicensesPage } from './pages/admin/AdminLicensesPage'
+import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage'
 
 function App() {
   return (
@@ -37,6 +43,13 @@ function App() {
           <Route path="/staff" element={<StaffPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          {/* Global admin routes (Admin only) */}
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/tenants" element={<AdminTenantsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/messages" element={<AdminMessagesPage />} />
+          <Route path="/admin/licenses" element={<AdminLicensesPage />} />
+          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
         </Route>
         
         {/* 404 fallback */}
