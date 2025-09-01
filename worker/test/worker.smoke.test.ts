@@ -1,15 +1,21 @@
-import { beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
+// Import the default Worker export
+import workerModule from '../../worker/index'
 
-let mf: any
-
-beforeAll(async () => {
-  // @ts-ignore provided by Miniflare environment
-  mf = globalThis.__MF__
-})
+function makeEnv(): any {
+  return {
+    ASSETS: { async fetch(req: Request) { return new Response('not found', { status: 404 }) } },
+    API_ORIGIN: 'https://example.com',
+    JWT_SECRET: 'test-secret',
+    NODE_ENV: 'development',
+    DB: undefined,
+  }
+}
 
 describe('Worker API smoke', () => {
   it('health works', async () => {
-    const res = await mf.dispatchFetch('http://localhost/api/health')
+    const env = makeEnv()
+    const res = await (workerModule as any).fetch(new Request('http://localhost/api/health'), env)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.success).toBe(true)
