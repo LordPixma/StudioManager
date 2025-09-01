@@ -112,6 +112,132 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     return handleTenants(new Request(url.origin + '/api/tenants', { method: 'POST', headers: request.headers, body: await request.clone().text() }), env, new URL(url.origin + '/api/tenants'))
   }
 
+  // Live bookings count per tenant (current active bookings)
+  if (path === '/api/admin/tenants/live-bookings' && method === 'GET') {
+    const nowIso = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    const rows = await env.DB.prepare(`SELECT tenant_id, COUNT(*) as cnt
+      FROM bookings
+      WHERE status = ? AND start_time <= ? AND end_time > ?
+      GROUP BY tenant_id`).bind('confirmed', nowIso, nowIso).all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+
+  // Tenant admins list
+  const mAdmins = path.match(/^\/api\/admin\/tenants\/(\d+)\/admins$/)
+  if (mAdmins && method === 'GET') {
+    const tenantId = parseInt(mAdmins[1], 10)
+    const rows = await env.DB.prepare('SELECT * FROM users WHERE tenant_id = ? AND role = ? ORDER BY created_at ASC').bind(tenantId, 'Admin').all()
+    const data = (rows?.results || []).map(serializeUser)
+    return json({ success: true, data })
+  }
+  if (mAdmins && method === 'POST') {
+    const tenantId = parseInt(mAdmins[1], 10)
+    const body = await request.json().catch(() => ({})) as any
+    const name = (body.name || '').trim()
+    const email = (body.email || '').toLowerCase().trim()
+    const password = body.password || ''
+    if (!name || !email || !password) return json({ success: false, message: 'name, email, password required' }, { status: 400 })
+    const adminCount = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE tenant_id = ? AND role = ?', [tenantId, 'Admin'])
+    if ((adminCount?.cnt || 0) >= 2) return json({ success: false, message: 'Tenant already has 2 Admins' }, { status: 400 })
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [tenantId])
+    if (!tenant) return json({ success: false, message: 'Tenant not found' }, { status: 404 })
+    const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [tenantId])
+    const hash = await generateWerkzeugPBKDF2(password)
+    await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenantId, studio?.id ?? null, name, email, hash, 'Admin', JSON.stringify(['view_customers','create_customer','edit_customer','delete_customer','view_bookings','create_booking','edit_booking','cancel_booking','view_staff','create_staff','edit_staff','view_reports','manage_studio'])])
+    const created = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+    await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'create_company_admin', JSON.stringify({ tenant_id: tenantId, user_id: created.id })])
+    return json({ success: true, data: serializeUser(created), message: 'Company admin created' }, { status: 201 })
+  }
+
+  // Change or delete tenant admin
+  const mAdminAction = path.match(/^\/api\/admin\/tenants\/(\d+)\/admins\/(\d+)(?:\/(role))?$/)
+  if (mAdminAction) {
+    const tenantId = parseInt(mAdminAction[1], 10)
+    const targetUserId = parseInt(mAdminAction[2], 10)
+    if (method === 'DELETE') {
+      const u = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
+      if (!u || u.tenant_id !== tenantId || u.role !== 'Admin') return json({ success: false, message: 'Admin not found' }, { status: 404 })
+      // Ensure not violating last admin? Requirement allows 0–2 admins, so delete allowed
+      await dbRun(env, 'DELETE FROM users WHERE id = ?', [targetUserId])
+      await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'delete_company_admin', JSON.stringify({ tenant_id: tenantId, user_id: targetUserId })])
+      return json({ success: true, message: 'Company admin deleted' })
+    }
+    if (method === 'POST' && mAdminAction[3] === 'role') {
+      const body = await request.json().catch(() => ({})) as any
+      const newRole = String(body.role || '').trim()
+      const allowed = ['Admin','Studio Manager','Receptionist','Staff/Instructor']
+      if (!allowed.includes(newRole)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
+      const u = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
+      if (!u || u.tenant_id !== tenantId) return json({ success: false, message: 'User not found' }, { status: 404 })
+      if (newRole === 'Admin') {
+        const adminCount = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE tenant_id = ? AND role = ?', [tenantId, 'Admin'])
+        if ((adminCount?.cnt || 0) >= 2) return json({ success: false, message: 'Tenant already has 2 Admins' }, { status: 400 })
+      }
+      // Prevent demoting the only Admin if business wants at least 0 – allowed per requirement
+      await dbRun(env, 'UPDATE users SET role = ? WHERE id = ?', [newRole, targetUserId])
+      await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'change_company_admin_role', JSON.stringify({ tenant_id: tenantId, user_id: targetUserId, role: newRole })])
+      const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
+      return json({ success: true, data: serializeUser(updated), message: 'Role updated' })
+    }
+  }
+
+  // Create arbitrary user in tenant
+  const mUsersCreate = path.match(/^\/api\/admin\/tenants\/(\d+)\/users$/)
+  if (mUsersCreate && method === 'POST') {
+    const tenantId = parseInt(mUsersCreate[1], 10)
+    const body = await request.json().catch(() => ({})) as any
+    const name = (body.name || '').trim()
+    const email = (body.email || '').toLowerCase().trim()
+    const password = body.password || ''
+    const role = String(body.role || 'Receptionist')
+    const allowedRoles = ['Admin','Studio Manager','Staff/Instructor','Receptionist']
+    if (!name || !email || !password) return json({ success: false, message: 'name, email, password required' }, { status: 400 })
+    if (!allowedRoles.includes(role)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
+    if (role === 'Admin') {
+      const adminCount = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE tenant_id = ? AND role = ?', [tenantId, 'Admin'])
+      if ((adminCount?.cnt || 0) >= 2) return json({ success: false, message: 'Tenant already has 2 Admins' }, { status: 400 })
+    }
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [tenantId])
+    if (!tenant) return json({ success: false, message: 'Tenant not found' }, { status: 404 })
+    const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [tenantId])
+    const hash = await generateWerkzeugPBKDF2(password)
+    await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenantId, studio?.id ?? null, name, email, hash, role, JSON.stringify([])])
+    const created = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+    await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'admin_create_user', JSON.stringify({ tenant_id: tenantId, user_id: created.id, role })])
+    return json({ success: true, data: serializeUser(created), message: 'User created' }, { status: 201 })
+  }
+
+  // Suspend/enable tenant
+  const mTenantAction = path.match(/^\/api\/admin\/tenants\/(\d+)\/(suspend|enable)$/)
+  if (mTenantAction && method === 'POST') {
+    const id = parseInt(mTenantAction[1], 10)
+    const action = mTenantAction[2]
+    const t = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [id])
+    if (!t) return json({ success: false, message: 'Tenant not found' }, { status: 404 })
+    const active = action === 'enable' ? 1 : 0
+    await dbRun(env, 'UPDATE tenants SET is_active = ? WHERE id = ?', [active, id])
+    await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, action === 'enable' ? 'enable_tenant' : 'suspend_tenant', JSON.stringify({ tenant_id: id })])
+    return json({ success: true, message: `Tenant ${action}d` })
+  }
+
+  // Delete tenant (cascade)
+  const mTenantDelete = path.match(/^\/api\/admin\/tenants\/(\d+)$/)
+  if (mTenantDelete && method === 'DELETE') {
+    const id = parseInt(mTenantDelete[1], 10)
+    const t = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [id])
+    if (!t) return json({ success: false, message: 'Tenant not found' }, { status: 404 })
+    // Cascade delete related data
+    await dbRun(env, 'DELETE FROM bookings WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM rooms WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM customers WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM studios WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM users WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM licenses WHERE tenant_id = ?', [id])
+    await dbRun(env, 'DELETE FROM tenants WHERE id = ?', [id])
+    await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, 'delete_tenant', JSON.stringify({ tenant_id: id })])
+    return json({ success: true, message: 'Tenant deleted' })
+  }
+
   // POST /api/admin/users/move
   if (path === '/api/admin/users/move' && method === 'POST') {
     const body = await request.json().catch(() => ({})) as any
@@ -561,8 +687,8 @@ async function handleTenants(request: Request, env: Env, url: URL): Promise<Resp
       const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? ORDER BY id DESC LIMIT 1', [subdomain])
       await dbRun(env, 'INSERT INTO studios (tenant_id, name) VALUES (?,?)', [tenant.id, `${tenant_name} - Main Studio`])
       const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [tenant.id])
-      const hash = await generateWerkzeugPBKDF2(admin_password)
-      await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, admin_name, admin_email, hash, 'Studio Manager', JSON.stringify(['view_customers','create_customer','edit_customer','delete_customer','view_bookings','create_booking','edit_booking','cancel_booking','view_staff','create_staff','edit_staff','view_reports','manage_studio'])])
+  const hash = await generateWerkzeugPBKDF2(admin_password)
+  await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, admin_name, admin_email, hash, 'Admin', JSON.stringify(['view_customers','create_customer','edit_customer','delete_customer','view_bookings','create_booking','edit_booking','cancel_booking','view_staff','create_staff','edit_staff','view_reports','manage_studio'])])
       return json({ success: true, data: { tenant, studio }, message: 'Tenant created successfully' }, { status: 201 })
     } catch (e: any) {
       return json({ success: false, message: `Failed to create tenant: ${e?.message || String(e)}` }, { status: 500 })

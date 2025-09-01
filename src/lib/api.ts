@@ -163,6 +163,14 @@ export const adminAPI = {
     const { data } = await http.get<ApiResponse>(`/admin/tenants`)
     return data
   },
+  async tenantsCreate(payload: { tenant_name: string; subdomain?: string; admin_name: string; admin_email: string; admin_password: string; plan?: string }) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants`, payload)
+    return data
+  },
+  async tenantsLiveBookings() {
+    const { data } = await http.get<ApiResponse>(`/admin/tenants/live-bookings`)
+    return data
+  },
   async moveUser(payload: { user_id: number; target_tenant_id: number; target_studio_id?: number }) {
     const { data } = await http.post<ApiResponse>(`/admin/users/move`, payload)
     return data
@@ -198,6 +206,38 @@ export const adminAPI = {
   async downloadRevenueCsv(): Promise<Blob> {
     const resp = await http.get(`/admin/reports/revenue.csv`, { responseType: 'blob' })
     return resp.data
+  },
+  async tenantAdminsList(tenantId: number) {
+    const { data } = await http.get<ApiResponse>(`/admin/tenants/${tenantId}/admins`)
+    return data
+  },
+  async tenantAdminsCreate(tenantId: number, payload: { name: string; email: string; password: string }) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/admins`, payload)
+    return data
+  },
+  async tenantAdminDelete(tenantId: number, userId: number) {
+    const { data } = await http.delete<ApiResponse>(`/admin/tenants/${tenantId}/admins/${userId}`)
+    return data
+  },
+  async tenantAdminChangeRole(tenantId: number, userId: number, role: string) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/admins/${userId}/role`, { role })
+    return data
+  },
+  async tenantUsersCreate(tenantId: number, payload: { name: string; email: string; password: string; role: string }) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/users`, payload)
+    return data
+  },
+  async tenantSuspend(tenantId: number) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/suspend`)
+    return data
+  },
+  async tenantEnable(tenantId: number) {
+    const { data } = await http.post<ApiResponse>(`/admin/tenants/${tenantId}/enable`)
+    return data
+  },
+  async tenantDelete(tenantId: number) {
+    const { data } = await http.delete<ApiResponse>(`/admin/tenants/${tenantId}`)
+    return data
   },
 }
 
