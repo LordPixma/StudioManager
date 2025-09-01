@@ -1,49 +1,79 @@
 ﻿# StudioManager
 
-A comprehensive SaaS web application for managing fitness, music, dance, or any multi-room studios.
+Multi-tenant studio management SaaS. Serverless on Cloudflare (Workers + D1 + Durable Objects) with a React/Vite frontend.
 
 ## Features
 
-- **Customer Management**: Create, view, edit, and delete customer profiles
-- **Room Booking**: Real-time booking with conflict detection
-- **Staff & Session Scheduling**: Assign staff to sessions and manage schedules
-- **Reporting & Analytics**: Dashboards with KPIs and exportable reports
-- **Multi-Studio Support**: Manage multiple studio locations
+- Customers: create, view, edit, delete with tenant isolation
+- Rooms: CRUD + capacity/rates; bookings with conflict safety (Durable Objects)
+- Staff: directory and role/permission management
+- Reports: CSV exports (bookings, revenue)
+- Auth: JWT in httpOnly cookie, same-origin API
 
-## Tech Stack
+## Architecture
 
-- **Backend**: Flask (Python), SQLAlchemy, PostgreSQL
-- **Frontend**: HTML5, CSS3, JavaScript, Jinja2
-- **Authentication**: Flask-Login, bcrypt
-- **Testing**: PyTest
-- **Deployment**: Docker, Gunicorn, NGINX
+- API: Cloudflare Workers (`worker/index.ts`)
+- Data: Cloudflare D1 (schema at `migrations/d1/schema.sql`)
+- Concurrency control: Durable Object `RoomLock`
+- Frontend: React + Vite (built to `dist/`, served by the Worker)
 
-## Setup
+## Breaking changes
 
-1. Clone the repository
-2. Create virtual environment: python -m venv venv
-3. Activate virtual environment: env\Scripts\activate (Windows) or source venv/bin/activate (Unix)
-4. Install dependencies: pip install -r requirements.txt
-5. Set up environment variables in .env
-6. Initialize database: lask db upgrade
-7. Run application: python run.py
+- Proxying to legacy backends and Cloudflare Tunnels has been removed.
+- All API routes are now served directly by the Cloudflare Worker under `/api/*`.
 
-## Development
+## Quick start
 
-- Run tests: pytest
-- Create migration: lask db migrate -m "description"
-- Apply migrations: lask db upgrade
+1) Install deps
+```
+npm install
+```
 
-## Docker
+2) Build frontend
+```
+npm run build
+```
 
-`ash
-docker-compose up --build
-`
+3) Configure secrets/vars
+```
+wrangler secret put JWT_SECRET
+# wrangler.toml already sets NODE_ENV=production under [vars]
+```
+
+4) Apply D1 schema (first deploy only)
+```
+wrangler d1 execute <your-d1-name> --file .\migrations\d1\schema.sql --remote
+```
+
+5) Deploy
+```
+wrangler deploy
+```
+
+## Local development
+
+- Run the Worker locally (serves assets + API):
+```
+wrangler dev
+```
+
+- Or use Vite for UI-only iteration:
+```
+npm run dev
+```
+
+Note: When using Vite dev server, API calls to `/api/*` expect the Worker to be running separately (or adjust proxy as needed for your setup).
+
+## Testing
+
+- Worker smoke tests (vitest):
+```
+npm run test:worker
+```
 
 ## Contributing
 
 1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Run tests
-5. Submit pull request
+2. Create a feature branch
+3. Make changes with tests
+4. Open a pull request

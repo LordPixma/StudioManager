@@ -8,9 +8,6 @@ command = "npm run build"
 
 [vars]
 NODE_ENV = "production"
-# API origin the worker will proxy /api/* to (include scheme and host, no trailing slash)
-# Permanent API via Cloudflare Named Tunnel
-API_ORIGIN = "https://api.lgger.com"
 # JWT_SECRET is managed via `wrangler secret` and should not be set here.
 
 [assets]

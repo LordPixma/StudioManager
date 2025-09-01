@@ -5,7 +5,6 @@ import workerModule from '../../worker/index'
 function makeEnv(): any {
   return {
     ASSETS: { async fetch(req: Request) { return new Response('not found', { status: 404 }) } },
-    API_ORIGIN: 'https://example.com',
     JWT_SECRET: 'test-secret',
     NODE_ENV: 'development',
     DB: undefined,

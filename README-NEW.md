@@ -1,6 +1,6 @@
 # StudioManager - SaaS
 
-A comprehensive multi-tenant SaaS web application for managing fitness, music, dance, or any multi-room studios. Built with React frontend and Flask API backend, optimized for Cloudflare deployment.
+A comprehensive multi-tenant SaaS web application for managing fitness, music, dance, or any multi-room studios. Built with a React frontend and a Cloudflare Workers API (serverless) backed by Cloudflare D1.
 
 ## Features
 
@@ -38,16 +38,19 @@ A comprehensive multi-tenant SaaS web application for managing fitness, music, d
 - **React Hook Form** with Zod validation
 
 ### Backend
-- **Flask** API-only backend
-- **SQLAlchemy** ORM with multi-tenant database design
-- **Flask-Migrate** for database migrations
-- **PostgreSQL** for production (SQLite for development)
-- **Flask-CORS** for cross-origin requests
+- **Cloudflare Workers** API
+- **Cloudflare D1** (SQLite-compatible) for persistence
+- **Durable Objects** for booking conflict control
+- JWT auth via httpOnly cookie
 
 ### Deployment
-- **Cloudflare Pages** for frontend hosting
-- **Cloudflare Workers** for backend API (planned)
-- **Cloudflare D1** for database (planned)
+- **Cloudflare Workers** serves both static assets and the API
+- **Cloudflare D1** for the database
+
+## Breaking changes
+
+- Proxying to a separate Flask API and Cloudflare Tunnel guidance has been removed.
+- All APIs are implemented in the Worker under `/api/*`.
 
 ## Quick Start
 
@@ -98,14 +101,15 @@ A comprehensive multi-tenant SaaS web application for managing fitness, music, d
 ### Production Deployment
 
 #### Cloudflare Workers (Full stack)
-Serves the frontend from `dist` and proxies `/api/*` to your Flask API.
+The Worker serves the frontend from `dist` and implements the API at `/api/*`.
 
 1. Build frontend: `npm run build`
-2. Configure variables:
-   - Deploy-time override: `wrangler deploy --var API_ORIGIN=https://api.your-domain.com --var NODE_ENV=production`
-   - Or keep in `wrangler.toml` under `[vars]`. For local dev, you can use a `.dev.vars` file with `KEY=VALUE` lines.
-3. Deploy: `wrangler deploy`
-4. Visit the Worker URL
+2. Secrets and vars:
+   - `wrangler secret put JWT_SECRET`
+   - `NODE_ENV=production` (wrangler.toml `[vars]`)
+3. Apply D1 schema (first deploy): `wrangler d1 execute <db-name> --file .\\migrations\\d1\\schema.sql --remote`
+4. Deploy: `wrangler deploy`
+5. Visit the Worker URL
 
 If you hit macOS permission errors writing Wrangler logs, fix ownership:
 ```
@@ -113,12 +117,8 @@ sudo chown -R "$USER":staff "$HOME/Library/Preferences/.wrangler"
 chmod -R u+rwX "$HOME/Library/Preferences/.wrangler"
 ```
 
-Permanent backend on Cloudflare:
-- Set up a Named Tunnel for a stable API hostname that forwards to your Flask server on localhost.
-- See `DEPLOYMENT.md` → “Permanent API on Cloudflare (Named Tunnel)”.
-
-#### Backend API
-- Host Flask API (Heroku, Railway, DO, AWS, etc.) and point `API_ORIGIN` at it.
+Notes:
+- Proxying to a legacy API has been removed. The app is now fully serverless on Cloudflare.
 
 ## Development
 
@@ -132,11 +132,9 @@ npm run preview      # Preview production build
 npm run lint         # Lint code
 npm run lint:fix     # Fix linting issues
 
-# Backend
-python run.py        # Start Flask development server
-flask db migrate     # Create database migration
-flask db upgrade     # Apply database migrations
-pytest              # Run tests
+# Worker
+wrangler dev         # Run the Worker locally (serves assets + API)
+wrangler deploy      # Deploy the Worker
 ```
 
 ## Contributing
@@ -154,8 +152,8 @@ pytest              # Run tests
 ### Phase 1: Core SaaS Conversion ✅
 - [x] React frontend with modern tooling
 - [x] Multi-tenant database architecture
-- [x] API-only Flask backend
-- [x] Basic authentication and user management
+- [x] Workers-based API
+- [x] Authentication and user management
 - [x] Customer management with tenant isolation
 
 ### Phase 2: Enhanced Features (Coming Soon)

@@ -1,11 +1,8 @@
 # Studio Manager SaaS Deployment Guide
 
-## Cloudflare Workers (Full stack: static + API proxy)
-# Studio Manager SaaS Deployment Guide
+## Cloudflare Workers (Full stack: static + API on Workers)
 
-## Cloudflare Workers (Full stack: static + API proxy)
-
-This repo includes a Worker at `worker/index.ts` that serves the React build from `dist` and proxies `/api/*` to your Flask API origin.
+This repo includes a Cloudflare Worker at `worker/index.ts` that serves the React build from `dist` and implements the API natively on Workers. Data is stored in Cloudflare D1, and booking conflict control uses Durable Objects.
 
 ### Configure
 
@@ -14,18 +11,16 @@ This repo includes a Worker at `worker/index.ts` that serves the React build fro
 npm run build
 ```
 
-2) Set variables (replace with your API origin, no trailing slash)
+2) Configure environment variables
 ```
-You can set variables in wrangler.toml under `[vars]`, or override at deploy time:
+You can set variables in wrangler.toml under `[vars]`, or via secrets:
 
-# Option A: keep values in wrangler.toml [vars]
+Required:
+- NODE_ENV=production
+- JWT_SECRET (set via `wrangler secret put JWT_SECRET`)
 
-# Option B: override on deploy
-wrangler deploy --var API_ORIGIN=https://api.your-domain.com --var NODE_ENV=production
-
-# Option C (local dev only): create a .dev.vars file with KEY=VALUE lines
+Optional (dev): create a .dev.vars file with KEY=VALUE lines
 # .dev.vars
-API_ORIGIN=https://localhost:5000
 NODE_ENV=development
 ```
 
@@ -37,15 +32,20 @@ chmod -R u+rwX "$HOME/Library/Preferences/.wrangler"
 ```
 ```
 
-3) Publish
+3) Apply D1 schema (first time only)
+```
+wrangler d1 execute stm-prod-01 --file .\\migrations\\d1\\schema.sql --remote
+```
+
+4) Publish
 ```
 wrangler deploy
 ```
 
 The Worker will:
 - Serve static assets from `dist` via the `ASSETS` binding
-- Proxy `/api/*` to `API_ORIGIN`
-- SPA fallback to `/index.html` for non-file routes
+- Serve API under `/api/*` directly (no external proxy)
+- Provide SPA fallback to `/index.html` for non-file routes
 
 Note: ensure your backend CORS allows the Worker’s domain if cookies are used.
 
@@ -76,39 +76,9 @@ VITE_API_URL=https://your-api-domain.com/api
 - Add your custom domain in the "Custom domains" section
 - Update DNS to point to your Cloudflare Pages deployment
 
-## Backend Deployment Options
+## Notes on legacy backends
 
-### Option 1: Traditional Hosting (Heroku, Railway, DigitalOcean)
-
-1. **Set environment variables**:
-   ```
-   SECRET_KEY=your-secret-key
-   DATABASE_URL=postgresql://user:pass@host:port/db
-   FLASK_ENV=production
-   ```
-
-2. **Deploy with Gunicorn**:
-   ```bash
-   gunicorn --bind 0.0.0.0:$PORT "app:create_app()"
-   ```
-
-3. **Database setup**:
-   ```bash
-   flask db upgrade
-   ```
-
-### Option 2: Serverless (Vercel Functions, AWS Lambda)
-
-1. Create serverless function wrapper
-2. Configure database connection pooling
-3. Set up CORS for your frontend domain
-
-### Option 3: Cloudflare Workers (Future)
-
-The backend can be migrated to Cloudflare Workers for a fully serverless stack using:
-- Cloudflare Workers for API
-- Cloudflare D1 for database
-- Cloudflare KV for sessions/cache
+Earlier versions referenced proxying to a separate Flask API via `API_ORIGIN` and Cloudflare Tunnels. That path has been removed. The application is now fully serverless on Cloudflare (Workers + D1 + Durable Objects). If you still operate a legacy backend, treat it as deprecated; no proxying remains in the Worker.
 
 ## Database Migration
 
@@ -137,58 +107,10 @@ ALTER TABLE customers ADD CONSTRAINT fk_customers_tenant
 ## Production Checklist
 ---
 
-## Permanent API on Cloudflare (Named Tunnel)
-
-Use a persistent, secure Cloudflare Tunnel mapped to your API hostname and forward to your Flask server on localhost.
-
-1) Install and login on the API host
-```
-cloudflared --version
-cloudflared tunnel login
-```
-
-2) Create a Named Tunnel and config
-```
-cloudflared tunnel create studio-api
-# Note the Tunnel ID printed; a credentials JSON is saved under ~/.cloudflared/
-```
-
-Create `~/.cloudflared/config.yml` (paths and hostnames adjusted to your environment):
-```
-tunnel: <TUNNEL_ID>
-credentials-file: /home/<user>/.cloudflared/<TUNNEL_ID>.json
-ingress:
-   - hostname: api.your-domain.com
-      service: http://127.0.0.1:5000
-   - service: http_status:404
-```
-
-3) Route DNS to the tunnel and run as a service
-```
-cloudflared tunnel route dns studio-api api.your-domain.com
-# macOS (brew): brew services start cloudflared
-# Linux (systemd): sudo cloudflared service install && sudo systemctl enable --now cloudflared
-```
-
-4) Verify
-```
-curl -sS https://api.your-domain.com/api/health
-```
-
-5) Point the Worker to the permanent API and deploy
-```
-# wrangler.toml
-[vars]
-NODE_ENV = "production"
-API_ORIGIN = "https://api.your-domain.com"
-
-wrangler deploy
-```
-
-Troubleshooting:
-- 530/1016 via Worker: tunnel down or API_ORIGIN wrong. Confirm tunnel logs and health.
-- 404 via tunnel: ingress rules/hostname mismatch.
-- QUIC timeouts: set `protocol: http2` in config.yml and restart cloudflared.
+## Troubleshooting
+- Health: `GET /api/health` → `{ status: 'healthy' }`
+- Readiness: `GET /api/readiness` → `{ db: 'ok' }`
+- 404 on unknown API routes is expected; proxying is removed.
 
 
 ### Security
@@ -218,9 +140,9 @@ Troubleshooting:
 ## Development Workflow
 
 ### Local Development
-1. Start backend: `python run.py`
-2. Start frontend: `npm run dev`
-3. Access at: http://localhost:3000
+- Start vite dev server: `npm run dev`
+- If testing the Worker locally, use `wrangler dev` to run the Worker and serve assets/API.
+- Access at: http://localhost:5173 (vite) or the wrangler dev URL
 
 ### Staging Deployment
 1. Push to `staging` branch
@@ -233,15 +155,13 @@ Troubleshooting:
 3. Merge triggers production deployment
 4. Monitor deployment and health checks
 
-## Cloudflare Pages Project Variables (recap)
+## Frontend build variables (recap)
 
-- Framework preset: Custom
 - Build command: `npm run build`
 - Output directory: `dist`
-- Root directory: `/`
 - Environment variables:
    - `NODE_ENV=production`
-   - `VITE_API_URL=https://your-api-domain.com/api`
+   - `VITE_API_URL` optional; defaults to same-origin `/api`
 
 ## Post-deploy smoke checklist (Pages + API)
 
@@ -264,4 +184,4 @@ Troubleshooting:
 
 5) Backend readiness
 - `GET /api/readiness` returns `{ db: "ok" }`.
-- Migrations applied on Postgres; errors should be 0.
+- D1 schema applied successfully; errors should be 0.

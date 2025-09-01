@@ -5,7 +5,6 @@ type AssetFetcher = {
 // D1Database is available in the Workers runtime types
 export interface Env {
   ASSETS: AssetFetcher
-  API_ORIGIN: string
   // Bind a D1 database as "DB" in wrangler.toml when ready
   DB?: any
   JWT_SECRET?: string
@@ -80,26 +79,7 @@ async function handleReadiness(env: Env): Promise<Response> {
   }
 }
 
-async function proxyApi(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url)
-  const target = new URL(url.pathname + url.search, env.API_ORIGIN)
-  const headers = new Headers(request.headers)
-  headers.delete('host')
-  headers.delete('content-length')
-  headers.delete('accept-encoding')
-  const init: RequestInit = {
-    method: request.method,
-    headers,
-    body: ['GET', 'HEAD'].includes(request.method) ? undefined : await request.clone().arrayBuffer(),
-    redirect: 'manual',
-  }
-  const resp = await fetch(target.toString(), init)
-  return new Response(resp.body, {
-    status: resp.status,
-    statusText: resp.statusText,
-    headers: resp.headers,
-  })
-}
+// (Proxy to legacy API removed) Unknown /api routes will return 404.
 
 // --- Auth helpers (JWT in httpOnly cookie) ---
 const SESSION_COOKIE = 'sm_session'
@@ -793,9 +773,9 @@ export default {
       return handleReports(request, env, url)
     }
 
-    // For all other /api/*, continue proxying to existing origin for now
+    // For all other /api/*, return 404 (no proxy)
     if (url.pathname.startsWith('/api/')) {
-      return proxyApi(request, env)
+      return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
     }
 
     // Serve static assets (SPA fallback)
