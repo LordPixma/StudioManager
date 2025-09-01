@@ -224,7 +224,9 @@ async function dbFirst(env: Env, sql: string, params: any[] = []): Promise<any |
 
 async function dbRun(env: Env, sql: string, params: any[] = []): Promise<void> {
   let stmt: any = env.DB.prepare(sql)
-  for (const p of params) stmt = stmt.bind(p)
+  if (params.length) {
+    stmt = stmt.bind(...params)
+  }
   await stmt.run()
 }
 
