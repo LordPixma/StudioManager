@@ -113,6 +113,10 @@ sudo chown -R "$USER":staff "$HOME/Library/Preferences/.wrangler"
 chmod -R u+rwX "$HOME/Library/Preferences/.wrangler"
 ```
 
+Permanent backend on Cloudflare:
+- Set up a Named Tunnel for a stable API hostname that forwards to your Flask server on localhost.
+- See `DEPLOYMENT.md` → “Permanent API on Cloudflare (Named Tunnel)”.
+
 #### Backend API
 - Host Flask API (Heroku, Railway, DO, AWS, etc.) and point `API_ORIGIN` at it.
 

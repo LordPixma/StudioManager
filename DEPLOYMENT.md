@@ -1,6 +1,9 @@
 # Studio Manager SaaS Deployment Guide
 
 ## Cloudflare Workers (Full stack: static + API proxy)
+# Studio Manager SaaS Deployment Guide
+
+## Cloudflare Workers (Full stack: static + API proxy)
 
 This repo includes a Worker at `worker/index.ts` that serves the React build from `dist` and proxies `/api/*` to your Flask API origin.
 
@@ -132,6 +135,61 @@ ALTER TABLE customers ADD CONSTRAINT fk_customers_tenant
 ```
 
 ## Production Checklist
+---
+
+## Permanent API on Cloudflare (Named Tunnel)
+
+Use a persistent, secure Cloudflare Tunnel mapped to your API hostname and forward to your Flask server on localhost.
+
+1) Install and login on the API host
+```
+cloudflared --version
+cloudflared tunnel login
+```
+
+2) Create a Named Tunnel and config
+```
+cloudflared tunnel create studio-api
+# Note the Tunnel ID printed; a credentials JSON is saved under ~/.cloudflared/
+```
+
+Create `~/.cloudflared/config.yml` (paths and hostnames adjusted to your environment):
+```
+tunnel: <TUNNEL_ID>
+credentials-file: /home/<user>/.cloudflared/<TUNNEL_ID>.json
+ingress:
+   - hostname: api.your-domain.com
+      service: http://127.0.0.1:5000
+   - service: http_status:404
+```
+
+3) Route DNS to the tunnel and run as a service
+```
+cloudflared tunnel route dns studio-api api.your-domain.com
+# macOS (brew): brew services start cloudflared
+# Linux (systemd): sudo cloudflared service install && sudo systemctl enable --now cloudflared
+```
+
+4) Verify
+```
+curl -sS https://api.your-domain.com/api/health
+```
+
+5) Point the Worker to the permanent API and deploy
+```
+# wrangler.toml
+[vars]
+NODE_ENV = "production"
+API_ORIGIN = "https://api.your-domain.com"
+
+wrangler deploy
+```
+
+Troubleshooting:
+- 530/1016 via Worker: tunnel down or API_ORIGIN wrong. Confirm tunnel logs and health.
+- 404 via tunnel: ingress rules/hostname mismatch.
+- QUIC timeouts: set `protocol: http2` in config.yml and restart cloudflared.
+
 
 ### Security
 - [ ] Use strong SECRET_KEY
