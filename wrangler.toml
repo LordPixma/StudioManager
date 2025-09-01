@@ -11,7 +11,7 @@ NODE_ENV = "production"
 # API origin the worker will proxy /api/* to (include scheme and host, no trailing slash)
 # Permanent API via Cloudflare Named Tunnel
 API_ORIGIN = "https://api.lgger.com"
-JWT_SECRET = "change-me-in-production"
+# JWT_SECRET is managed via `wrangler secret` and should not be set here.
 
 [assets]
 directory = "dist"
@@ -27,3 +27,7 @@ database_id = "66d2edae-930c-4af2-ac9d-4b0f42c012dc"
 [[durable_objects.bindings]]
 name = "ROOM_LOCK"
 class_name = "RoomLock"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RoomLock"]
