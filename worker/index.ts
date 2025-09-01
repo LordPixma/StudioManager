@@ -9,6 +9,7 @@ export interface Env {
   // Bind a D1 database as "DB" in wrangler.toml when ready
   DB?: any
   JWT_SECRET?: string
+  NODE_ENV?: string
 }
 
 type ApiResponse<T = any> = {
@@ -305,6 +306,223 @@ async function handleRegister(request: Request, env: Env): Promise<Response> {
   }
 }
 
+// --- Dev-only seed endpoint ---
+async function handleSeed(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  if (env.NODE_ENV === 'production' || (env as any).NODE_ENV === 'production') {
+    return json({ success: false, message: 'Forbidden' }, { status: 403 })
+  }
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  try {
+    // Create a tenant, studio, and a few users and customers for testing
+    const tname = 'Acme Studios'
+    const sub = 'acme'
+    await dbRun(env, 'INSERT OR IGNORE INTO tenants (name, subdomain, plan, is_active) VALUES (?,?,?,1)', [tname, sub, 'free'])
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? LIMIT 1', [sub])
+    await dbRun(env, 'INSERT OR IGNORE INTO studios (tenant_id, name) VALUES (?,?)', [tenant.id, `${tname} - Main Studio`])
+    const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [tenant.id])
+    const adminEmail = 'admin@example.com'
+    const adminHash = await generateWerkzeugPBKDF2('password')
+    await dbRun(env, 'INSERT OR IGNORE INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, 'Admin User', adminEmail, adminHash, 'Admin', JSON.stringify(['create_booking','edit_customer','view_reports','manage_staff'])])
+    // Seed a couple of customers
+    await dbRun(env, 'INSERT OR IGNORE INTO customers (tenant_id, studio_id, name, email, phone, notes) VALUES (?,?,?,?,?,?)', [tenant.id, studio.id, 'John Doe', 'john@example.com', '555-0001', 'VIP'])
+    await dbRun(env, 'INSERT OR IGNORE INTO customers (tenant_id, studio_id, name, email, phone, notes) VALUES (?,?,?,?,?,?)', [tenant.id, studio.id, 'Jane Smith', 'jane@example.com', '555-0002', ''])
+    return json({ success: true, message: 'Seed complete', data: { tenant: { id: tenant.id, subdomain: tenant.subdomain } } })
+  } catch (e: any) {
+    return json({ success: false, message: `Seed failed: ${e?.message || String(e)}` }, { status: 500 })
+  }
+}
+
+// --- Tenants API ---
+async function handleTenants(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const path = url.pathname
+  const method = request.method
+  // POST /api/tenants
+  if (path === '/api/tenants' && method === 'POST') {
+    const data = await request.json().catch(() => ({})) as any
+    const errors: Record<string, string[]> = {}
+    const addErr = (k: string, v: string) => { (errors[k] ||= []).push(v) }
+    const tenant_name = (data.tenant_name || '').trim()
+    let subdomain = (data.subdomain || '').trim().toLowerCase()
+    const admin_name = (data.admin_name || '').trim()
+    const admin_email = (data.admin_email || '').trim().toLowerCase()
+    const admin_password = data.admin_password || ''
+    const plan = data.plan || 'free'
+    if (!tenant_name) addErr('tenant_name', 'Tenant name is required')
+    if (!subdomain) subdomain = tenant_name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 20)
+    if (!/^[a-z0-9-]+$/.test(subdomain)) addErr('subdomain', 'Subdomain can only contain letters, numbers, and hyphens')
+    if (subdomain.length < 3) addErr('subdomain', 'Subdomain must be at least 3 characters long')
+    if (!admin_name) addErr('admin_name', 'Admin name is required')
+    if (!admin_email) addErr('admin_email', 'Admin email is required')
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(admin_email)) addErr('admin_email', 'Invalid email address')
+    if (!admin_password) addErr('admin_password', 'Admin password is required')
+    else if (admin_password.length < 8) addErr('admin_password', 'Password must be at least 8 characters')
+    const existingEmail = await dbFirst(env, 'SELECT id FROM users WHERE email = ? LIMIT 1', [admin_email])
+    if (existingEmail) addErr('admin_email', 'Email already exists')
+    const existingSub = await dbFirst(env, 'SELECT id FROM tenants WHERE subdomain = ? LIMIT 1', [subdomain])
+    if (existingSub) addErr('subdomain', 'Subdomain already exists')
+    if (Object.keys(errors).length) return json({ success: false, errors }, { status: 400 })
+    try {
+      await dbRun(env, 'INSERT INTO tenants (name, subdomain, plan, is_active) VALUES (?,?,?,1)', [tenant_name, subdomain, plan])
+      const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? ORDER BY id DESC LIMIT 1', [subdomain])
+      await dbRun(env, 'INSERT INTO studios (tenant_id, name) VALUES (?,?)', [tenant.id, `${tenant_name} - Main Studio`])
+      const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [tenant.id])
+      const hash = await generateWerkzeugPBKDF2(admin_password)
+      await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, admin_name, admin_email, hash, 'Studio Manager', JSON.stringify(['view_customers','create_customer','edit_customer','delete_customer','view_bookings','create_booking','edit_booking','cancel_booking','view_staff','create_staff','edit_staff','view_reports','manage_studio'])])
+      return json({ success: true, data: { tenant, studio }, message: 'Tenant created successfully' }, { status: 201 })
+    } catch (e: any) {
+      return json({ success: false, message: `Failed to create tenant: ${e?.message || String(e)}` }, { status: 500 })
+    }
+  }
+  // GET /api/tenants
+  if (path === '/api/tenants' && method === 'GET') {
+    const user = await getUserFromSession(request, env)
+    if (!user || user.role !== 'Admin') return json({ success: false, message: 'Admin access required' }, { status: 403 })
+    const rows = await env.DB.prepare('SELECT * FROM tenants').all()
+    const data = (rows?.results || []).map((t: any) => ({ id: t.id, name: t.name, subdomain: t.subdomain, plan: t.plan, is_active: !!t.is_active, created_at: t.created_at, settings: t.settings ? JSON.parse(t.settings) : {} }))
+    return json({ success: true, data })
+  }
+  // GET /api/tenants/:id | PUT /api/tenants/:id
+  const m = path.match(/^\/api\/tenants\/(\d+)$/)
+  if (m) {
+    const id = parseInt(m[1], 10)
+    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [id])
+    if (!tenant) return json({ success: false, message: 'Tenant not found' }, { status: 404 })
+    const user = await getUserFromSession(request, env)
+    if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    if (method === 'GET') {
+      if (user.role !== 'Admin' && user.tenant_id !== id) return json({ success: false, message: 'Access denied' }, { status: 403 })
+      return json({ success: true, data: { id: tenant.id, name: tenant.name, subdomain: tenant.subdomain, plan: tenant.plan, is_active: !!tenant.is_active, created_at: tenant.created_at, settings: tenant.settings ? JSON.parse(tenant.settings) : {} } })
+    } else if (method === 'PUT') {
+      const isGlobalAdmin = user.role === 'Admin'
+      const isTenantAdmin = user.role === 'Studio Manager' && user.tenant_id === id
+      if (!isGlobalAdmin && !isTenantAdmin) return json({ success: false, message: 'Access denied' }, { status: 403 })
+      const body = await request.json().catch(() => ({})) as any
+      const updates: string[] = []
+      const params: any[] = []
+      if (typeof body.name === 'string' && body.name.trim()) { updates.push('name = ?'); params.push(body.name.trim()) }
+      if (isGlobalAdmin && 'plan' in body) { updates.push('plan = ?'); params.push(String(body.plan)) }
+      if (isGlobalAdmin && 'is_active' in body) { updates.push('is_active = ?'); params.push(body.is_active ? 1 : 0) }
+      if (body.settings && typeof body.settings === 'object') { updates.push('settings = ?'); params.push(JSON.stringify({ ...(tenant.settings ? JSON.parse(tenant.settings) : {}), ...body.settings })) }
+      if (updates.length === 0) return json({ success: true, data: { id: tenant.id, name: tenant.name, subdomain: tenant.subdomain, plan: tenant.plan, is_active: !!tenant.is_active, created_at: tenant.created_at, settings: tenant.settings ? JSON.parse(tenant.settings) : {} }, message: 'No changes' })
+      params.push(id)
+      await dbRun(env, `UPDATE tenants SET ${updates.join(', ')} WHERE id = ?`, params)
+      const updated = await dbFirst(env, 'SELECT * FROM tenants WHERE id = ? LIMIT 1', [id])
+      return json({ success: true, data: { id: updated.id, name: updated.name, subdomain: updated.subdomain, plan: updated.plan, is_active: !!updated.is_active, created_at: updated.created_at, settings: updated.settings ? JSON.parse(updated.settings) : {} }, message: 'Tenant updated successfully' })
+    }
+  }
+  return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
+}
+
+// --- Customers API ---
+async function handleCustomers(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const method = request.method
+  const path = url.pathname
+  // GET /api/customers
+  if (path === '/api/customers' && method === 'GET') {
+    const qs = url.searchParams
+    const search = qs.get('search') || ''
+    const sort = qs.get('sort') || 'name'
+    const order = (qs.get('order') || 'asc').toLowerCase() === 'desc' ? 'DESC' : 'ASC'
+    const page = Math.max(1, parseInt(qs.get('page') || '1', 10))
+    const perPage = Math.min(100, Math.max(1, parseInt(qs.get('per_page') || '25', 10)))
+    const offset = (page - 1) * perPage
+    let where = 'WHERE 1=1'
+    const params: any[] = []
+    if (user.role !== 'Admin' || user.tenant_id) {
+      where += ' AND tenant_id = ?'
+      params.push(user.tenant_id)
+      if (!['Admin', 'Studio Manager'].includes(user.role)) {
+        where += ' AND studio_id = ?'
+        params.push(user.studio_id)
+      }
+    }
+    if (search) {
+      where += ' AND (name LIKE ? OR email LIKE ?)'
+      params.push(`%${search}%`, `%${search}%`)
+    }
+    const orderBy = ['name','email','created_at','updated_at'].includes(sort) ? sort : 'name'
+    const total = await dbFirst(env, `SELECT COUNT(*) as cnt FROM customers ${where}`, params)
+    const rows = await env.DB.prepare(`SELECT * FROM customers ${where} ORDER BY ${orderBy} ${order} LIMIT ? OFFSET ?`).bind(...params, perPage, offset).all()
+    const items = (rows?.results || []).map((c: any) => ({ id: c.id, tenant_id: c.tenant_id, studio_id: c.studio_id, name: c.name, email: c.email, phone: c.phone, notes: c.notes || '', created_at: c.created_at, updated_at: c.updated_at }))
+    const meta = { total_count: total?.cnt ?? items.length, page, per_page: perPage, has_next: items.length === perPage, has_prev: page > 1 }
+    return json({ success: true, data: items, meta })
+  }
+  // GET /api/customers/:id
+  const mGet = path.match(/^\/api\/customers\/(\d+)$/)
+  if (mGet && method === 'GET') {
+    const id = parseInt(mGet[1], 10)
+    const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [id])
+    if (!c) return json({ success: false, message: 'Customer not found' }, { status: 404 })
+    if (!(user.role === 'Admin' && !user.tenant_id)) {
+      if (c.tenant_id !== user.tenant_id) return json({ success: false, message: 'Access denied' }, { status: 403 })
+      if (!['Admin','Studio Manager'].includes(user.role) && c.studio_id !== user.studio_id) return json({ success: false, message: 'Access denied' }, { status: 403 })
+    }
+    return json({ success: true, data: c })
+  }
+  // POST /api/customers
+  if (path === '/api/customers' && method === 'POST') {
+    if (!user.tenant_id) return json({ success: false, message: 'Invalid user configuration' }, { status: 403 })
+    const payload = await request.json().catch(() => ({})) as any
+    const errors: Record<string, string[]> = {}
+    const addErr = (k: string, v: string) => { (errors[k] ||= []).push(v) }
+    const name = (payload.name || '').trim()
+    const email = (payload.email || '').trim()
+    if (!name) addErr('name', 'Name is required')
+    if (!email) addErr('email', 'Email is required')
+    else {
+      const exist = await dbFirst(env, 'SELECT id FROM customers WHERE tenant_id = ? AND email = ? LIMIT 1', [user.tenant_id, email])
+      if (exist) addErr('email', 'Email already exists')
+    }
+    if (Object.keys(errors).length) return json({ success: false, message: 'Validation failed', errors }, { status: 400 })
+    const studioId = ['Admin','Studio Manager'].includes(user.role) ? (payload.studio_id ?? user.studio_id) : user.studio_id
+    await dbRun(env, 'INSERT INTO customers (tenant_id, studio_id, name, email, phone, notes) VALUES (?,?,?,?,?,?)', [user.tenant_id, studioId, name, email, payload.phone || null, payload.notes || null])
+    const created = await dbFirst(env, 'SELECT * FROM customers WHERE tenant_id = ? AND email = ? ORDER BY id DESC LIMIT 1', [user.tenant_id, email])
+    return json({ success: true, data: created, message: 'Customer created successfully' }, { status: 201 })
+  }
+  // PUT /api/customers/:id
+  const mPut = path.match(/^\/api\/customers\/(\d+)$/)
+  if (mPut && method === 'PUT') {
+    const id = parseInt(mPut[1], 10)
+    const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [id])
+    if (!c) return json({ success: false, message: 'Customer not found' }, { status: 404 })
+    if (user.role !== 'Admin') {
+      if (c.tenant_id !== user.tenant_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+      if (!['Admin','Studio Manager'].includes(user.role) && c.studio_id !== user.studio_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    }
+    const payload = await request.json().catch(() => ({})) as any
+    const updates: string[] = []
+    const params: any[] = []
+    if ('name' in payload) { updates.push('name = ?'); params.push(payload.name) }
+    if ('email' in payload && payload.email !== c.email) {
+      const exists = await dbFirst(env, 'SELECT id FROM customers WHERE tenant_id = ? AND email = ? LIMIT 1', [user.tenant_id, payload.email])
+      if (exists) return json({ success: false, message: 'Validation failed', errors: { email: ['Email already exists'] } as any }, { status: 400 })
+      updates.push('email = ?'); params.push(payload.email)
+    }
+    for (const f of ['phone','notes'] as const) if (f in payload) { updates.push(`${f} = ?`); params.push(payload[f]) }
+    if (updates.length === 0) return json({ success: true, data: c, message: 'No changes' })
+    params.push(id)
+    await dbRun(env, `UPDATE customers SET ${updates.join(', ')} WHERE id = ?`, params)
+    const updated = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [id])
+    return json({ success: true, data: updated, message: 'Customer updated successfully' })
+  }
+  // DELETE /api/customers/:id
+  const mDel = path.match(/^\/api\/customers\/(\d+)$/)
+  if (mDel && method === 'DELETE') {
+    const id = parseInt(mDel[1], 10)
+    const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [id])
+    if (!c) return json({ success: false, message: 'Customer not found' }, { status: 404 })
+    if (user.role !== 'Admin' && c.studio_id !== user.studio_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    await dbRun(env, 'DELETE FROM customers WHERE id = ?', [id])
+    return json({ success: true, message: 'Customer deleted successfully' })
+  }
+  return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
@@ -316,7 +534,7 @@ export default {
     if (url.pathname === '/api/readiness') {
       return handleReadiness(env)
     }
-    if (url.pathname === '/api/login' && request.method === 'POST') {
+  if (url.pathname === '/api/login' && request.method === 'POST') {
       return handleLogin(request, env, url)
     }
     if (url.pathname === '/api/logout' && request.method === 'POST') {
@@ -327,6 +545,15 @@ export default {
     }
     if (url.pathname === '/api/register' && request.method === 'POST') {
       return handleRegister(request, env)
+    }
+    if (url.pathname === '/api/_seed' && request.method === 'POST') {
+      return handleSeed(request, env)
+    }
+    if (url.pathname.startsWith('/api/tenants')) {
+      return handleTenants(request, env, url)
+    }
+    if (url.pathname === '/api/customers' || /^\/api\/customers\//.test(url.pathname)) {
+      return handleCustomers(request, env, url)
     }
 
     // For all other /api/*, continue proxying to existing origin for now
