@@ -1,4 +1,4 @@
-import { FileX, Plus, RefreshCw, Download } from 'lucide-react'
+import { FileX, Plus, RefreshCw, Download, Edit, Trash2, Check, X as XIcon, Calendar as CalendarIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { bookingsAPI, customerAPI, roomsAPI, staffAPI, reportsAPI } from '../lib/api'
@@ -17,6 +17,9 @@ export function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [filterRoomId, setFilterRoomId] = useState<number | ''>('')
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('')
+  const [filterDateTo, setFilterDateTo] = useState<string>('')
 
   const { register, handleSubmit, reset } = useForm<{ room_id: number; customer_id: number; date: string; start: string; end: string; notes?: string }>()
 
@@ -25,15 +28,13 @@ export function BookingsPage() {
     const load = async () => {
       try {
         setLoading(true)
-        const [rRes, cRes, bRes] = await Promise.all([
+        const [rRes, cRes] = await Promise.all([
           roomsAPI.list(),
           customerAPI.getAll({ per_page: 100 }),
-          bookingsAPI.list({}),
         ])
         if (mounted) {
           if (rRes.success) setRooms(rRes.data || [])
           if (cRes.success) setCustomers((cRes as any).data?.items || cRes.data || [])
-          if (bRes.success) setBookings(bRes.data || [])
         }
       } catch (e: any) {
         setError(e?.message || 'Failed to load data')
@@ -42,16 +43,54 @@ export function BookingsPage() {
       }
     }
     load()
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [])
+
+  const reloadBookings = async () => {
+    try {
+      setLoading(true)
+      const params: any = {}
+      if (filterRoomId) params.room_id = filterRoomId
+      if (filterDateFrom) params.from = new Date(filterDateFrom).toISOString()
+      if (filterDateTo) params.to = new Date(filterDateTo).toISOString()
+      const bRes = await bookingsAPI.list(params)
+      if (bRes.success) setBookings(bRes.data || [])
+    } catch (e: any) {
+      setError(e?.message || 'Failed to load bookings')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    reloadBookings()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterRoomId, filterDateFrom, filterDateTo])
 
   const onCreate = handleSubmit(async (values) => {
     setError(null)
+    // Basic client validation
+    const start_time = new Date(`${values.date}T${values.start}:00`)
+    const end_time = new Date(`${values.date}T${values.end}:00`)
+    if (!(values.room_id && values.customer_id && values.date && values.start && values.end)) {
+      const msg = 'All fields are required'
+      setError(msg)
+      notify({ kind: 'error', message: msg })
+      return
+    }
+    if (isNaN(start_time.getTime()) || isNaN(end_time.getTime())) {
+      const msg = 'Invalid date/time'
+      setError(msg)
+      notify({ kind: 'error', message: msg })
+      return
+    }
+    if (end_time <= start_time) {
+      const msg = 'End time must be after start time'
+      setError(msg)
+      notify({ kind: 'error', message: msg })
+      return
+    }
     try {
-      const start_time = new Date(`${values.date}T${values.start}:00`)
-      const end_time = new Date(`${values.date}T${values.end}:00`)
       const res = await bookingsAPI.create({
         room_id: Number(values.room_id),
         customer_id: Number(values.customer_id),
@@ -61,17 +100,20 @@ export function BookingsPage() {
         status: 'confirmed',
       })
       if (res.success) {
-        const list = await bookingsAPI.list({})
-        if (list.success) setBookings(list.data || [])
+        await reloadBookings()
         reset()
+        notify({ kind: 'success', message: 'Booking created' })
       } else {
-        setError(res.message || 'Failed to create booking')
+        const msg = res.message || 'Failed to create booking'
+        setError(msg)
+        notify({ kind: 'error', message: msg })
       }
     } catch (e: any) {
-      setError(e?.message || 'Failed to create booking')
+      const status = e?.response?.status
+      const msg = e?.response?.data?.message || e?.message || 'Failed to create booking'
+      setError(msg)
+      notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : msg })
     }
-    if (!error) notify({ kind: 'success', message: 'Booking created' })
-    else notify({ kind: 'error', message: error })
   })
 
   return (
@@ -81,7 +123,7 @@ export function BookingsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="text-gray-600 mt-1">Manage room bookings and reservations.</p>
         </div>
-        <Button variant="secondary" onClick={() => window.location.reload()} className="inline-flex items-center gap-2">
+  <Button variant="secondary" onClick={() => reloadBookings()} className="inline-flex items-center gap-2">
           <RefreshCw className="h-4 w-4" /> Refresh
         </Button>
       </div>
@@ -140,11 +182,33 @@ export function BookingsPage() {
           </div>
         </div>
 
-        <div className="card">
+  <div className="card">
           <div className="card-header">
             <h3 className="text-lg font-medium">Upcoming Bookings</h3>
           </div>
-          <div className="card-body">
+          <div className="card-body space-y-4">
+            <div className="grid md:grid-cols-4 gap-3">
+              <div>
+                <label className="form-label">Filter Room</label>
+                <Select value={String(filterRoomId)} onChange={(e) => setFilterRoomId(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">All rooms</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <label className="form-label">From</label>
+                <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} />
+              </div>
+              <div>
+                <label className="form-label">To</label>
+                <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} />
+              </div>
+              <div className="flex items-end">
+                <Button variant="secondary" onClick={() => reloadBookings()} className="w-full">Apply</Button>
+              </div>
+            </div>
             {bookings.length === 0 ? (
               <div className="text-center text-gray-500 py-8">No bookings yet</div>
             ) : (
@@ -154,16 +218,16 @@ export function BookingsPage() {
                   const customer = customers.find((c) => c.id === b.customer_id)
                   const start = new Date(b.start_time)
                   const end = new Date(b.end_time)
+                  const durationHrs = Math.max(0, (end.getTime() - start.getTime()) / 36e5)
                   return (
-                    <li key={b.id} className="py-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{room?.name || `Room #${b.room_id}`} · {customer?.name || `Customer #${b.customer_id}`}</div>
-                          <div className="text-sm text-gray-600">{start.toLocaleString()} – {end.toLocaleTimeString()}</div>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">{b.status}</span>
-                      </div>
-                    </li>
+                    <BookingListItem key={b.id}
+                      booking={b}
+                      roomName={room?.name}
+                      customerName={customer?.name}
+                      durationHrs={durationHrs}
+                      onUpdated={async () => { await reloadBookings(); notify({ kind: 'success', message: 'Booking updated' }) }}
+                      onDeleted={async () => { await reloadBookings(); notify({ kind: 'success', message: 'Booking cancelled' }) }}
+                    />
                   )
                 })}
               </ul>
@@ -171,6 +235,131 @@ export function BookingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Simple calendar preview (month grid stub) */}
+      <div className="card">
+        <div className="card-header flex items-center justify-between">
+          <h3 className="text-lg font-medium flex items-center gap-2"><CalendarIcon className="h-4 w-4"/> Calendar (preview)</h3>
+          <span className="text-sm text-gray-500">Month grid preview</span>
+        </div>
+        <div className="card-body">
+          <BasicMonthCalendar bookings={bookings} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void }) {
+  const { notify } = useToast()
+  const [editing, setEditing] = useState(false)
+  const [start, setStart] = useState(() => booking.start_time.slice(0,16))
+  const [end, setEnd] = useState(() => booking.end_time.slice(0,16))
+  const [notes, setNotes] = useState(booking.notes || '')
+  const statusColor = booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+
+  const save = async () => {
+    try {
+      const payload: any = { notes }
+      if (start) payload.start_time = new Date(start).toISOString()
+      if (end) payload.end_time = new Date(end).toISOString()
+      const res = await bookingsAPI.update(booking.id, payload)
+      if (res.success) { setEditing(false); onUpdated() }
+      else notify({ kind: 'error', message: res.message || 'Update failed' })
+    } catch (e: any) {
+      const status = e?.response?.status
+      notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : (e?.message || 'Update failed') })
+    }
+  }
+
+  const cancel = async () => {
+    try {
+      const res = await bookingsAPI.update(booking.id, { status: 'cancelled' })
+      if (res.success) onDeleted()
+      else notify({ kind: 'error', message: res.message || 'Cancel failed' })
+    } catch (e: any) {
+      notify({ kind: 'error', message: e?.message || 'Cancel failed' })
+    }
+  }
+
+  const price = booking.total_amount ?? undefined
+  return (
+    <li className="py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-medium truncate">{roomName || `Room #${booking.room_id}`} · {customerName || `Customer #${booking.customer_id}`}</div>
+          <div className="text-sm text-gray-600">
+            {new Date(booking.start_time).toLocaleString()} – {new Date(booking.end_time).toLocaleTimeString()} · {durationHrs.toFixed(1)}h{price != null ? ` · $${price}` : ''}
+          </div>
+          {editing ? (
+            <div className="mt-2 grid md:grid-cols-3 gap-2">
+              <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+              <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+          ) : booking.notes ? (
+            <div className="text-sm text-gray-700 mt-1">{booking.notes}</div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded ${statusColor}`}>{booking.status}</span>
+          {editing ? (
+            <>
+              <Button variant="secondary" onClick={() => { setEditing(false); setStart(booking.start_time.slice(0,16)); setEnd(booking.end_time.slice(0,16)); setNotes(booking.notes || '') }} className="p-2"><XIcon className="h-4 w-4"/></Button>
+              <Button onClick={save} className="p-2"><Check className="h-4 w-4"/></Button>
+            </>
+          ) : (
+            <>
+              {booking.status !== 'cancelled' && <Button variant="secondary" onClick={() => setEditing(true)} className="p-2"><Edit className="h-4 w-4"/></Button>}
+              {booking.status !== 'cancelled' && <Button variant="secondary" onClick={cancel} className="p-2"><Trash2 className="h-4 w-4"/></Button>}
+            </>
+          )}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+function BasicMonthCalendar({ bookings }: { bookings: Booking[] }) {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = today.getMonth()
+  const first = new Date(year, month, 1)
+  const startDay = first.getDay() // 0-6
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells = [] as Array<{ date: Date; bookings: Booking[] } | null>
+  for (let i = 0; i < startDay; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d)
+    const isoDay = date.toISOString().slice(0, 10)
+    const dayBookings = bookings.filter(b => b.start_time.slice(0, 10) === isoDay)
+    cells.push({ date, bookings: dayBookings })
+  }
+  while (cells.length % 7 !== 0) cells.push(null)
+  return (
+    <div className="grid grid-cols-7 gap-2">
+      {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d) => (
+        <div key={d} className="text-xs font-medium text-gray-500 text-center">{d}</div>
+      ))}
+      {cells.map((c, idx) => (
+        <div key={idx} className="min-h-[96px] border rounded-lg p-2 bg-white">
+          {c && (
+            <>
+              <div className="text-xs font-medium text-gray-700">{c.date.getDate()}</div>
+              <div className="mt-1 space-y-1">
+                {c.bookings.slice(0, 3).map((b) => (
+                  <div key={b.id} className="text-[11px] px-2 py-1 rounded bg-primary-50 text-primary-700 truncate">
+                    {new Date(b.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · R{b.room_id}
+                  </div>
+                ))}
+                {c.bookings.length > 3 && (
+                  <div className="text-[11px] text-gray-500">+{c.bookings.length - 3} more</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

@@ -628,6 +628,50 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', body: JSON.stringify({ ...payload, tenant_id: user.tenant_id }), headers: { 'Content-Type': 'application/json' } }))
     return resp
   }
+  // PUT /api/bookings/:id (update time/status/notes)
+  const mPut = url.pathname.match(/^\/api\/bookings\/(\d+)$/)
+  if (mPut && method === 'PUT') {
+    const id = parseInt(mPut[1], 10)
+    const existing = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [id])
+    if (!existing) return json({ success: false, message: 'Booking not found' }, { status: 404 })
+    if (existing.tenant_id !== user.tenant_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    const payload = await request.json().catch(() => ({})) as any
+    const updates: string[] = []
+    const params: any[] = []
+    const newStart = payload.start_time ? String(payload.start_time) : null
+    const newEnd = payload.end_time ? String(payload.end_time) : null
+    const newStatus = payload.status ? String(payload.status) : null
+    if (newStart) { updates.push('start_time = ?'); params.push(newStart) }
+    if (newEnd) { updates.push('end_time = ?'); params.push(newEnd) }
+    if (typeof payload.notes !== 'undefined') { updates.push('notes = ?'); params.push(payload.notes || null) }
+    if (newStatus) { updates.push('status = ?'); params.push(newStatus) }
+    if (updates.length === 0) {
+      return json({ success: true, data: existing, message: 'No changes' })
+    }
+    // Conflict check when updating times for confirmed bookings
+    if ((newStart || newEnd) && (newStatus ? newStatus === 'confirmed' : existing.status === 'confirmed')) {
+      const startToCheck = newStart || existing.start_time
+      const endToCheck = newEnd || existing.end_time
+      const conflict = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM bookings WHERE room_id = ? AND status = ? AND id != ? AND start_time < ? AND end_time > ?', [existing.room_id, 'confirmed', id, endToCheck, startToCheck])
+      if ((conflict?.cnt || 0) > 0) {
+        return json({ success: false, message: 'Booking conflict' }, { status: 409 })
+      }
+    }
+    params.push(id)
+    await dbRun(env, `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, params)
+    const updated = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [id])
+    return json({ success: true, data: updated, message: 'Booking updated' })
+  }
+  // DELETE /api/bookings/:id (hard delete, optional)
+  const mDel = url.pathname.match(/^\/api\/bookings\/(\d+)$/)
+  if (mDel && method === 'DELETE') {
+    const id = parseInt(mDel[1], 10)
+    const existing = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [id])
+    if (!existing) return json({ success: false, message: 'Booking not found' }, { status: 404 })
+    if (existing.tenant_id !== user.tenant_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
+    await dbRun(env, 'DELETE FROM bookings WHERE id = ?', [id])
+    return json({ success: true, message: 'Booking deleted' })
+  }
   return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
 }
 

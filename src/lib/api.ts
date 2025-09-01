@@ -113,6 +113,14 @@ export const bookingsAPI = {
     const { data } = await http.post<ApiResponse>(`/bookings`, payload)
     return data
   },
+  async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string }>) {
+    const { data } = await http.put<ApiResponse>(`/bookings/${id}`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/bookings/${id}`)
+    return data
+  },
 }
 
 export const staffAPI = {
