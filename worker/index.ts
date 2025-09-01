@@ -138,6 +138,30 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
     return json({ success: true, data: serializeUser(updated), message: 'User moved' })
   }
 
+  // POST /api/admin/users/role { user_id, role }
+  if (path === '/api/admin/users/role' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const targetUserId = parseInt(body.user_id, 10)
+    const newRole = String(body.role || '').trim()
+    if (!Number.isFinite(targetUserId) || !newRole) return json({ success: false, message: 'user_id and role are required' }, { status: 400 })
+    const allowedRoles = ['SuperAdmin','Admin','Studio Manager','Staff/Instructor','Receptionist']
+    if (!allowedRoles.includes(newRole)) return json({ success: false, message: 'Invalid role' }, { status: 400 })
+    const target = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
+    if (!target) return json({ success: false, message: 'User not found' }, { status: 404 })
+    // Safeguard: Prevent removing last remaining SuperAdmin
+    if (target.role === 'SuperAdmin' && newRole !== 'SuperAdmin') {
+      const count = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE role = ? LIMIT 1', ['SuperAdmin'])
+      if ((count?.cnt || 0) <= 1) {
+        return json({ success: false, message: 'Cannot remove the last SuperAdmin' }, { status: 400 })
+      }
+    }
+    await dbRun(env, 'UPDATE users SET role = ? WHERE id = ?', [newRole, targetUserId])
+    const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [targetUserId])
+    const action = newRole === 'SuperAdmin' ? 'grant_superadmin' : (target.role === 'SuperAdmin' ? 'revoke_superadmin' : 'change_role')
+    await dbRun(env, 'INSERT INTO audit_logs (actor_user_id, action, details) VALUES (?,?,?)', [user.id, action, JSON.stringify({ user_id: targetUserId, from: target.role, to: newRole })])
+    return json({ success: true, data: serializeUser(updated), message: 'Role updated' })
+  }
+
   // Messages
   if (path === '/api/admin/messages' && method === 'GET') {
     const rows = await env.DB.prepare('SELECT * FROM announcements ORDER BY created_at DESC LIMIT 200').all()
@@ -927,6 +951,30 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
+    // Bootstrap first SuperAdmin (one-time or with key)
+    if (url.pathname === '/api/bootstrap-superadmin' && request.method === 'POST') {
+      if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+      await ensureAdminTables(env)
+      const superCount = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users WHERE role = ? LIMIT 1', ['SuperAdmin'])
+      if ((superCount?.cnt || 0) > 0) return json({ success: false, message: 'SuperAdmin already configured' }, { status: 403 })
+      const totalUsers = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM users LIMIT 1')
+      const body = await request.json().catch(() => ({})) as any
+      const name = (body.name || '').trim()
+      const email = (body.email || '').toLowerCase().trim()
+      const password = body.password || ''
+      if (!name || !email || !password) return json({ success: false, message: 'name, email, password required' }, { status: 400 })
+      if ((totalUsers?.cnt || 0) > 0) {
+        const keyHdr = request.headers.get('x-bootstrap-key') || ''
+        const bootstrapKey = (env as any).ADMIN_BOOTSTRAP_KEY
+        if (!bootstrapKey || keyHdr !== bootstrapKey) return json({ success: false, message: 'Bootstrap key required' }, { status: 403 })
+      }
+      const exists = await dbFirst(env, 'SELECT id FROM users WHERE email = ? LIMIT 1', [email])
+      if (exists) return json({ success: false, message: 'Email already exists' }, { status: 400 })
+      const hash = await generateWerkzeugPBKDF2(password)
+      await dbRun(env, 'INSERT INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (NULL, NULL, ?, ?, ?, ?, ?, 1)', [name, email, hash, 'SuperAdmin', JSON.stringify(['*'])])
+      const created = await dbFirst(env, 'SELECT * FROM users WHERE email = ? LIMIT 1', [email])
+      return json({ success: true, data: serializeUser(created), message: 'SuperAdmin created' }, { status: 201 })
+    }
     // Global admin routes
     if (url.pathname.startsWith('/api/admin')) {
       return handleAdmin(request, env, url)

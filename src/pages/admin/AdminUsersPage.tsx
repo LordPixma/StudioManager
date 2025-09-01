@@ -49,6 +49,37 @@ export function AdminUsersPage() {
           {result && <div className="sm:col-span-3 text-sm text-gray-700 dark:text-gray-300">{result}</div>}
         </div>
       </div>
+
+      <div>
+        <h2 className="text-xl font-semibold">Global Admin Controls</h2>
+        <p className="text-gray-600 dark:text-gray-300 mt-1">Promote or demote a user to/from SuperAdmin.</p>
+      </div>
+      <div className="card">
+        <div className="card-body grid sm:grid-cols-3 gap-3">
+          <div>
+            <label className="form-label">Target User ID</label>
+            <Input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="User ID" />
+          </div>
+          <div className="sm:col-span-3 flex gap-3">
+            <Button onClick={async () => {
+              const uid = parseInt(userId, 10)
+              if (!Number.isFinite(uid)) { notify({ kind: 'error', message: 'Enter a valid user ID' }); return }
+              if (!confirm('Grant SuperAdmin? This gives platform-wide access.')) return
+              const res = await adminAPI.setUserRole({ user_id: uid, role: 'SuperAdmin' })
+              if (res.success) notify({ kind: 'success', message: 'Granted SuperAdmin' })
+              else notify({ kind: 'error', message: res.message || 'Failed to grant' })
+            }}>Grant SuperAdmin</Button>
+            <Button onClick={async () => {
+              const uid = parseInt(userId, 10)
+              if (!Number.isFinite(uid)) { notify({ kind: 'error', message: 'Enter a valid user ID' }); return }
+              if (!confirm('Revoke SuperAdmin?')) return
+              const res = await adminAPI.setUserRole({ user_id: uid, role: 'Admin' })
+              if (res.success) notify({ kind: 'success', message: 'Revoked SuperAdmin' })
+              else notify({ kind: 'error', message: res.message || 'Failed to revoke' })
+            }}>Revoke SuperAdmin</Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

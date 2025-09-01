@@ -167,6 +167,10 @@ export const adminAPI = {
     const { data } = await http.post<ApiResponse>(`/admin/users/move`, payload)
     return data
   },
+  async setUserRole(payload: { user_id: number; role: string }) {
+    const { data } = await http.post<ApiResponse>(`/admin/users/role`, payload)
+    return data
+  },
   async messagesList() {
     const { data } = await http.get<ApiResponse>(`/admin/messages`)
     return data
