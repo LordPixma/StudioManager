@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { TenantSettingsContext } from './useTenantSettings'
+import { TenantSettingsContext } from './TenantSettingsContext'
 
 export function useTenantSettings() {
   const ctx = useContext(TenantSettingsContext)

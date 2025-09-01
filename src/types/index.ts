@@ -37,7 +37,7 @@ export interface Studio {
   address?: string
   phone?: string
   email?: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 export interface Tenant {
@@ -47,7 +47,7 @@ export interface Tenant {
   plan: 'free' | 'basic' | 'premium' | 'enterprise'
   is_active: boolean
   created_at: string
-  settings?: Record<string, any>
+  settings?: Record<string, unknown>
 }
 
 // Customer types
@@ -121,7 +121,7 @@ export interface Session {
 }
 
 // API response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
@@ -149,7 +149,7 @@ export interface TableColumn<T> {
   key: keyof T
   title: string
   sortable?: boolean
-  render?: (value: any, item: T) => React.ReactNode
+  render?: (value: T[keyof T], item: T) => React.ReactNode
 }
 
 export interface FilterOptions {
@@ -158,5 +158,5 @@ export interface FilterOptions {
   order?: 'asc' | 'desc'
   page?: number
   per_page?: number
-  [key: string]: any
+  [key: string]: unknown
 }

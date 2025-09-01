@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
@@ -14,13 +14,13 @@ export function AdminMessagesPage() {
   const [tenantId, setTenantId] = useState('')
   const { notify } = useToast()
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const res = await adminAPI.messagesList()
   if (res.success) setMessages(res.data || [])
   else notify({ kind: 'error', message: res.message || 'Failed to load messages' })
-  }
+  }, [notify])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   const send = async () => {
     if (!title.trim() || !body.trim()) { notify({ kind: 'error', message: 'Title and body are required' }); return }

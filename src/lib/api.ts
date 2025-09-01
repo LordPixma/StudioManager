@@ -42,9 +42,15 @@ export const customerAPI = {
   async getAll(params: { search?: string; page?: number; per_page?: number }) {
     const { data } = await http.get<ApiResponse>(`/customers`, { params })
     // Normalize to items/total/pages for current UI
-    if (data.success && Array.isArray((data as any).data)) {
-      const meta = (data as any).meta || { total_count: (data as any).data.length, page: 1, per_page: (params.per_page || (data as any).data.length) }
-      return { success: true, data: { items: (data as any).data, total: meta.total_count, pages: Math.ceil(meta.total_count / meta.per_page) }, meta }
+    if (data.success && Array.isArray(data.data)) {
+      const meta = (data.meta as { total_count?: number; page?: number; per_page?: number } | undefined) ?? {
+        total_count: data.data.length,
+        page: 1,
+        per_page: params.per_page ?? data.data.length,
+      }
+      const total = meta.total_count ?? data.data.length
+      const perPage = meta.per_page ?? data.data.length
+      return { success: true, data: { items: data.data, total, pages: Math.ceil(total / perPage) }, meta }
     }
     return data
   },
@@ -79,7 +85,7 @@ export const tenantsAPI = {
   const { data } = await http.get<ApiResponse>(`/tenants/${id}`)
   return data
   },
-  async update(id: number, payload: Partial<{ name: string; plan: string; is_active: boolean; settings: Record<string, any> }>) {
+  async update(id: number, payload: Partial<{ name: string; plan: string; is_active: boolean; settings: Record<string, unknown> }>) {
     const { data } = await http.put<ApiResponse>(`/tenants/${id}`, payload)
     return data
   },
@@ -90,11 +96,11 @@ export const roomsAPI = {
     const { data } = await http.get<ApiResponse>(`/rooms`, { params })
     return data
   },
-  async create(payload: { name: string; studio_id?: number; capacity?: number; hourly_rate?: number; equipment?: any[] }) {
+  async create(payload: { name: string; studio_id?: number; capacity?: number; hourly_rate?: number; equipment?: string[] }) {
     const { data } = await http.post<ApiResponse>(`/rooms`, payload)
     return data
   },
-  async update(id: number, payload: Partial<{ name: string; capacity: number; hourly_rate: number; is_active: boolean; equipment: any[] }>) {
+  async update(id: number, payload: Partial<{ name: string; capacity: number; hourly_rate: number; is_active: boolean; equipment: string[] }>) {
     const { data } = await http.put<ApiResponse>(`/rooms/${id}`, payload)
     return data
   },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
 import { Input } from '../../components/ui/Input'
@@ -18,12 +18,12 @@ export function AdminLicensesPage() {
   const [tenantId, setTenantId] = useState('')
   const { notify } = useToast()
 
-  const load = async () => {
+  const load = useCallback(async () => {
   const res = await adminAPI.licensesList()
   if (res.success) setLicenses(res.data || [])
   else notify({ kind: 'error', message: res.message || 'Failed to load licenses' })
-  }
-  useEffect(() => { load() }, [])
+  }, [notify])
+  useEffect(() => { load() }, [load])
 
   const create = async () => {
     const res = await adminAPI.licensesCreate({ plan, seats: parseInt(seats, 10), expires_at: expires || undefined, tenant_id: tenantId ? parseInt(tenantId, 10) : undefined })

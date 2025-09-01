@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI, tenantsAPI } from '../../lib/api'
 import { Button } from '../../components/ui/Button'
@@ -64,19 +64,19 @@ export function AdminTenantsPage() {
   }, [])
 
   // Load live bookings counts
-  const loadLiveCounts = async () => {
+  const loadLiveCounts = useCallback(async () => {
     const res = await adminAPI.tenantsLiveBookings()
     if (res.success) {
       const map: Record<number, number> = {}
       for (const row of (res.data || [])) map[row.tenant_id] = row.cnt
       setLiveCounts(map)
     }
-  }
-  useEffect(() => { loadLiveCounts() }, [])
+  }, [])
+  useEffect(() => { loadLiveCounts() }, [loadLiveCounts])
 
   useEffect(() => {
     if (error) notify({ kind: 'error', message: error })
-  }, [error])
+  }, [error, notify])
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim()

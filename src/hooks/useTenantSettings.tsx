@@ -1,21 +1,9 @@
-import React, { createContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { tenantsAPI } from '../lib/api'
 import { useAuth } from './useAuthHook'
 import type { Tenant } from '../types'
-
-type TenantSettings = {
-  branding_primary?: string
-  branding_logo_url?: string
-} & Record<string, unknown>
-
-export interface TenantSettingsContextType {
-  tenant: Tenant | null
-  settings: TenantSettings
-  isLoading: boolean
-  refresh: () => Promise<void>
-}
-
-export const TenantSettingsContext = createContext<TenantSettingsContextType | null>(null)
+import { TenantSettingsContext } from './TenantSettingsContext'
+import type { TenantSettings } from './TenantSettingsContext'
 
 function clamp(n: number, min = 0, max = 100) { return Math.min(max, Math.max(min, n)) }
 

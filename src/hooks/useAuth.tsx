@@ -1,21 +1,10 @@
-import { createContext, useEffect, ReactNode } from 'react'
+import { useEffect, ReactNode } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { authAPI } from '../lib/api'
 import type { User, LoginCredentials, RegisterData } from '../types'
 import type { ApiResponse } from '../lib/api'
-
-export interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  login: (credentials: LoginCredentials) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
-  logout: () => void
-  checkSession: () => Promise<void>
-}
-
-export const AuthContext = createContext<AuthContextType | null>(null)
+import { AuthContext, type AuthContextType } from './AuthContext'
 
 interface AuthProviderProps {
   children: ReactNode

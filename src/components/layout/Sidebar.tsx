@@ -13,7 +13,7 @@ import { cn } from '../../lib/utils'
 
 type IconType = React.ComponentType<{ className?: string }>
 type NavItem = { name: string; href: string; icon: IconType; role?: string; permission?: string }
-const navigation: NavItem[] = [
+export const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users, permission: 'view_customers' },
   { name: 'Bookings', href: '/bookings', icon: Calendar, permission: 'view_bookings' },
@@ -22,7 +22,7 @@ const navigation: NavItem[] = [
   { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'view_reports' },
 ]
 
-const adminNavigation: NavItem[] = [
+export const adminNavigation: NavItem[] = [
   { name: 'Studios', href: '/studios', icon: Building2, role: 'Admin' },
   { name: 'Settings', href: '/settings', icon: Settings },
   // Global admin
