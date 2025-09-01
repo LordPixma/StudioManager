@@ -89,138 +89,69 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen grid md:grid-cols-2 bg-gray-50">
+      {/* Left: Branding */}
+      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
         <div>
-          <h1 className="text-center text-3xl font-bold text-gray-900 mb-2">
-            Studio Manager
-          </h1>
-          <h2 className="text-center text-xl text-gray-600">
-            Create your account
-          </h2>
-          <p className="text-center text-sm text-gray-500 mt-2">
-            Start managing your studio today
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">SM</div>
+            <div className="text-xl font-bold">Studio Manager</div>
+          </div>
+          <div className="mt-16 max-w-md">
+            <h2 className="text-3xl font-semibold leading-snug">Create your account and start today.</h2>
+            <p className="mt-4 text-gray-300">Set up your studio in minutes. Flexible, secure, and ready to scale with your business.</p>
+          </div>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <div className="text-sm text-gray-400">© {new Date().getFullYear()} Studio Manager</div>
+      </div>
+
+      {/* Right: Form */}
+      <div className="flex items-center justify-center px-6 py-12 md:px-12 bg-white">
+        <div className="w-full max-w-md">
+          <div className="mb-8 md:hidden text-center">
+            <div className="text-2xl font-bold text-gray-900">Studio Manager</div>
+            <div className="text-gray-600">Create your account</div>
+          </div>
           {errors.general && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
               {errors.general}
             </div>
           )}
-          
-          <div className="space-y-4">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="tenant_name" className="form-label">
-                Studio/Company Name *
-              </label>
-              <Input
-                id="tenant_name"
-                name="tenant_name"
-                type="text"
-                required
-                placeholder="Enter your studio name"
-                value={formData.tenant_name}
-                onChange={handleChange}
-              />
-              {errors.tenant_name && (
-                <p className="form-error">{errors.tenant_name}</p>
-              )}
+              <label htmlFor="tenant_name" className="form-label">Studio/Company Name *</label>
+              <Input id="tenant_name" name="tenant_name" type="text" required placeholder="Enter your studio name" value={formData.tenant_name} onChange={handleChange} />
+              {errors.tenant_name && (<p className="form-error">{errors.tenant_name}</p>)}
             </div>
-
             <div>
-              <label htmlFor="name" className="form-label">
-                Your Full Name *
-              </label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                required
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-              {errors.name && (
-                <p className="form-error">{errors.name}</p>
-              )}
+              <label htmlFor="name" className="form-label">Your Full Name *</label>
+              <Input id="name" name="name" type="text" required placeholder="Enter your full name" value={formData.name} onChange={handleChange} />
+              {errors.name && (<p className="form-error">{errors.name}</p>)}
             </div>
-            
             <div>
-              <label htmlFor="email" className="form-label">
-                Email Address *
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-              {errors.email && (
-                <p className="form-error">{errors.email}</p>
-              )}
+              <label htmlFor="email" className="form-label">Email Address *</label>
+              <Input id="email" name="email" type="email" required placeholder="Enter your email" value={formData.email} onChange={handleChange} />
+              {errors.email && (<p className="form-error">{errors.email}</p>)}
             </div>
-            
             <div>
-              <label htmlFor="password" className="form-label">
-                Password *
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                placeholder="Create a password (min 8 characters)"
-                value={formData.password}
-                onChange={handleChange}
-              />
-              {errors.password && (
-                <p className="form-error">{errors.password}</p>
-              )}
+              <label htmlFor="password" className="form-label">Password *</label>
+              <Input id="password" name="password" type="password" required placeholder="Create a password (min 8 characters)" value={formData.password} onChange={handleChange} />
+              {errors.password && (<p className="form-error">{errors.password}</p>)}
             </div>
-            
             <div>
-              <label htmlFor="confirmPassword" className="form-label">
-                Confirm Password *
-              </label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-              {errors.confirmPassword && (
-                <p className="form-error">{errors.confirmPassword}</p>
-              )}
+              <label htmlFor="confirmPassword" className="form-label">Confirm Password *</label>
+              <Input id="confirmPassword" name="confirmPassword" type="password" required placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} />
+              {errors.confirmPassword && (<p className="form-error">{errors.confirmPassword}</p>)}
             </div>
-          </div>
-
-          <div>
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className={cn('w-full', isLoading && 'opacity-50 cursor-not-allowed')}
-            >
+            <Button type="submit" disabled={isLoading} className={cn('w-full h-12 text-base', isLoading && 'opacity-50 cursor-not-allowed')}>
               {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
+          </form>
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">Sign in</Link>
           </div>
-          
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 hover:text-primary-500 font-medium">
-                Sign in
-              </Link>
-            </span>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   )
