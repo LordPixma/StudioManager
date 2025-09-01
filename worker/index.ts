@@ -324,32 +324,6 @@ async function handleRegister(request: Request, env: Env): Promise<Response> {
   }
 }
 
-// --- Dev-only seed endpoint ---
-async function handleSeed(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url)
-  if (env.NODE_ENV === 'production' || (env as any).NODE_ENV === 'production') {
-    return json({ success: false, message: 'Forbidden' }, { status: 403 })
-  }
-  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
-  try {
-    // Create a tenant, studio, and a few users and customers for testing
-    const tname = 'Acme Studios'
-    const sub = 'acme'
-    await dbRun(env, 'INSERT OR IGNORE INTO tenants (name, subdomain, plan, is_active) VALUES (?,?,?,1)', [tname, sub, 'free'])
-    const tenant = await dbFirst(env, 'SELECT * FROM tenants WHERE subdomain = ? LIMIT 1', [sub])
-    await dbRun(env, 'INSERT OR IGNORE INTO studios (tenant_id, name) VALUES (?,?)', [tenant.id, `${tname} - Main Studio`])
-    const studio = await dbFirst(env, 'SELECT * FROM studios WHERE tenant_id = ? ORDER BY id LIMIT 1', [tenant.id])
-    const adminEmail = 'admin@example.com'
-    const adminHash = await generateWerkzeugPBKDF2('password')
-    await dbRun(env, 'INSERT OR IGNORE INTO users (tenant_id, studio_id, name, email, password_hash, role, permissions, is_active) VALUES (?,?,?,?,?,?,?,1)', [tenant.id, studio.id, 'Admin User', adminEmail, adminHash, 'Admin', JSON.stringify(['create_booking','edit_customer','view_reports','manage_staff'])])
-    // Seed a couple of customers
-    await dbRun(env, 'INSERT OR IGNORE INTO customers (tenant_id, studio_id, name, email, phone, notes) VALUES (?,?,?,?,?,?)', [tenant.id, studio.id, 'John Doe', 'john@example.com', '555-0001', 'VIP'])
-    await dbRun(env, 'INSERT OR IGNORE INTO customers (tenant_id, studio_id, name, email, phone, notes) VALUES (?,?,?,?,?,?)', [tenant.id, studio.id, 'Jane Smith', 'jane@example.com', '555-0002', ''])
-    return json({ success: true, message: 'Seed complete', data: { tenant: { id: tenant.id, subdomain: tenant.subdomain } } })
-  } catch (e: any) {
-    return json({ success: false, message: `Seed failed: ${e?.message || String(e)}` }, { status: 500 })
-  }
-}
 
 // --- Tenants API ---
 async function handleTenants(request: Request, env: Env, url: URL): Promise<Response> {
@@ -750,9 +724,6 @@ export default {
     }
     if (url.pathname === '/api/register' && request.method === 'POST') {
       return handleRegister(request, env)
-    }
-    if (url.pathname === '/api/_seed' && request.method === 'POST') {
-      return handleSeed(request, env)
     }
     if (url.pathname.startsWith('/api/tenants')) {
       return handleTenants(request, env, url)

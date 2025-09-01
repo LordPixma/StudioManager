@@ -47,18 +47,21 @@ export function LoginPage() {
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-gray-50">
       {/* Left: Branding */}
-      <div className="relative hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
+      <div className="relative hidden md:flex flex-col p-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden">
         <div className="pointer-events-none absolute inset-0 gradient-mesh opacity-70" />
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">SM</div>
-            <div className="text-xl font-bold">Studio Manager</div>
-          </div>
-          <div className="mt-16 max-w-md">
-            <h2 className="text-3xl font-semibold leading-snug">Manage bookings, staff, and customers seamlessly.</h2>
-            <p className="mt-4 text-gray-300">A fast, modern platform for multi-room studios. Secure, cloud-native, and built for teams.</p>
+        {/* Top brand */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white font-bold">SM</div>
+          <div className="text-xl font-bold">Studio Manager</div>
+        </div>
+        {/* Centered hero content */}
+        <div className="flex-1 flex items-center">
+          <div className="max-w-md">
+            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight">Manage bookings, staff, and customers seamlessly.</h2>
+            <p className="mt-5 text-base md:text-lg text-gray-300/90 leading-relaxed">A fast, modern platform for multi-room studios. Secure, cloud-native, and built for teams.</p>
           </div>
         </div>
+        {/* Footer */}
         <div className="text-sm text-gray-400">© {new Date().getFullYear()} Studio Manager</div>
       </div>
 

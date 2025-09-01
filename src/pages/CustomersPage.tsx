@@ -1,15 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search, Edit, Trash2, Users } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Users, X } from 'lucide-react'
 import { customerAPI } from '../lib/api'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { Textarea } from '../components/ui/Textarea'
+import { useToast } from '../components/ui/Toast'
 import type { Customer } from '../types'
 
 export function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
+  const { notify } = useToast()
 
   const {
     data: customersResponse,
@@ -195,21 +198,107 @@ export function CustomersPage() {
         </div>
       )}
 
-      {/* TODO: Add CustomerModal component for creating/editing customers */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Add Customer</h3>
-            <p className="text-gray-600 mb-4">
-              Customer form will be implemented here.
-            </p>
-            <div className="flex justify-end space-x-2">
-              <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button>Save</Button>
-            </div>
-          </div>
-        </div>
+        <AddCustomerModal
+          onClose={() => setShowModal(false)}
+          onCreated={() => {
+            notify({ kind: 'success', title: 'Customer added', message: 'New customer has been created.' })
+            setShowModal(false)
+            refetch()
+          }}
+        />
       )}
+    </div>
+  )
+}
+
+function AddCustomerModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const setField = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }))
+  }
+
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.name.trim()) e.name = 'Name is required'
+    if (!form.email.trim()) e.email = 'Email is required'
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) e.email = 'Email is invalid'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    if (!validate()) return
+    setSubmitting(true)
+    try {
+      await customerAPI.create({ name: form.name.trim(), email: form.email.trim(), phone: form.phone || undefined, notes: form.notes || undefined })
+      onCreated()
+    } catch (err: any) {
+      const backendErrors = err?.response?.data?.errors
+      if (backendErrors && typeof backendErrors === 'object') {
+        const mapped: Record<string, string> = {}
+        for (const key of Object.keys(backendErrors)) {
+          const val = backendErrors[key]
+          mapped[key] = Array.isArray(val) ? String(val[0]) : String(val)
+        }
+        setErrors(mapped)
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-slide-up">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900">Add Customer</h3>
+            <button className="p-1 rounded hover:bg-gray-100" onClick={onClose} aria-label="Close">
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+          <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+            <div>
+              <label htmlFor="name" className="form-label">Full name *</label>
+              <Input id="name" name="name" value={form.name} onChange={setField} placeholder="e.g., John Doe" required />
+              {errors.name && <p className="form-error">{errors.name}</p>}
+            </div>
+            <div>
+              <label htmlFor="email" className="form-label">Email *</label>
+              <Input id="email" name="email" type="email" value={form.email} onChange={setField} placeholder="name@example.com" required />
+              {errors.email && <p className="form-error">{errors.email}</p>}
+            </div>
+            <div>
+              <label htmlFor="phone" className="form-label">Phone</label>
+              <Input id="phone" name="phone" value={form.phone} onChange={setField} placeholder="Optional" />
+            </div>
+            <div>
+              <label htmlFor="notes" className="form-label">Notes</label>
+              <Textarea id="notes" name="notes" value={form.notes} onChange={setField} rows={3} placeholder="Any relevant details..." />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button type="submit" disabled={submitting} className={submitting ? 'opacity-50 cursor-not-allowed' : ''}>
+                {submitting ? 'Saving…' : 'Create'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }
