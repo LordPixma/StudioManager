@@ -206,6 +206,14 @@ export const reportsAPI = {
     const resp = await http.get(`/reports/revenue.csv`, { responseType: 'blob' })
     return resp.data
   },
+  async downloadOccupancyCsv(params?: { from?: string; to?: string; open_hours_per_day?: number }): Promise<Blob> {
+    const resp = await http.get(`/reports/occupancy.csv`, { params, responseType: 'blob' })
+    return resp.data
+  },
+  async downloadStaffCsv(params?: { from?: string; to?: string }): Promise<Blob> {
+    const resp = await http.get(`/reports/staff.csv`, { params, responseType: 'blob' })
+    return resp.data
+  },
 }
 
 export const analyticsAPI = {

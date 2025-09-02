@@ -657,7 +657,7 @@ export function StaffPage() {
 }
 
 export function ReportsPage() {
-  const [downloading, setDownloading] = useState<'bookings' | 'revenue' | null>(null)
+  const [downloading, setDownloading] = useState<'bookings' | 'revenue' | 'occupancy' | 'staff' | null>(null)
   const [from, setFrom] = useState<string>(() => new Date(Date.now() - 29*24*3600*1000).toISOString().slice(0,10))
   const [to, setTo] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [openHours, setOpenHours] = useState<number>(12)
@@ -724,12 +724,23 @@ export function ReportsPage() {
     try { localStorage.setItem('reports.budgetTarget', String(budgetTarget || '')) } catch {}
   }, [budgetTarget])
 
-  const handleDownload = async (kind: 'bookings' | 'revenue') => {
+  const handleDownload = async (kind: 'bookings' | 'revenue' | 'occupancy' | 'staff') => {
     try {
       setDownloading(kind)
-      const blob = kind === 'bookings' ? await reportsAPI.downloadBookingsCsv() : await reportsAPI.downloadRevenueCsv()
-      downloadBlobAsFile(blob, `${kind}.csv`)
-      notify({ kind: 'success', message: `${kind === 'bookings' ? 'Bookings' : 'Revenue'} report downloaded` })
+      const fromIso = new Date(from).toISOString()
+      const toIso = new Date(new Date(to).setHours(23,59,59,999)).toISOString()
+      let blob: Blob
+      if (kind === 'bookings') blob = await reportsAPI.downloadBookingsCsv()
+      else if (kind === 'revenue') blob = await reportsAPI.downloadRevenueCsv()
+      else if (kind === 'occupancy') blob = await reportsAPI.downloadOccupancyCsv({ from: fromIso, to: toIso, open_hours_per_day: openHours })
+      else blob = await reportsAPI.downloadStaffCsv({ from: fromIso, to: toIso })
+      downloadBlobAsFile(blob, `${kind === 'staff' ? 'staff_performance' : kind}.csv`)
+      notify({ kind: 'success', message: `${{
+        bookings: 'Bookings',
+        revenue: 'Revenue',
+        occupancy: 'Occupancy',
+        staff: 'Staff performance',
+      }[kind]} report downloaded` })
     } catch {
       notify({ kind: 'error', message: 'Failed to download report' })
     } finally {
@@ -954,6 +965,22 @@ export function ReportsPage() {
           <div className="card-body">
             <Button disabled={downloading === 'revenue'} onClick={() => handleDownload('revenue')} className="inline-flex items-center gap-2">
               <Download className="h-4 w-4"/> {downloading === 'revenue' ? 'Downloading…' : 'Download'}
+            </Button>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Occupancy CSV</h3></div>
+          <div className="card-body">
+            <Button disabled={downloading === 'occupancy'} onClick={() => handleDownload('occupancy')} className="inline-flex items-center gap-2">
+              <Download className="h-4 w-4"/> {downloading === 'occupancy' ? 'Downloading…' : 'Download'}
+            </Button>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Staff Performance CSV</h3></div>
+          <div className="card-body">
+            <Button disabled={downloading === 'staff'} onClick={() => handleDownload('staff')} className="inline-flex items-center gap-2">
+              <Download className="h-4 w-4"/> {downloading === 'staff' ? 'Downloading…' : 'Download'}
             </Button>
           </div>
         </div>

@@ -1377,6 +1377,9 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
   const headers = new Headers()
   headers.set('Content-Type', 'text/csv; charset=utf-8')
   headers.set('Cache-Control', 'no-store')
+  const searchParams = url.searchParams
+  const from = searchParams.get('from') || new Date(Date.now() - 29*24*3600*1000).toISOString()
+  const to = searchParams.get('to') || new Date().toISOString()
   if (url.pathname.endsWith('/bookings.csv')) {
     headers.set('Content-Disposition', 'attachment; filename="bookings.csv"')
   const rows = await env.DB.prepare('SELECT * FROM bookings WHERE tenant_id = ? ORDER BY start_time ASC').bind(user.tenant_id).all()
@@ -1391,6 +1394,42 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
   const rows = await env.DB.prepare('SELECT date(start_time) as day, SUM(total_amount) as revenue FROM bookings WHERE tenant_id = ? AND status = ? GROUP BY day ORDER BY day ASC').bind(user.tenant_id, 'confirmed').all()
     const lines = ['date,revenue']
   for (const r of ((rows?.results as any[]) || [])) lines.push([r.day, r.revenue ?? 0].join(','))
+    return new Response(lines.join('\n'), { headers })
+  }
+  if (url.pathname.endsWith('/occupancy.csv')) {
+    headers.set('Content-Disposition', 'attachment; filename="occupancy.csv"')
+    const openHoursPerDay = Number((searchParams.get('open_hours_per_day') || '12'))
+    const days = Math.max(1, Math.ceil((Date.parse(to) - Date.parse(from)) / 86400000))
+    const rooms = await env.DB.prepare(`SELECT id, name FROM rooms WHERE tenant_id = ? AND is_active = 1`).bind(user.tenant_id).all()
+    const roomList = ((rooms?.results as any[]) || [])
+    const lines = ['room_id,room_name,booked_hours,available_hours,utilization']
+    for (const r of roomList) {
+      const hoursRow = await dbFirst(env, `SELECT SUM((julianday(end_time) - julianday(start_time)) * 24.0) as h FROM bookings WHERE tenant_id = ? AND room_id = ? AND status='confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, r.id, from, to])
+      const booked = hoursRow?.h || 0
+      const available = openHoursPerDay * days
+      const util = available > 0 ? booked / available : 0
+      lines.push([r.id, JSON.stringify(r.name || ''), (Math.round(booked * 100) / 100), available, (Math.round(util * 10000) / 10000)].join(','))
+    }
+    return new Response(lines.join('\n'), { headers })
+  }
+  if (url.pathname.endsWith('/staff.csv')) {
+    headers.set('Content-Disposition', 'attachment; filename="staff_performance.csv"')
+    const byStaff = await env.DB.prepare(`
+      SELECT u.id as staff_id, u.name as staff_name,
+             SUM(CASE WHEN b.status='confirmed' THEN 1 ELSE 0 END) as bookings,
+             SUM(CASE WHEN b.status='confirmed' THEN b.total_amount ELSE 0 END) as revenue
+      FROM users u
+      LEFT JOIN bookings b ON b.staff_id = u.id AND b.tenant_id = u.tenant_id
+      WHERE u.tenant_id = ? AND u.role IN ('Receptionist','Staff/Instructor','Studio Manager','Admin')
+        AND (b.start_time IS NULL OR b.start_time BETWEEN ? AND ?)
+      GROUP BY u.id, u.name
+      ORDER BY revenue DESC NULLS LAST, bookings DESC
+    `).bind(user.tenant_id, from, to).all()
+    const rows = ((byStaff?.results as any[]) || [])
+    const lines = ['staff_id,staff_name,bookings,revenue']
+    for (const r of rows) {
+      lines.push([r.staff_id, JSON.stringify(r.staff_name || ''), r.bookings || 0, r.revenue || 0].join(','))
+    }
     return new Response(lines.join('\n'), { headers })
   }
   return new Response('Not found', { status: 404 })
