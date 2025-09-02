@@ -35,20 +35,30 @@ export function ProfilePage() {
     load()
   }, [reset])
 
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[1] || e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) return
-    if (file.size > 200 * 1024) { // 200KB
-      alert('Please choose an image under 200KB')
-      return
+    // Try R2 upload first (2MB limit server-side)
+    try {
+      const res = await userAPI.uploadAvatar(file)
+      if (res.success && res.data?.url) {
+        setValue('avatar_url', res.data.url)
+        updateUser({ avatar_url: res.data.url })
+        return
+      }
+    } catch {}
+    // Fallback: small inline data URL for preview
+    if (file.size <= 200 * 1024) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = String(reader.result || '')
+        setValue('avatar_url', dataUrl)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      alert('Avatar upload failed and file is too large for inline preview (200KB).')
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result || '')
-      setValue('avatar_url', dataUrl)
-    }
-    reader.readAsDataURL(file)
   }
 
   const onSubmit = handleSubmit(async (values) => {

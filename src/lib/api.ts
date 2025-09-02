@@ -47,6 +47,14 @@ export const userAPI = {
     const { data } = await http.put<ApiResponse>(`/users/me`, payload)
     return data
   },
+  async uploadAvatar(file: File) {
+    const form = new FormData()
+    form.append('file', file)
+    const resp = await http.post<ApiResponse<{ url: string }>>(`/users/me/avatar`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return resp.data
+  }
 }
 
 export const customerAPI = {

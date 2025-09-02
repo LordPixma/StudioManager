@@ -28,3 +28,8 @@ class_name = "RoomLock"
 [[migrations]]
 tag = "v1"
 new_classes = ["RoomLock"]
+
+# R2 bucket for storing user avatars
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "stm-avatars-01"

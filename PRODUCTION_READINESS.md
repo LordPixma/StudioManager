@@ -60,3 +60,4 @@ Top areas to harden next:
 - Issue: No centralized logging or error tracking.
 
 - Actions:
+	- Bind R2 for avatars: add [[r2_buckets]] AVATARS in wrangler.toml; endpoints: POST /api/users/me/avatar, GET /api/r2/avatars/:key. Keep CSP img-src allowing https: and data:.

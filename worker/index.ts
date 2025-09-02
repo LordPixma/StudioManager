@@ -14,6 +14,14 @@ type DurableObjectNamespace = { idFromName: (name: string) => DurableObjectId; g
 type AssetFetcher = {
   fetch: (request: Request) => Promise<Response>
 }
+// Minimal R2 types
+type R2HTTPMetadata = { contentType?: string } | undefined
+type R2PutOptions = { httpMetadata?: R2HTTPMetadata } | undefined
+type R2ObjectBody = { body: ReadableStream | null; httpMetadata?: R2HTTPMetadata } | null
+interface R2Bucket {
+  put: (key: string, value: ArrayBuffer | Uint8Array | ReadableStream | Blob, options?: R2PutOptions) => Promise<any>
+  get: (key: string) => Promise<R2ObjectBody>
+}
 
 // D1Database is available in the Workers runtime types
 export interface Env {
@@ -23,6 +31,7 @@ export interface Env {
   JWT_SECRET?: string
   NODE_ENV?: string
   ROOM_LOCK: DurableObjectNamespace
+  AVATARS?: R2Bucket
 }
 
 type ApiResponse<T = unknown> = {
@@ -1716,6 +1725,15 @@ export default {
     if (url.pathname === '/api/register' && request.method === 'POST') {
       return handleRegister(request, env)
     }
+    // Upload avatar to R2 and update profile
+    if (url.pathname === '/api/users/me/avatar' && request.method === 'POST') {
+      return handleAvatarUpload(request, env, url)
+    }
+    // Serve avatars from R2 via worker
+    const mAvatar = url.pathname.match(/^\/api\/r2\/avatars\/(.+)$/)
+    if (mAvatar && request.method === 'GET') {
+      return handleAvatarGet(request, env, decodeURIComponent(mAvatar[1]))
+    }
     // User profile endpoints
     if (url.pathname === '/api/users/me') {
       return handleUserProfile(request, env)
@@ -1755,4 +1773,38 @@ export default {
     }
     return assetResp
   },
+}
+
+// --- Avatar handlers ---
+async function handleAvatarUpload(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.AVATARS) return json({ success: false, message: 'R2 not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const form = await request.formData().catch(() => null)
+  if (!form) return json({ success: false, message: 'Invalid form' }, { status: 400 })
+  const file = form.get('file') as File | null
+  if (!file) return json({ success: false, message: 'file is required' }, { status: 400 })
+  if (!file.type.startsWith('image/')) return json({ success: false, message: 'Only image files accepted' }, { status: 400 })
+  const maxBytes = 2 * 1024 * 1024 // 2MB
+  if (file.size > maxBytes) return json({ success: false, message: 'File too large (max 2MB)' }, { status: 413 })
+  // Extension from type
+  const ext = (file.type.split('/')[1] || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const key = `${user.tenant_id || 'global'}/${user.id}/${Date.now()}.${ext}`
+  await env.AVATARS.put(key, file.stream(), { httpMetadata: { contentType: file.type } })
+  // Store a worker-served URL; avoid hard-coding domain
+  const path = `/api/r2/avatars/${encodeURIComponent(key)}`
+  await dbRun(env, 'UPDATE users SET avatar_url = ? WHERE id = ?', [path, user.id])
+  return json({ success: true, data: { url: path } })
+}
+
+async function handleAvatarGet(request: Request, env: Env, key: string): Promise<Response> {
+  if (!env.AVATARS) return new Response('R2 not bound', { status: 503 })
+  const obj = await env.AVATARS.get(key)
+  if (!obj || !obj.body) return new Response('Not found', { status: 404 })
+  const headers = new Headers()
+  const ct = obj.httpMetadata?.contentType || 'application/octet-stream'
+  headers.set('Content-Type', ct)
+  // Cache public avatars briefly
+  headers.set('Cache-Control', 'public, max-age=300')
+  return new Response(obj.body, { headers })
 }
