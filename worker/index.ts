@@ -1423,7 +1423,7 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
       WHERE u.tenant_id = ? AND u.role IN ('Receptionist','Staff/Instructor','Studio Manager','Admin')
         AND (b.start_time IS NULL OR b.start_time BETWEEN ? AND ?)
       GROUP BY u.id, u.name
-      ORDER BY revenue DESC NULLS LAST, bookings DESC
+      ORDER BY COALESCE(revenue, 0) DESC, COALESCE(bookings, 0) DESC
     `).bind(user.tenant_id, from, to).all()
     const rows = ((byStaff?.results as any[]) || [])
     const lines = ['staff_id,staff_name,bookings,revenue']
