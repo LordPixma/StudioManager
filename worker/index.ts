@@ -1951,7 +1951,10 @@ async function handlePortal(request: Request, env: Env, url: URL): Promise<Respo
     const code = randomCode(6)
     const exp = new Date(Date.now() + 10 * 60_000).toISOString()
     await dbRun(env, 'INSERT INTO customer_otps (tenant_id, customer_id, email, code, expires_at) VALUES (?,?,?,?,?)', [customer.tenant_id, customer.id, email, code, exp])
-    // In production, send code via email/SMS. For now, return masked message.
+    // In production, send code via email/SMS. In non-production, return the code for testing.
+    if ((env.NODE_ENV || '').toLowerCase() !== 'production') {
+      return json({ success: true, data: { code }, message: 'OTP created (dev)' })
+    }
     return json({ success: true, message: 'OTP sent to your email.' })
   }
 
