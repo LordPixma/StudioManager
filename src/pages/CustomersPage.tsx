@@ -28,9 +28,11 @@ export function CustomersPage() {
     })
   })
 
-  const customers = customersResponse?.data?.items || []
-  const total = customersResponse?.data?.total || 0
-  const totalPages = customersResponse?.data?.pages || 0
+  // customerAPI.getAll returns normalized shape when possible; narrow loosely for TS
+  const customersData = (customersResponse as any)?.data || {}
+  const customers = Array.isArray(customersData.items) ? customersData.items : []
+  const total = typeof customersData.total === 'number' ? customersData.total : 0
+  const totalPages = typeof customersData.pages === 'number' ? customersData.pages : 0
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)

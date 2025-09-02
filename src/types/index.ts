@@ -92,6 +92,7 @@ export interface Booking {
   status: 'confirmed' | 'pending' | 'cancelled'
   notes?: string
   total_amount?: number
+  staff_id?: number | null
 }
 
 // Staff types

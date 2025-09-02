@@ -159,6 +159,7 @@ async function ensureBookingExtensions(env: Env) {
   // Add optional columns
   await ensureColumn('rooms', 'room_type', 'room_type TEXT')
   await ensureColumn('bookings', 'event_id', 'event_id INTEGER NULL')
+  await ensureColumn('bookings', 'staff_id', 'staff_id INTEGER NULL')
 }
 
 function requireGlobalAdmin(user: { role?: string } | null): string | null {
@@ -1054,8 +1055,13 @@ export class RoomLock {
         return json({ success: false, message: 'Booking conflict' }, { status: 409 })
       }
       const hasEvent = typeof data.event_id !== 'undefined' && data.event_id !== null
-      if (hasEvent) {
+      const hasStaff = typeof data.staff_id !== 'undefined' && data.staff_id !== null
+      if (hasEvent && hasStaff) {
+        await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount, event_id, staff_id) VALUES (?,?,?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null, data.event_id, data.staff_id])
+      } else if (hasEvent) {
         await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount, event_id) VALUES (?,?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null, data.event_id])
+      } else if (hasStaff) {
+        await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount, staff_id) VALUES (?,?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null, data.staff_id])
       } else {
         await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount) VALUES (?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null])
       }
@@ -1202,7 +1208,7 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', body: JSON.stringify({ ...payload, tenant_id: user.tenant_id }), headers: { 'Content-Type': 'application/json' } }))
     return resp
   }
-  // PUT /api/bookings/:id (update time/status/notes)
+  // PUT /api/bookings/:id (update time/status/notes/staff)
   const mPut = url.pathname.match(/^\/api\/bookings\/(\d+)$/)
   if (mPut && method === 'PUT') {
     const id = parseInt(mPut[1], 10)
@@ -1217,9 +1223,10 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const newStatus = payload.status ? String(payload.status) : null
   if (newStart) { updates.push('start_time = ?'); params.push(newStart) }
   if (newEnd) { updates.push('end_time = ?'); params.push(newEnd) }
-    if (typeof payload.notes !== 'undefined') { updates.push('notes = ?'); params.push(payload.notes || null) }
+  if (typeof payload.notes !== 'undefined') { updates.push('notes = ?'); params.push(payload.notes || null) }
     if (newStatus) { updates.push('status = ?'); params.push(newStatus) }
   if (typeof payload.total_amount !== 'undefined') { updates.push('total_amount = ?'); params.push(payload.total_amount ?? null) }
+  if (typeof payload.staff_id !== 'undefined') { updates.push('staff_id = ?'); params.push(payload.staff_id ?? null) }
     if (updates.length === 0) {
       return json({ success: true, data: existing, message: 'No changes' })
     }
@@ -1389,6 +1396,164 @@ async function handleReports(request: Request, env: Env, url: URL): Promise<Resp
   return new Response('Not found', { status: 404 })
 }
 
+// --- Analytics API ---
+async function handleAnalytics(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+
+  const searchParams = url.searchParams
+  const from = searchParams.get('from') || new Date(Date.now() - 29*24*3600*1000).toISOString()
+  const to = searchParams.get('to') || new Date().toISOString()
+
+  const path = url.pathname
+
+  // Summary KPIs
+  if (path === '/api/analytics/summary' && request.method === 'GET') {
+    const totalBookings = await dbFirst(env, `SELECT COUNT(*) as c FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, from, to])
+    const revenueRow = await dbFirst(env, `SELECT SUM(total_amount) as s FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, from, to])
+    const avgVal = await dbFirst(env, `SELECT AVG(x) as a FROM (SELECT total_amount as x FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND total_amount IS NOT NULL AND start_time BETWEEN ? AND ?)`, [user.tenant_id, from, to])
+    const uniqueCustomers = await dbFirst(env, `SELECT COUNT(DISTINCT customer_id) as c FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, from, to])
+    const roomsCount = await dbFirst(env, `SELECT COUNT(*) as c FROM rooms WHERE tenant_id = ? AND is_active = 1`, [user.tenant_id])
+    const days = Math.max(1, Math.ceil((Date.parse(to) - Date.parse(from)) / 86400000))
+    const bookedHoursRow = await dbFirst(env, `SELECT SUM((julianday(end_time) - julianday(start_time)) * 24.0) as h FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, from, to])
+    const openHoursPerDay = Number((searchParams.get('open_hours_per_day') || '12'))
+    const totalAvailable = (roomsCount?.c || 0) * openHoursPerDay * days
+    const occupancyRate = totalAvailable > 0 ? Math.min(1, Math.max(0, (bookedHoursRow?.h || 0) / totalAvailable)) : 0
+    const peakHour = await dbFirst(env, `SELECT strftime('%H', start_time) as hour, COUNT(*) as c FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ? GROUP BY hour ORDER BY c DESC LIMIT 1`, [user.tenant_id, from, to])
+    const peakDay = await dbFirst(env, `SELECT strftime('%w', start_time) as weekday, COUNT(*) as c FROM bookings WHERE tenant_id = ? AND status = 'confirmed' AND start_time BETWEEN ? AND ? GROUP BY weekday ORDER BY c DESC LIMIT 1`, [user.tenant_id, from, to])
+    return json({ success: true, data: {
+      total_bookings: totalBookings?.c || 0,
+      revenue: revenueRow?.s || 0,
+      avg_booking_value: avgVal?.a || 0,
+      unique_customers: uniqueCustomers?.c || 0,
+      occupancy_rate: occupancyRate,
+      peak_hour: (peakHour?.hour ?? null),
+      peak_day_of_week: (peakDay?.weekday ?? null),
+      assumptions: { open_hours_per_day: openHoursPerDay, days }
+    }})
+  }
+
+  // Forecasts (moving average approach)
+  if (path === '/api/analytics/forecast' && request.method === 'GET') {
+    const metric = (url.searchParams.get('metric') || 'revenue') as 'revenue' | 'bookings'
+    const period = (url.searchParams.get('period') || 'monthly') as 'monthly' | 'weekly'
+    const months = Math.min(12, Math.max(1, Number(url.searchParams.get('months') || '3')))
+    const now = new Date()
+    const since = new Date(now)
+    since.setMonth(now.getMonth() - 6)
+    const sinceIso = since.toISOString()
+    if (period === 'monthly') {
+      const rows = await env.DB.prepare(`
+        SELECT strftime('%Y-%m', start_time) as ym,
+               SUM(CASE WHEN status='confirmed' THEN total_amount ELSE 0 END) as revenue,
+               SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END) as bookings
+        FROM bookings WHERE tenant_id = ? AND start_time >= ?
+        GROUP BY ym ORDER BY ym ASC
+      `).bind(user.tenant_id, sinceIso).all()
+      const items = ((rows?.results as any[]) || []).map(r => ({ period: r.ym, revenue: r.revenue || 0, bookings: r.bookings || 0 }))
+      const last3 = items.slice(-3)
+      const avgRevenue = last3.length ? last3.reduce((s, i) => s + i.revenue, 0) / last3.length : 0
+      const avgBookings = last3.length ? last3.reduce((s, i) => s + i.bookings, 0) / last3.length : 0
+      const forecasts = [] as Array<{ period: string; value: number }>
+      let year = now.getFullYear(); let m = now.getMonth()
+      for (let i = 0; i < months; i++) {
+        m++; if (m > 11) { m = 0; year++ }
+        const label = `${year}-${String(m+1).padStart(2,'0')}`
+        forecasts.push({ period: label, value: metric === 'revenue' ? Math.round(avgRevenue * 100) / 100 : Math.round(avgBookings) })
+      }
+      return json({ success: true, data: { period: 'monthly', metric, history: items, forecasts, method: 'moving_average_last3' } })
+    } else {
+      const rows = await env.DB.prepare(`
+        SELECT strftime('%Y-%W', start_time) as yw,
+               SUM(CASE WHEN status='confirmed' THEN total_amount ELSE 0 END) as revenue,
+               SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END) as bookings
+        FROM bookings WHERE tenant_id = ? AND start_time >= ?
+        GROUP BY yw ORDER BY yw ASC
+      `).bind(user.tenant_id, sinceIso).all()
+      const items = ((rows?.results as any[]) || []).map(r => ({ period: r.yw, revenue: r.revenue || 0, bookings: r.bookings || 0 }))
+      const last4 = items.slice(-4)
+      const avgRevenue = last4.length ? last4.reduce((s, i) => s + i.revenue, 0) / last4.length : 0
+      const avgBookings = last4.length ? last4.reduce((s, i) => s + i.bookings, 0) / last4.length : 0
+      const forecasts = [] as Array<{ period: string; value: number }>
+      let y = now.getFullYear(); let w = Number(strftimeWeek(now))
+      for (let i = 0; i < months * 4; i++) {
+        w++; if (w > 52) { w = 0; y++ }
+        const label = `${y}-${String(w).padStart(2,'0')}`
+        forecasts.push({ period: label, value: metric === 'revenue' ? Math.round(avgRevenue * 100) / 100 : Math.round(avgBookings) })
+      }
+      return json({ success: true, data: { period: 'weekly', metric, history: items, forecasts, method: 'moving_average_last4' } })
+    }
+  }
+
+  // Customer analytics
+  if (path === '/api/analytics/customers' && request.method === 'GET') {
+    const today = new Date()
+    const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString()
+    const startOfPrevMonth = new Date(today.getFullYear(), today.getMonth()-1, 1).toISOString()
+    const endOfPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0, 23,59,59).toISOString()
+    const setPrev = await env.DB.prepare(`SELECT DISTINCT customer_id as id FROM bookings WHERE tenant_id = ? AND status='confirmed' AND start_time BETWEEN ? AND ?`).bind(user.tenant_id, startOfPrevMonth, endOfPrevMonth).all()
+    const setThis = await env.DB.prepare(`SELECT DISTINCT customer_id as id FROM bookings WHERE tenant_id = ? AND status='confirmed' AND start_time >= ?`).bind(user.tenant_id, startOfThisMonth).all()
+    const prevIds = new Set(((setPrev?.results as any[]) || []).map(r => r.id))
+    const thisIds = new Set(((setThis?.results as any[]) || []).map(r => r.id))
+    let retained = 0; prevIds.forEach(id => { if (thisIds.has(id)) retained++ })
+    const retentionRate = prevIds.size ? retained / prevIds.size : 0
+    const churnRate = prevIds.size ? 1 - retentionRate : 0
+    const last180 = new Date(Date.now() - 180*24*3600*1000).toISOString()
+    const revRows = await env.DB.prepare(`SELECT customer_id, SUM(total_amount) as revenue FROM bookings WHERE tenant_id = ? AND status='confirmed' AND start_time >= ? GROUP BY customer_id`).bind(user.tenant_id, last180).all()
+    const revenues = ((revRows?.results as any[]) || []).map(r => r.revenue || 0)
+    const avgCLV = revenues.length ? (revenues.reduce((s, x) => s + (Number(x) || 0), 0) / revenues.length) : 0
+    return json({ success: true, data: { retention_rate: retentionRate, churn_rate: churnRate, avg_clv: Math.round(avgCLV * 100) / 100, cohorts: { prev_month: prevIds.size, this_month: thisIds.size, retained } } })
+  }
+
+  // Occupancy and peak times
+  if (path === '/api/analytics/occupancy' && request.method === 'GET') {
+    const openHoursPerDay = Number((url.searchParams.get('open_hours_per_day') || '12'))
+    const days = Math.max(1, Math.ceil((Date.parse(to) - Date.parse(from)) / 86400000))
+    const rooms = await env.DB.prepare(`SELECT id, name FROM rooms WHERE tenant_id = ? AND is_active = 1`).bind(user.tenant_id).all()
+    const roomList = ((rooms?.results as any[]) || [])
+    const perRoom: any[] = []
+    for (const r of roomList) {
+      const hoursRow = await dbFirst(env, `SELECT SUM((julianday(end_time) - julianday(start_time)) * 24.0) as h FROM bookings WHERE tenant_id = ? AND room_id = ? AND status='confirmed' AND start_time BETWEEN ? AND ?`, [user.tenant_id, r.id, from, to])
+      const booked = hoursRow?.h || 0
+      const available = openHoursPerDay * days
+      perRoom.push({ room_id: r.id, room_name: r.name, booked_hours: booked, available_hours: available, utilization: available > 0 ? booked / available : 0 })
+    }
+    const hoursHistRows = await env.DB.prepare(`SELECT strftime('%H', start_time) as hour, COUNT(*) as c FROM bookings WHERE tenant_id = ? AND status='confirmed' AND start_time BETWEEN ? AND ? GROUP BY hour ORDER BY hour ASC`).bind(user.tenant_id, from, to).all()
+    const hoursHist = ((hoursHistRows?.results as any[]) || []).map(r => ({ hour: r.hour, count: r.c }))
+    return json({ success: true, data: { per_room: perRoom, hours_hist: hoursHist, assumptions: { open_hours_per_day: openHoursPerDay, days } } })
+  }
+
+  // Staff performance (requires bookings.staff_id)
+  if (path === '/api/analytics/staff' && request.method === 'GET') {
+    const byStaff = await env.DB.prepare(`
+      SELECT u.id as staff_id, u.name as staff_name,
+             SUM(CASE WHEN b.status='confirmed' THEN 1 ELSE 0 END) as bookings,
+             SUM(CASE WHEN b.status='confirmed' THEN b.total_amount ELSE 0 END) as revenue
+      FROM users u
+      LEFT JOIN bookings b ON b.staff_id = u.id AND b.tenant_id = u.tenant_id
+      WHERE u.tenant_id = ? AND u.role IN ('Receptionist','Staff/Instructor','Studio Manager','Admin')
+        AND (b.start_time IS NULL OR b.start_time BETWEEN ? AND ?)
+      GROUP BY u.id, u.name
+      ORDER BY revenue DESC NULLS LAST, bookings DESC
+    `).bind(user.tenant_id, from, to).all()
+    const results = ((byStaff?.results as any[]) || []).map(r => ({ staff_id: r.staff_id, staff_name: r.staff_name, bookings: r.bookings || 0, revenue: r.revenue || 0 }))
+    return json({ success: true, data: { staff: results, note: 'Metrics use bookings.staff_id when present; otherwise values may be zero until staff assignment is implemented.' } })
+  }
+
+  return json({ success: false, message: 'Not found' }, { status: 404 })
+}
+
+function strftimeWeek(d: Date): string {
+  // ISO week number approximation
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const dayNum = date.getUTCDay() || 7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((date as any) - (yearStart as any)) / 86400000 + 1) / 7)
+  return String(weekNo)
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
@@ -1459,6 +1624,9 @@ export default {
     }
     if (url.pathname === '/api/staff' || /^\/api\/staff\//.test(url.pathname)) {
       return handleStaff(request, env, url)
+    }
+    if (url.pathname.startsWith('/api/analytics')) {
+      return handleAnalytics(request, env, url)
     }
     if (url.pathname.startsWith('/api/reports/') && (url.pathname.endsWith('.csv'))) {
       return handleReports(request, env, url)

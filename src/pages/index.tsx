@@ -1,7 +1,7 @@
-import { FileX, Plus, RefreshCw, Download, Edit, Trash2, Check, X as XIcon, Calendar as CalendarIcon } from 'lucide-react'
+import { FileX, Plus, RefreshCw, Download, Edit, Trash2, Check, X as XIcon, Calendar as CalendarIcon, TrendingUp, DollarSign, Users as UsersIcon, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { bookingsAPI, customerAPI, roomsAPI, staffAPI, reportsAPI } from '../lib/api'
+import { bookingsAPI, customerAPI, roomsAPI, staffAPI, reportsAPI, analyticsAPI } from '../lib/api'
 import type { Booking, Room, Customer } from '../types'
 import { downloadBlobAsFile } from '../lib/utils'
 import { Button } from '../components/ui/Button'
@@ -17,6 +17,7 @@ export function BookingsPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [staffList, setStaffList] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filterRoomId, setFilterRoomId] = useState<number | ''>('')
@@ -24,7 +25,7 @@ export function BookingsPage() {
   const [filterDateTo, setFilterDateTo] = useState<string>('')
   const [hardDelete, setHardDelete] = useState<boolean>(false)
 
-  const { register, handleSubmit, reset, watch } = useForm<{ room_id: number; customer_id: number; date: string; start: string; end: string; notes?: string }>()
+  const { register, handleSubmit, reset, watch } = useForm<{ room_id: number; customer_id: number; staff_id?: number | ''; date: string; start: string; end: string; notes?: string }>()
   const watchRoom = watch('room_id')
   const watchDate = watch('date')
   const watchStart = watch('start')
@@ -52,13 +53,16 @@ export function BookingsPage() {
     const load = async () => {
       try {
         setLoading(true)
-        const [rRes, cRes] = await Promise.all([
+        const [rRes, cRes, sRes] = await Promise.all([
           roomsAPI.list(),
           customerAPI.getAll({ per_page: 100 }),
+          staffAPI.list(),
         ])
         if (mounted) {
-          if (rRes.success) setRooms(rRes.data || [])
-          if (cRes.success) setCustomers((cRes as any).data?.items || cRes.data || [])
+          if (rRes.success) setRooms(Array.isArray(rRes.data) ? rRes.data : [])
+          if (cRes.success) setCustomers((cRes as any).data?.items || (Array.isArray(cRes.data) ? cRes.data : []))
+          if (sRes.success) setStaffList(Array.isArray(sRes.data) ? sRes.data : [])
+          ;(window as any).__staffList = Array.isArray(sRes?.data) ? sRes.data : []
         }
       } catch (e: any) {
         setError(e?.message || 'Failed to load data')
@@ -78,7 +82,7 @@ export function BookingsPage() {
       if (filterDateFrom) params.from = new Date(filterDateFrom).toISOString()
       if (filterDateTo) params.to = new Date(filterDateTo).toISOString()
       const bRes = await bookingsAPI.list(params)
-      if (bRes.success) setBookings(bRes.data || [])
+  if (bRes.success) setBookings(Array.isArray(bRes.data) ? bRes.data : [])
     } catch (e: any) {
       setError(e?.message || 'Failed to load bookings')
     } finally {
@@ -123,6 +127,7 @@ export function BookingsPage() {
         notes: values.notes,
         total_amount: suggestedAmount ?? undefined,
         status: 'confirmed',
+        staff_id: values.staff_id ? Number(values.staff_id) : null,
       })
       if (res.success) {
         await reloadBookings()
@@ -196,6 +201,16 @@ export function BookingsPage() {
                 <label className="form-label">Notes (optional)</label>
                 <Textarea placeholder="Optional notes" {...register('notes')} />
               </div>
+              {/* Staff selection */}
+              <div>
+                <label className="form-label">Assign Staff (optional)</label>
+                <Select {...register('staff_id')}>
+                  <option value="">Unassigned</option>
+                  {staffList.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </Select>
+              </div>
               {suggestedAmount != null && (
                 <div className="text-sm text-gray-600 -mt-2">
                   Suggested amount: <span className="font-medium">${'{'}suggestedAmount.toFixed(2){'}'}</span>
@@ -263,6 +278,7 @@ export function BookingsPage() {
                       onUpdated={async () => { await reloadBookings(); notify({ kind: 'success', message: 'Booking updated' }) }}
           onDeleted={async () => { await reloadBookings(); }}
           hardDelete={hardDelete}
+                      staffList={staffList as any}
                     />
                   )
                 })}
@@ -306,13 +322,14 @@ export function BookingsPage() {
   )
 }
 
-function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted, hardDelete }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void; hardDelete: boolean }) {
+function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted, hardDelete, staffList }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void; hardDelete: boolean; staffList: Array<{ id: number; name: string }> }) {
   const { notify } = useToast()
   const [editing, setEditing] = useState(false)
   const [start, setStart] = useState(() => booking.start_time.slice(0,16))
   const [end, setEnd] = useState(() => booking.end_time.slice(0,16))
   const [notes, setNotes] = useState(booking.notes || '')
   const [amount, setAmount] = useState<string>(booking.total_amount != null ? String(booking.total_amount) : '')
+  const [staffId, setStaffId] = useState<string>(booking.staff_id != null ? String(booking.staff_id) : '')
   const statusColor = booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : booking.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
 
   const save = async () => {
@@ -328,6 +345,7 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
         }
         payload.total_amount = parsed
       }
+            payload.staff_id = staffId ? Number(staffId) : null
       const res = await bookingsAPI.update(booking.id, payload)
       if (res.success) { setEditing(false); onUpdated() }
       else notify({ kind: 'error', message: res.message || 'Update failed' })
@@ -363,11 +381,20 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
             {new Date(booking.start_time).toLocaleString()} – {new Date(booking.end_time).toLocaleTimeString()} · {durationHrs.toFixed(1)}h{price != null ? ` · $${price}` : ''}
           </div>
           {editing ? (
-            <div className="mt-2 grid md:grid-cols-4 gap-2">
+            <div className="mt-2 grid md:grid-cols-5 gap-2">
               <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
               <Input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} />
               <Input type="number" step="0.01" placeholder="Amount ($)" value={amount} onChange={(e) => setAmount(e.target.value)} />
               <Input placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <div>
+            <label className="form-label">Staff</label>
+            <Select value={staffId} onChange={(e) => setStaffId(e.target.value)}>
+              <option value="">Unassigned</option>
+              {Array.isArray(staffList) && staffList.map((s) => (
+                <option key={s.id} value={String(s.id)}>{s.name}</option>
+              ))}
+            </Select>
+          </div>
             </div>
           ) : booking.notes ? (
             <div className="text-sm text-gray-700 mt-1">{booking.notes}</div>
@@ -468,8 +495,8 @@ export function StaffPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const res = await staffAPI.list()
-        if (mounted && res.success) setStaff(res.data || [])
+  const res = await staffAPI.list()
+  if (mounted && res.success) setStaff(Array.isArray(res.data) ? res.data : [])
       } catch (e: any) {
         setError(e?.message || 'Failed to load staff')
       } finally {
@@ -486,8 +513,8 @@ export function StaffPage() {
       const res = await staffAPI.create({ name: values.name, email: values.email, role: values.role || 'Staff/Instructor' })
       if (res.success) {
         reset()
-        const list = await staffAPI.list()
-        if (list.success) setStaff(list.data || [])
+  const list = await staffAPI.list()
+  if (list.success) setStaff(Array.isArray(list.data) ? list.data : [])
       } else {
         setError(res.message || 'Failed to add staff')
       }
@@ -565,27 +592,211 @@ export function StaffPage() {
 
 export function ReportsPage() {
   const [downloading, setDownloading] = useState<'bookings' | 'revenue' | null>(null)
+  const [from, setFrom] = useState<string>(() => new Date(Date.now() - 29*24*3600*1000).toISOString().slice(0,10))
+  const [to, setTo] = useState<string>(() => new Date().toISOString().slice(0,10))
+  const [openHours, setOpenHours] = useState<number>(12)
+  const [loading, setLoading] = useState(false)
+  const [summary, setSummary] = useState<any | null>(null)
+  const [forecast, setForecast] = useState<any | null>(null)
+  const [cust, setCust] = useState<any | null>(null)
+  const [occ, setOcc] = useState<any | null>(null)
+  const [staff, setStaff] = useState<any | null>(null)
   const { notify } = useToast()
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const fromIso = new Date(from).toISOString()
+      const toIso = new Date(new Date(to).setHours(23,59,59,999)).toISOString()
+      const [s, f, c, o, st] = await Promise.all([
+        analyticsAPI.summary({ from: fromIso, to: toIso, open_hours_per_day: openHours }),
+        analyticsAPI.forecast({ metric: 'revenue', period: 'monthly', months: 3 }),
+        analyticsAPI.customers({ from: fromIso, to: toIso }),
+        analyticsAPI.occupancy({ from: fromIso, to: toIso, open_hours_per_day: openHours }),
+        analyticsAPI.staff({ from: fromIso, to: toIso }),
+      ])
+      if (s.success) setSummary(s.data)
+      if (f.success) setForecast(f.data)
+      if (c.success) setCust(c.data)
+      if (o.success) setOcc(o.data)
+      if (st.success) setStaff(st.data)
+    } catch (e) {
+      console.error(e)
+      notify({ kind: 'error', message: 'Failed to load analytics' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleDownload = async (kind: 'bookings' | 'revenue') => {
     try {
       setDownloading(kind)
       const blob = kind === 'bookings' ? await reportsAPI.downloadBookingsCsv() : await reportsAPI.downloadRevenueCsv()
       downloadBlobAsFile(blob, `${kind}.csv`)
       notify({ kind: 'success', message: `${kind === 'bookings' ? 'Bookings' : 'Revenue'} report downloaded` })
-  } catch {
+    } catch {
       notify({ kind: 'error', message: 'Failed to download report' })
     } finally {
       setDownloading(null)
     }
   }
+
+  const kpi = (label: string, value: string | number, icon: React.ReactNode) => (
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3 shadow-sm">
+      <div className="p-2 rounded-lg bg-primary-50 text-primary-600">{icon}</div>
+      <div>
+        <div className="text-sm text-gray-500">{label}</div>
+        <div className="text-xl font-semibold">{value}</div>
+      </div>
+    </div>
+  )
+
+  // Minimal SVG sparkline; values array plotted left-to-right with optional split index for history vs forecast
+  const Sparkline = ({ values, width = 320, height = 60, splitIndex }: { values: number[]; width?: number; height?: number; splitIndex?: number }) => {
+    if (!values || values.length === 0) return null
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const pad = 4
+    const w = width
+    const h = height
+    const range = max - min || 1
+    const step = values.length > 1 ? (w - pad * 2) / (values.length - 1) : 0
+    const y = (v: number) => h - pad - ((v - min) / range) * (h - pad * 2)
+    const points = values.map((v, i) => `${pad + i * step},${y(v)}`).join(' ')
+    // Split into history and forecast paths
+    let historyPts = points
+    let forecastPts = ''
+    if (typeof splitIndex === 'number' && splitIndex >= 1 && splitIndex < values.length) {
+      const pts = points.split(' ')
+      historyPts = pts.slice(0, splitIndex).join(' ')
+      forecastPts = pts.slice(splitIndex - 1).join(' ')
+    }
+    return (
+      <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="w-full">
+        {/* history */}
+        <polyline fill="none" stroke="#3b82f6" strokeWidth="2" points={historyPts} />
+        {/* forecast */}
+        {forecastPts && <polyline fill="none" stroke="#f59e0b" strokeDasharray="4 3" strokeWidth="2" points={forecastPts} />}
+      </svg>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-600 mt-1">Analytics and reporting for your studio performance.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
+          <p className="text-gray-600 mt-1">KPI tracking, forecasts, customer insights, and utilization.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          <span className="text-gray-500">to</span>
+          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <Input type="number" min={1} max={24} value={openHours} onChange={(e)=>setOpenHours(Number(e.target.value)||12)} className="w-24" placeholder="Open hrs" />
+          <Button variant="secondary" onClick={load} disabled={loading}><RefreshCw className="h-4 w-4"/></Button>
         </div>
       </div>
+
+      {/* KPIs */}
+      <div className="grid md:grid-cols-4 gap-4">
+        {kpi('Revenue', `$${Number(summary?.revenue||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
+        {kpi('Bookings', Number(summary?.total_bookings||0), <TrendingUp className="h-5 w-5"/>)}
+        {kpi('Avg. booking value', `$${Number(summary?.avg_booking_value||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
+        {kpi('Unique customers', Number(summary?.unique_customers||0), <UsersIcon className="h-5 w-5"/>)}
+      </div>
+
+      {/* Forecast & occupancy */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Revenue Forecast (next 3 mo)</h3></div>
+          <div className="card-body space-y-3">
+            <div className="text-sm text-gray-600">Method: {forecast?.method?.replaceAll('_',' ')}</div>
+            {/* Sparkline based on history + forecasts */}
+            {(() => {
+              const historyVals = Array.isArray(forecast?.history) ? forecast!.history.map((h: any) => Number(h.value) || 0) : []
+              const forecastVals = Array.isArray(forecast?.forecasts) ? forecast!.forecasts.map((f: any) => Number(f.value) || 0) : []
+              const all = [...historyVals, ...forecastVals]
+              return all.length > 0 ? (
+                <Sparkline values={all} splitIndex={historyVals.length} />
+              ) : null
+            })()}
+            <ul className="text-sm space-y-1">
+              {forecast?.forecasts?.map((f: any) => (
+                <li key={f.period} className="flex justify-between"><span>{f.period}</span><span className="font-medium">${Number(f.value).toFixed(2)}</span></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Occupancy</h3></div>
+          <div className="card-body space-y-3">
+            <div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="h-4 w-4"/> Assumed open hours/day: {occ?.assumptions?.open_hours_per_day} · Days: {occ?.assumptions?.days}</div>
+            <div className="space-y-2">
+              {occ?.per_room?.map((r: any) => (
+                <div key={r.room_id}>
+                  <div className="flex justify-between text-sm"><span>{r.room_name || `Room ${r.room_id}`}</span><span>{Math.round((r.utilization||0)*100)}%</span></div>
+                  <div className="w-full h-2 bg-gray-100 rounded"><div className="h-2 bg-primary-500 rounded" style={{ width: `${Math.min(100, Math.round((r.utilization||0)*100))}%` }} /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer analytics and peak times */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Customers</h3></div>
+          <div className="card-body text-sm space-y-2">
+            <div>Retention rate: <span className="font-medium">{Math.round((cust?.retention_rate||0)*100)}%</span></div>
+            <div>Churn rate: <span className="font-medium">{Math.round((cust?.churn_rate||0)*100)}%</span></div>
+            <div>Avg CLV (last 180d): <span className="font-medium">${Number(cust?.avg_clv||0).toFixed(2)}</span></div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-header"><h3 className="text-lg font-medium">Peak Times</h3></div>
+          <div className="card-body text-sm space-y-2">
+            <div>Peak hour: <span className="font-medium">{summary?.peak_hour ?? '—'}</span></div>
+            <div>Peak weekday (0=Sun): <span className="font-medium">{summary?.peak_day_of_week ?? '—'}</span></div>
+            <div>Occupancy rate (overall): <span className="font-medium">{Math.round((summary?.occupancy_rate||0)*100)}%</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Staff performance */}
+      <div className="card">
+        <div className="card-header flex items-center justify-between">
+          <h3 className="text-lg font-medium">Staff Performance</h3>
+          <span className="text-xs text-gray-500">Requires assigning bookings to staff</span>
+        </div>
+        <div className="card-body">
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 pr-4">Staff</th>
+                  <th className="py-2 pr-4">Bookings</th>
+                  <th className="py-2 pr-4">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {staff?.staff?.map((s: any) => (
+                  <tr key={s.staff_id} className="border-t">
+                    <td className="py-2 pr-4">{s.staff_name}</td>
+                    <td className="py-2 pr-4">{s.bookings}</td>
+                    <td className="py-2 pr-4">${Number(s.revenue||0).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* CSV downloads */}
       <div className="grid md:grid-cols-2 gap-6">
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Bookings CSV</h3></div>

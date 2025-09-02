@@ -115,7 +115,7 @@ export const bookingsAPI = {
     const { data } = await http.get<ApiResponse>(`/bookings`, { params })
     return data
   },
-  async create(payload: { room_id: number; customer_id: number; start_time: string; end_time: string; status?: 'confirmed' | 'cancelled'; notes?: string; total_amount?: number }) {
+  async create(payload: { room_id: number; customer_id: number; start_time: string; end_time: string; status?: 'confirmed' | 'cancelled'; notes?: string; total_amount?: number; staff_id?: number | null }) {
     const { data } = await http.post<ApiResponse>(`/bookings`, payload)
     return data
   },
@@ -127,7 +127,7 @@ export const bookingsAPI = {
     const { data } = await http.post<ApiResponse>(`/bookings/recurring`, payload)
     return data
   },
-  async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string; total_amount: number }>) {
+  async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string; total_amount: number; staff_id: number | null }>) {
     const { data } = await http.put<ApiResponse>(`/bookings/${id}`, payload)
     return data
   },
@@ -205,6 +205,29 @@ export const reportsAPI = {
   async downloadRevenueCsv(): Promise<Blob> {
     const resp = await http.get(`/reports/revenue.csv`, { responseType: 'blob' })
     return resp.data
+  },
+}
+
+export const analyticsAPI = {
+  async summary(params?: { from?: string; to?: string; open_hours_per_day?: number }) {
+    const { data } = await http.get<ApiResponse>(`/analytics/summary`, { params })
+    return data
+  },
+  async forecast(params?: { metric?: 'revenue' | 'bookings'; period?: 'monthly' | 'weekly'; months?: number }) {
+    const { data } = await http.get<ApiResponse>(`/analytics/forecast`, { params })
+    return data
+  },
+  async customers(params?: { from?: string; to?: string }) {
+    const { data } = await http.get<ApiResponse>(`/analytics/customers`, { params })
+    return data
+  },
+  async occupancy(params?: { from?: string; to?: string; open_hours_per_day?: number }) {
+    const { data } = await http.get<ApiResponse>(`/analytics/occupancy`, { params })
+    return data
+  },
+  async staff(params?: { from?: string; to?: string }) {
+    const { data } = await http.get<ApiResponse>(`/analytics/staff`, { params })
+    return data
   },
 }
 
