@@ -3,6 +3,47 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { bookingsAPI, customerAPI, roomsAPI, staffAPI, reportsAPI, analyticsAPI } from '../lib/api'
 import type { Booking, Room, Customer } from '../types'
+
+// Lightweight local types to eliminate any
+type StaffOption = { id: number; name: string }
+type SummaryResponse = {
+  revenue?: number
+  total_bookings?: number
+  avg_booking_value?: number
+  unique_customers?: number
+  occupancy_rate?: number
+  peak_hour?: number
+  peak_day_of_week?: number
+}
+type ForecastPoint = { period: string; value: number | string }
+type ForecastResponse = { method?: string; history?: ForecastPoint[]; forecasts?: ForecastPoint[] }
+type OccupancyRoom = { room_id: number; room_name?: string; utilization?: number }
+type OccupancyResponse = { per_room?: OccupancyRoom[]; assumptions?: { open_hours_per_day?: number; days?: number } }
+type StaffPerformanceRow = { staff_id: number; staff_name: string; bookings: number; revenue: number }
+
+function getHttpStatus(err: unknown): number | undefined {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const resp = (err as { response?: unknown }).response
+    if (resp && typeof resp === 'object' && 'status' in resp) {
+      const s = (resp as { status?: unknown }).status
+      if (typeof s === 'number') return s
+    }
+  }
+  return undefined
+}
+function getHttpMessage(err: unknown): string | undefined {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const resp = (err as { response?: unknown }).response
+    if (resp && typeof resp === 'object' && 'data' in resp) {
+      const data = (resp as { data?: unknown }).data
+      if (data && typeof data === 'object' && 'message' in data) {
+        const m = (data as { message?: unknown }).message
+        if (typeof m === 'string') return m
+      }
+    }
+  }
+  return undefined
+}
 import { downloadBlobAsFile } from '../lib/utils'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
@@ -17,7 +58,7 @@ export function BookingsPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [staffList, setStaffList] = useState<any[]>([])
+  const [staffList, setStaffList] = useState<StaffOption[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filterRoomId, setFilterRoomId] = useState<number | ''>('')
@@ -59,13 +100,33 @@ export function BookingsPage() {
           staffAPI.list(),
         ])
         if (mounted) {
-          if (rRes.success) setRooms(Array.isArray(rRes.data) ? rRes.data : [])
-          if (cRes.success) setCustomers((cRes as any).data?.items || (Array.isArray(cRes.data) ? cRes.data : []))
-          if (sRes.success) setStaffList(Array.isArray(sRes.data) ? sRes.data : [])
-          ;(window as any).__staffList = Array.isArray(sRes?.data) ? sRes.data : []
+          if (rRes.success) setRooms(Array.isArray(rRes.data) ? (rRes.data as Room[]) : [])
+          if (cRes.success) {
+            const raw = cRes.data as unknown
+            if (Array.isArray(raw)) setCustomers(raw as Customer[])
+            else {
+              const items = (raw as { items?: unknown })?.items
+              setCustomers(Array.isArray(items) ? (items as Customer[]) : [])
+            }
+          }
+          if (sRes.success) {
+            const raw = sRes.data as unknown
+            const list: StaffOption[] = Array.isArray(raw)
+              ? raw.map((e: unknown) => {
+                  const o = e as { id?: unknown; name?: unknown; email?: unknown }
+                  const idVal = typeof o.id === 'number' ? o.id : Number(o.id)
+                  const nm = typeof o.name === 'string' ? o.name : (typeof o.email === 'string' ? o.email : `Staff ${idVal}`)
+                  return { id: Number.isFinite(idVal) ? (idVal as number) : 0, name: nm }
+                })
+              : []
+            setStaffList(list)
+          }
         }
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load data')
+      } catch (e: unknown) {
+        const msg = (e && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string')
+          ? (e as { message: string }).message
+          : 'Failed to load data'
+        setError(msg)
       } finally {
         setLoading(false)
       }
@@ -77,14 +138,17 @@ export function BookingsPage() {
   const reloadBookings = async () => {
     try {
       setLoading(true)
-      const params: any = {}
+      const params: { room_id?: number; from?: string; to?: string } = {}
       if (filterRoomId) params.room_id = filterRoomId
       if (filterDateFrom) params.from = new Date(filterDateFrom).toISOString()
       if (filterDateTo) params.to = new Date(filterDateTo).toISOString()
       const bRes = await bookingsAPI.list(params)
-  if (bRes.success) setBookings(Array.isArray(bRes.data) ? bRes.data : [])
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load bookings')
+      if (bRes.success) setBookings(Array.isArray(bRes.data) ? (bRes.data as Booking[]) : [])
+    } catch (e: unknown) {
+      const msg = (e && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string')
+        ? (e as { message: string }).message
+        : 'Failed to load bookings'
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -138,9 +202,9 @@ export function BookingsPage() {
         setError(msg)
         notify({ kind: 'error', message: msg })
       }
-    } catch (e: any) {
-      const status = e?.response?.status
-      const msg = e?.response?.data?.message || e?.message || 'Failed to create booking'
+    } catch (e: unknown) {
+      const status = getHttpStatus(e)
+      const msg = getHttpMessage(e) || (e && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : 'Failed to create booking')
       setError(msg)
       notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : msg })
     }
@@ -322,7 +386,7 @@ export function BookingsPage() {
   )
 }
 
-function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted, hardDelete, staffList }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void; hardDelete: boolean; staffList: Array<{ id: number; name: string }> }) {
+function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdated, onDeleted, hardDelete, staffList }: { booking: Booking; roomName?: string; customerName?: string; durationHrs: number; onUpdated: () => void; onDeleted: () => void; hardDelete: boolean; staffList: StaffOption[] }) {
   const { notify } = useToast()
   const [editing, setEditing] = useState(false)
   const [start, setStart] = useState(() => booking.start_time.slice(0,16))
@@ -334,7 +398,7 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
 
   const save = async () => {
     try {
-      const payload: any = { notes }
+      const payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string; total_amount: number; staff_id: number | null }> = { notes }
       if (start) payload.start_time = new Date(start).toISOString()
       if (end) payload.end_time = new Date(end).toISOString()
       if (amount !== '') {
@@ -345,13 +409,14 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
         }
         payload.total_amount = parsed
       }
-            payload.staff_id = staffId ? Number(staffId) : null
+      payload.staff_id = staffId ? Number(staffId) : null
       const res = await bookingsAPI.update(booking.id, payload)
       if (res.success) { setEditing(false); onUpdated() }
       else notify({ kind: 'error', message: res.message || 'Update failed' })
-    } catch (e: any) {
-      const status = e?.response?.status
-      notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : (e?.message || 'Update failed') })
+    } catch (e: unknown) {
+      const status = getHttpStatus(e)
+      const msg = getHttpMessage(e) || (e && typeof e === 'object' && 'message' in e && typeof (e as { message?: unknown }).message === 'string' ? (e as { message: string }).message : 'Update failed')
+      notify({ kind: 'error', message: status === 409 ? 'Booking conflict for the selected time' : msg })
     }
   }
 
@@ -372,13 +437,14 @@ function BookingListItem({ booking, roomName, customerName, durationHrs, onUpdat
   }
 
   const price = booking.total_amount ?? undefined
+  const assignedStaff = booking.staff_id != null ? staffList.find(s => s.id === booking.staff_id) : undefined
   return (
     <li className="py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-medium truncate">{roomName || `Room #${booking.room_id}`} · {customerName || `Customer #${booking.customer_id}`}</div>
           <div className="text-sm text-gray-600">
-            {new Date(booking.start_time).toLocaleString()} – {new Date(booking.end_time).toLocaleTimeString()} · {durationHrs.toFixed(1)}h{price != null ? ` · $${price}` : ''}
+            {new Date(booking.start_time).toLocaleString()} – {new Date(booking.end_time).toLocaleTimeString()} · {durationHrs.toFixed(1)}h{price != null ? ` · $${price}` : ''}{assignedStaff ? ` · Staff: ${assignedStaff.name}` : ''}
           </div>
           {editing ? (
             <div className="mt-2 grid md:grid-cols-5 gap-2">
@@ -596,11 +662,11 @@ export function ReportsPage() {
   const [to, setTo] = useState<string>(() => new Date().toISOString().slice(0,10))
   const [openHours, setOpenHours] = useState<number>(12)
   const [loading, setLoading] = useState(false)
-  const [summary, setSummary] = useState<any | null>(null)
-  const [forecast, setForecast] = useState<any | null>(null)
-  const [cust, setCust] = useState<any | null>(null)
-  const [occ, setOcc] = useState<any | null>(null)
-  const [staff, setStaff] = useState<any | null>(null)
+  const [summary, setSummary] = useState<SummaryResponse | null>(null)
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null)
+  const [cust, setCust] = useState<{ retention_rate?: number; churn_rate?: number; avg_clv?: number } | null>(null)
+  const [occ, setOcc] = useState<OccupancyResponse | null>(null)
+  const [staff, setStaff] = useState<{ staff?: StaffPerformanceRow[] } | null>(null)
   const { notify } = useToast()
 
   const load = async () => {
@@ -615,11 +681,11 @@ export function ReportsPage() {
         analyticsAPI.occupancy({ from: fromIso, to: toIso, open_hours_per_day: openHours }),
         analyticsAPI.staff({ from: fromIso, to: toIso }),
       ])
-      if (s.success) setSummary(s.data)
-      if (f.success) setForecast(f.data)
-      if (c.success) setCust(c.data)
-      if (o.success) setOcc(o.data)
-      if (st.success) setStaff(st.data)
+  if (s.success) setSummary((s.data as unknown) as SummaryResponse)
+  if (f.success) setForecast((f.data as unknown) as ForecastResponse)
+  if (c.success) setCust((c.data as unknown) as { retention_rate?: number; churn_rate?: number; avg_clv?: number })
+  if (o.success) setOcc((o.data as unknown) as OccupancyResponse)
+  if (st.success) setStaff((st.data as unknown) as { staff?: StaffPerformanceRow[] })
     } catch (e) {
       console.error(e)
       notify({ kind: 'error', message: 'Failed to load analytics' })
@@ -713,7 +779,7 @@ export function ReportsPage() {
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Revenue Forecast (next 3 mo)</h3></div>
           <div className="card-body space-y-3">
-            <div className="text-sm text-gray-600">Method: {forecast?.method?.replaceAll('_',' ')}</div>
+            <div className="text-sm text-gray-600">Method: {forecast?.method ? forecast.method.replace(/_/g, ' ') : ''}</div>
             {/* Sparkline based on history + forecasts */}
             {(() => {
               const historyVals = Array.isArray(forecast?.history) ? forecast!.history.map((h: any) => Number(h.value) || 0) : []
