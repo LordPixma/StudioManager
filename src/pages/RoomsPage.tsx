@@ -7,6 +7,7 @@ import { Input } from '../components/ui/Input'
 // import { Select } from '../components/ui/Select'
 import { useToast } from '../components/ui/useToast'
 import { Plus, RefreshCw, Trash2, Edit } from 'lucide-react'
+import { getErrorMessage } from '../lib/utils'
 
 type RoomForm = {
   name: string
@@ -25,11 +26,11 @@ export function RoomsPage() {
   const load = async () => {
     try {
       setLoading(true)
-      const res = await roomsAPI.list()
-      if (res.success) setRooms(res.data || [])
+  const res = await roomsAPI.list()
+  if (res.success) setRooms(Array.isArray(res.data) ? (res.data as Room[]) : [])
       else setError(res.message || 'Failed to load rooms')
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load rooms')
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, 'Failed to load rooms'))
     } finally {
       setLoading(false)
     }
@@ -67,8 +68,8 @@ export function RoomsPage() {
         setError(msg)
         notify({ kind: 'error', message: msg })
       }
-    } catch (e: any) {
-      const msg = e?.response?.data?.message || e?.message || 'Failed to add room'
+    } catch (e: unknown) {
+      const msg = getErrorMessage(e, 'Failed to add room')
       setError(msg)
       notify({ kind: 'error', message: msg })
     }
@@ -83,8 +84,8 @@ export function RoomsPage() {
       } else {
         notify({ kind: 'error', message: res.message || 'Delete failed' })
       }
-    } catch (e: any) {
-      notify({ kind: 'error', message: e?.message || 'Delete failed' })
+    } catch (e: unknown) {
+      notify({ kind: 'error', message: getErrorMessage(e, 'Delete failed') })
     }
   }
 

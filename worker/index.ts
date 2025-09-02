@@ -82,6 +82,85 @@ async function ensureAdminTables(env: Env) {
   )`).run()
 }
 
+// --- Booking Extensions (schema) ---
+async function ensureBookingExtensions(env: Env) {
+  if (!env.DB) return
+  // Helper to add a column if missing
+  async function ensureColumn(table: string, column: string, ddl: string) {
+    const info = await env.DB!.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>()
+    const cols = (info?.results || []).map(r => (r as any).name)
+    if (!cols.includes(column)) {
+      await env.DB!.prepare(`ALTER TABLE ${table} ADD COLUMN ${ddl}`).run()
+    }
+  }
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS booking_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS recurring_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    customer_id INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    pattern TEXT NOT NULL, -- 'weekly' | 'monthly'
+    interval INTEGER DEFAULT 1,
+    byweekday TEXT NULL, -- JSON array of 0-6
+    bymonthday TEXT NULL, -- JSON array of 1-31
+    notes TEXT NULL,
+    room_ids TEXT NOT NULL, -- JSON array
+    status TEXT DEFAULT 'active',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS waitlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    room_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    customer_id INTEGER NOT NULL,
+    status TEXT DEFAULT 'waiting',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS time_slot_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    label TEXT NOT NULL,
+    room_type TEXT NULL,
+    room_id INTEGER NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    days_of_week TEXT NOT NULL, -- JSON array 0-6
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    title TEXT,
+    notes TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+  )`).run()
+  // Add optional columns
+  await ensureColumn('rooms', 'room_type', 'room_type TEXT')
+  await ensureColumn('bookings', 'event_id', 'event_id INTEGER NULL')
+}
+
 function requireGlobalAdmin(user: { role?: string } | null): string | null {
   if (!user) return 'Unauthorized'
   if (user.role !== 'SuperAdmin') return 'SuperAdmin access required'
@@ -97,6 +176,7 @@ async function handleAdmin(request: Request, env: Env, url: URL): Promise<Respon
   const path = url.pathname
   const method = request.method
   await ensureAdminTables(env)
+  await ensureBookingExtensions(env)
 
   // GET /api/admin/summary
   if (path === '/api/admin/summary' && method === 'GET') {
@@ -973,8 +1053,13 @@ export class RoomLock {
       if ((conflict?.cnt || 0) > 0) {
         return json({ success: false, message: 'Booking conflict' }, { status: 409 })
       }
-      await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount) VALUES (?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null])
-      const created = await dbFirst(this.env, 'SELECT * FROM bookings WHERE room_id = ? ORDER BY id DESC LIMIT 1', [data.room_id])
+      const hasEvent = typeof data.event_id !== 'undefined' && data.event_id !== null
+      if (hasEvent) {
+        await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount, event_id) VALUES (?,?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null, data.event_id])
+      } else {
+        await dbRun(this.env, 'INSERT INTO bookings (tenant_id, room_id, customer_id, start_time, end_time, status, notes, total_amount) VALUES (?,?,?,?,?,?,?,?)', [data.tenant_id, data.room_id, data.customer_id, data.start_time, data.end_time, data.status || 'confirmed', data.notes || null, data.total_amount || null])
+      }
+      const created = await dbFirst(this.env, 'SELECT * FROM bookings WHERE room_id = ? AND start_time = ? AND end_time = ? ORDER BY id DESC LIMIT 1', [data.room_id, data.start_time, data.end_time])
       return json({ success: true, data: created }, { status: 201 })
     }
     return json({ success: false, message: 'Not found' }, { status: 404 })
@@ -987,6 +1072,7 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
   const user = await getUserFromSession(request, env)
   if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
   const method = request.method
+  await ensureBookingExtensions(env)
   if (url.pathname === '/api/bookings' && method === 'GET') {
     const qs = url.searchParams
     const roomId = qs.get('room_id')
@@ -1002,6 +1088,111 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const rows = await env.DB.prepare(`SELECT * FROM bookings ${where} ORDER BY start_time ASC`).bind(...params).all()
     const data = rows?.results || []
     return json({ success: true, data })
+  }
+  // Multi-room booking creation
+  if (url.pathname === '/api/bookings/multi' && method === 'POST') {
+    const payload = await request.json().catch(() => ({})) as Record<string, unknown>
+    const roomIds = Array.isArray((payload as any).room_ids) ? ((payload as any).room_ids as unknown[]).map(n => Number(n)).filter(n => Number.isFinite(n)) : []
+    const customerId = Number((payload as any).customer_id)
+    const start = String((payload as any).start_time || '')
+    const end = String((payload as any).end_time || '')
+    const notes = typeof (payload as any).notes === 'string' ? String((payload as any).notes) : null
+    if (!(roomIds.length && Number.isFinite(customerId) && start && end)) return json({ success: false, message: 'Invalid payload' }, { status: 400 })
+    // Create an event
+    await dbRun(env, 'INSERT INTO events (tenant_id, title, notes) VALUES (?,?,?)', [user.tenant_id, (payload as any).title || null, notes])
+    const evt = await dbFirst(env, 'SELECT id FROM events WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [user.tenant_id])
+    const eventId = evt?.id
+    const createdIds: number[] = []
+    for (const rid of roomIds) {
+      const id = env.ROOM_LOCK.idFromName(String(rid))
+      const stub = env.ROOM_LOCK.get(id)
+      const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenant_id: user.tenant_id, room_id: rid, customer_id: customerId, start_time: start, end_time: end, status: 'confirmed', notes, event_id: eventId }) }))
+      if (!resp.ok) {
+        // Rollback previous creates
+        for (const bid of createdIds) { await dbRun(env, 'DELETE FROM bookings WHERE id = ?', [bid]) }
+        if (eventId) await dbRun(env, 'DELETE FROM events WHERE id = ?', [eventId])
+        const body = await resp.json().catch(() => ({}))
+        return json({ success: false, message: body?.message || 'Multi-room conflict' }, { status: resp.status })
+      }
+      const body = await resp.json().catch(() => ({}))
+      const bid = body?.data?.id
+      if (bid) createdIds.push(bid)
+    }
+    const rows = await env.DB.prepare('SELECT * FROM bookings WHERE id IN (' + createdIds.map(() => '?').join(',') + ')').bind(...createdIds).all()
+    return json({ success: true, data: rows?.results || [] }, { status: 201 })
+  }
+  // Recurring bookings creation
+  if (url.pathname === '/api/bookings/recurring' && method === 'POST') {
+    const p = await request.json().catch(() => ({})) as Record<string, unknown>
+    const pattern = String((p as any).pattern || '')
+    const interval = Number((p as any).interval || 1)
+    const startDate = String((p as any).start_date || '')
+    const endDate = String((p as any).end_date || '')
+    const startTime = String((p as any).start_time || '')
+    const endTime = String((p as any).end_time || '')
+    const customerId = Number((p as any).customer_id)
+    const roomIds = Array.isArray((p as any).room_ids) ? ((p as any).room_ids as unknown[]).map(n => Number(n)).filter(n => Number.isFinite(n)) : (Number.isFinite((p as any).room_id) ? [Number((p as any).room_id)] : [])
+    const notes = typeof (p as any).notes === 'string' ? String((p as any).notes) : null
+    if (!(pattern && startDate && startTime && endTime && roomIds.length && Number.isFinite(customerId))) return json({ success: false, message: 'Invalid payload' }, { status: 400 })
+    // Save rule
+    await dbRun(env, 'INSERT INTO recurring_rules (tenant_id, customer_id, start_date, end_date, start_time, end_time, pattern, interval, byweekday, bymonthday, notes, room_ids, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,? ,?)', [user.tenant_id, customerId, startDate, endDate || null, startTime, endTime, pattern, interval, JSON.stringify((p as any).byweekday || null), JSON.stringify((p as any).bymonthday || null), notes, JSON.stringify(roomIds), 'active'])
+    // Generate occurrences (bounded to 26 weeks/months to avoid runaway)
+  const occ: Array<{ start: string; end: string }> = []
+  const toISO = (dateStr: string, t: string) => new Date(`${dateStr}T${t}:00`).toISOString()
+  const addDays = (d: Date, days: number) => { const x = new Date(d); x.setDate(x.getDate() + days); return x }
+  const fmt = (d: Date) => d.toISOString().slice(0,10)
+    const until = endDate ? new Date(`${endDate}T00:00:00`) : null
+    const startD = new Date(`${startDate}T00:00:00`)
+    if (pattern === 'weekly') {
+      const weekdays: number[] = Array.isArray((p as any).byweekday) ? (p as any).byweekday as number[] : [startD.getDay()]
+  let cursor = new Date(startD)
+      let iterations = 0
+      while ((!until || cursor <= until) && iterations < 182) { // ~26 weeks if daily check
+        for (const wd of weekdays) {
+          const day = new Date(cursor)
+          const diff = (wd - day.getDay() + 7) % 7
+          const target = addDays(day, diff)
+          const ds = fmt(target)
+          const s = toISO(ds, startTime)
+          const e = toISO(ds, endTime)
+          if (!until || target <= until) occ.push({ start: s, end: e })
+        }
+        cursor = addDays(cursor, 7 * Math.max(1, interval))
+        iterations++
+      }
+    } else if (pattern === 'monthly') {
+  const mdays: number[] = Array.isArray((p as any).bymonthday) ? (p as any).bymonthday as number[] : [startD.getDate()]
+  let cursor = new Date(startD)
+  let iterations = 0
+  while ((!until || cursor <= until) && iterations < 24) { // up to 24 months
+        for (const mday of mdays) {
+          const monthStart = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth(), 1))
+          const target = new Date(monthStart)
+          target.setUTCDate(Math.max(1, Math.min(mday, 28)))
+          const ds = fmt(target)
+          const s = toISO(ds, startTime)
+          const e = toISO(ds, endTime)
+          if (!until || target <= until) occ.push({ start: s, end: e })
+        }
+  cursor = new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + Math.max(1, interval), cursor.getUTCDate()))
+        iterations++
+      }
+    } else {
+      return json({ success: false, message: 'Unsupported pattern' }, { status: 400 })
+    }
+    const created: any[] = []
+    for (const { start, end } of occ) {
+      for (const rid of roomIds) {
+        const id = env.ROOM_LOCK.idFromName(String(rid))
+        const stub = env.ROOM_LOCK.get(id)
+        const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenant_id: user.tenant_id, room_id: rid, customer_id: customerId, start_time: start, end_time: end, status: 'confirmed', notes }) }))
+        if (resp.ok) {
+          const body = await resp.json().catch(() => ({}))
+          if (body?.data) created.push(body.data)
+        }
+      }
+    }
+    return json({ success: true, data: created }, { status: 201 })
   }
   if (url.pathname === '/api/bookings' && method === 'POST') {
     const payload = await request.json().catch(() => ({})) as any
@@ -1055,6 +1246,74 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     if (existing.tenant_id !== user.tenant_id) return json({ success: false, message: 'Forbidden' }, { status: 403 })
     await dbRun(env, 'DELETE FROM bookings WHERE id = ?', [id])
     return json({ success: true, message: 'Booking deleted' })
+  }
+  // Booking templates CRUD
+  if (url.pathname === '/api/booking-templates' && method === 'GET') {
+    const rows = await env.DB.prepare('SELECT * FROM booking_templates WHERE tenant_id = ? ORDER BY created_at DESC').bind(user.tenant_id).all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+  if (url.pathname === '/api/booking-templates' && method === 'POST') {
+    const p = await request.json().catch(() => ({})) as Record<string, unknown>
+    const name = String((p as any).name || '')
+    const payload = JSON.stringify((p as any).payload || {})
+    if (!name) return json({ success: false, message: 'Name required' }, { status: 400 })
+    await dbRun(env, 'INSERT INTO booking_templates (tenant_id, name, payload) VALUES (?,?,?)', [user.tenant_id, name, payload])
+    const row = await dbFirst(env, 'SELECT * FROM booking_templates WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [user.tenant_id])
+    return json({ success: true, data: row }, { status: 201 })
+  }
+  const mTplDel = url.pathname.match(/^\/api\/booking-templates\/(\d+)$/)
+  if (mTplDel && method === 'DELETE') {
+    await dbRun(env, 'DELETE FROM booking_templates WHERE tenant_id = ? AND id = ?', [user.tenant_id, Number(mTplDel[1])])
+    return json({ success: true, message: 'Deleted' })
+  }
+  // Waitlist
+  if (url.pathname === '/api/waitlist' && method === 'GET') {
+    const qs = url.searchParams
+    const roomId = qs.get('room_id')
+    const rows = await env.DB.prepare('SELECT * FROM waitlist WHERE tenant_id = ? ' + (roomId ? 'AND room_id = ? ' : '') + 'ORDER BY created_at ASC').bind(...(roomId ? [user.tenant_id, Number(roomId)] : [user.tenant_id])).all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+  if (url.pathname === '/api/waitlist' && method === 'POST') {
+    const p = await request.json().catch(() => ({})) as Record<string, unknown>
+    const roomId = Number((p as any).room_id)
+    const customerId = Number((p as any).customer_id)
+    const date = String((p as any).date || '')
+    const start = String((p as any).start_time || '')
+    const end = String((p as any).end_time || '')
+    if (!(Number.isFinite(roomId) && Number.isFinite(customerId) && date && start && end)) return json({ success: false, message: 'Invalid payload' }, { status: 400 })
+    await dbRun(env, 'INSERT INTO waitlist (tenant_id, room_id, date, start_time, end_time, customer_id, status) VALUES (?,?,?,?,?,?,?)', [user.tenant_id, roomId, date, start, end, customerId, 'waiting'])
+    const row = await dbFirst(env, 'SELECT * FROM waitlist WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [user.tenant_id])
+    return json({ success: true, data: row }, { status: 201 })
+  }
+  // Time slot templates
+  if (url.pathname === '/api/time-slots' && method === 'GET') {
+    const qs = url.searchParams
+    const roomType = qs.get('room_type')
+    const roomId = qs.get('room_id')
+    let where = 'WHERE tenant_id = ?'
+    const params: unknown[] = [user.tenant_id]
+    if (roomType) { where += ' AND room_type = ?'; params.push(roomType) }
+    if (roomId) { where += ' AND room_id = ?'; params.push(Number(roomId)) }
+    const rows = await env.DB.prepare(`SELECT * FROM time_slot_templates ${where} ORDER BY created_at DESC`).bind(...params).all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+  if (url.pathname === '/api/time-slots' && method === 'POST') {
+    const p = await request.json().catch(() => ({})) as Record<string, unknown>
+    const label = String((p as any).label || '')
+    const start = String((p as any).start_time || '')
+    const end = String((p as any).end_time || '')
+    const days = Array.isArray((p as any).days_of_week) ? (p as any).days_of_week : []
+    const roomType = (p as any).room_type ? String((p as any).room_type) : null
+    const roomId = Number.isFinite((p as any).room_id) ? Number((p as any).room_id) : null
+    if (!(label && start && end && Array.isArray(days))) return json({ success: false, message: 'Invalid payload' }, { status: 400 })
+    await dbRun(env, 'INSERT INTO time_slot_templates (tenant_id, label, room_type, room_id, start_time, end_time, days_of_week, active) VALUES (?,?,?,?,?,?,?,1)', [user.tenant_id, label, roomType, roomId, start, end, JSON.stringify(days)])
+    const row = await dbFirst(env, 'SELECT * FROM time_slot_templates WHERE tenant_id = ? ORDER BY id DESC LIMIT 1', [user.tenant_id])
+    return json({ success: true, data: row }, { status: 201 })
+  }
+  const mTsDel = url.pathname.match(/^\/api\/time-slots\/(\d+)$/)
+  if (mTsDel && method === 'DELETE') {
+    await dbRun(env, 'DELETE FROM time_slot_templates WHERE tenant_id = ? AND id = ?', [user.tenant_id, Number(mTsDel[1])])
+    return json({ success: true, message: 'Deleted' })
   }
   return json({ success: false, message: 'API endpoint not found' }, { status: 404 })
 }

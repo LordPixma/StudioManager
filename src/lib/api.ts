@@ -119,12 +119,61 @@ export const bookingsAPI = {
     const { data } = await http.post<ApiResponse>(`/bookings`, payload)
     return data
   },
+  async createMulti(payload: { room_ids: number[]; customer_id: number; start_time: string; end_time: string; title?: string; notes?: string }) {
+    const { data } = await http.post<ApiResponse>(`/bookings/multi`, payload)
+    return data
+  },
+  async createRecurring(payload: { pattern: 'weekly' | 'monthly'; interval?: number; start_date: string; end_date?: string; start_time: string; end_time: string; customer_id: number; room_id?: number; room_ids?: number[]; byweekday?: number[]; bymonthday?: number[]; notes?: string }) {
+    const { data } = await http.post<ApiResponse>(`/bookings/recurring`, payload)
+    return data
+  },
   async update(id: number, payload: Partial<{ start_time: string; end_time: string; status: 'confirmed' | 'cancelled'; notes: string; total_amount: number }>) {
     const { data } = await http.put<ApiResponse>(`/bookings/${id}`, payload)
     return data
   },
   async remove(id: number) {
     const { data } = await http.delete<ApiResponse>(`/bookings/${id}`)
+    return data
+  },
+}
+
+export const bookingTemplatesAPI = {
+  async list() {
+    const { data } = await http.get<ApiResponse>(`/booking-templates`)
+    return data
+  },
+  async create(payload: { name: string; payload: Record<string, unknown> }) {
+    const { data } = await http.post<ApiResponse>(`/booking-templates`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/booking-templates/${id}`)
+    return data
+  },
+}
+
+export const waitlistAPI = {
+  async list(params?: { room_id?: number }) {
+    const { data } = await http.get<ApiResponse>(`/waitlist`, { params })
+    return data
+  },
+  async create(payload: { room_id: number; date: string; start_time: string; end_time: string; customer_id: number }) {
+    const { data } = await http.post<ApiResponse>(`/waitlist`, payload)
+    return data
+  },
+}
+
+export const timeSlotsAPI = {
+  async list(params?: { room_type?: string; room_id?: number }) {
+    const { data } = await http.get<ApiResponse>(`/time-slots`, { params })
+    return data
+  },
+  async create(payload: { label: string; start_time: string; end_time: string; days_of_week: number[]; room_type?: string; room_id?: number }) {
+    const { data } = await http.post<ApiResponse>(`/time-slots`, payload)
+    return data
+  },
+  async remove(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/time-slots/${id}`)
     return data
   },
 }

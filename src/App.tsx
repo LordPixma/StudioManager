@@ -11,6 +11,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CustomersPage } from './pages/CustomersPage'
 import { BookingsPage } from './pages/BookingsPage'
+import CalendarPage from './pages/CalendarPage'
 import { StaffPage } from './pages/StaffPage'
 import { RoomsPage } from './pages/RoomsPage'
 import { ReportsPage } from './pages/ReportsPage'
@@ -39,6 +40,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/rooms" element={<RoomsPage />} />
           <Route path="/staff" element={<StaffPage />} />
           <Route path="/reports" element={<ReportsPage />} />

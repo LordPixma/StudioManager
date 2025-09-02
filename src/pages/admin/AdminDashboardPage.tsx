@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuthHook'
 import { adminAPI } from '../../lib/api'
 import type { AdminSummary } from '../../types'
 import { Button } from '../../components/ui/Button'
+import { getErrorMessage } from '../../lib/utils'
 
 export function AdminDashboardPage() {
   const { user } = useAuth()
@@ -16,8 +17,8 @@ export function AdminDashboardPage() {
   const res = await adminAPI.summary()
   if (mounted && res.success) setSummary(res.data as AdminSummary)
         else if (mounted && !res.success) setError(res.message || 'Failed to load summary')
-      } catch (e: any) {
-        if (mounted) setError(e?.message || 'Failed to load')
+      } catch (e: unknown) {
+        if (mounted) setError(getErrorMessage(e, 'Failed to load'))
       }
     })()
     return () => { mounted = false }

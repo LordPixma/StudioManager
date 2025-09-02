@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/Input'
 import { useToast } from '../../components/ui/useToast'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
+import { getErrorMessage } from '../../lib/utils'
 
 export function AdminTenantsPage() {
   const { user } = useAuth()
@@ -59,7 +60,7 @@ export function AdminTenantsPage() {
   const res = await adminAPI.tenants()
   if (mounted && res.success) setTenants(Array.isArray(res.data) ? (res.data as AdminTenantListItem[]) : [])
         else if (mounted) setError(res.message || 'Failed to load tenants')
-  } catch (e: any) { if (mounted) setError(e?.message || 'Failed to load') }
+  } catch (e: unknown) { if (mounted) setError(getErrorMessage(e, 'Failed to load')) }
     })()
     return () => { mounted = false }
   }, [])
@@ -69,7 +70,8 @@ export function AdminTenantsPage() {
     const res = await adminAPI.tenantsLiveBookings()
     if (res.success) {
       const map: Record<number, number> = {}
-      for (const row of (res.data || [])) map[row.tenant_id] = row.cnt
+      const rows = Array.isArray(res.data) ? res.data as Array<{ tenant_id: number; cnt: number }> : []
+      for (const row of rows) map[row.tenant_id] = row.cnt
       setLiveCounts(map)
     }
   }, [])
