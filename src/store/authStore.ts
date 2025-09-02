@@ -8,6 +8,7 @@ interface AuthStore extends AuthState {
   clearAuth: () => void
   setLoading: (loading: boolean) => void
   updateSessionTimeout: (timeout: string) => void
+  updateUser: (partial: Partial<User>) => void
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -31,6 +32,8 @@ export const useAuthStore = create<AuthStore>()(
       setLoading: (isLoading: boolean) => set({ isLoading }),
 
       updateSessionTimeout: (sessionTimeout: string) => set({ sessionTimeout }),
+
+  updateUser: (partial: Partial<User>) => set((state) => ({ user: state.user ? { ...state.user, ...partial } : state.user })),
     }),
     {
       name: 'auth-storage',

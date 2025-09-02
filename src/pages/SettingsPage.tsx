@@ -144,10 +144,22 @@ export function SettingsPage() {
           <div className="card-header">
             <h3 className="text-lg font-medium">Profile</h3>
           </div>
-          <div className="card-body space-y-2">
-            <div className="text-sm text-gray-600">Name: <span className="text-gray-900 font-medium">{user?.name}</span></div>
-            <div className="text-sm text-gray-600">Email: <span className="text-gray-900 font-medium">{user?.email}</span></div>
-            <div className="text-sm text-gray-600">Role: <span className="text-gray-900 font-medium">{user?.role}</span></div>
+          <div className="card-body space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-gray-500">NA</div>
+                )}
+              </div>
+              <div>
+                <div className="text-sm text-gray-600">Name: <span className="text-gray-900 font-medium">{user?.name}</span></div>
+                <div className="text-sm text-gray-600">Email: <span className="text-gray-900 font-medium">{user?.email}</span></div>
+                <div className="text-sm text-gray-600">Role: <span className="text-gray-900 font-medium">{user?.role}</span></div>
+              </div>
+            </div>
+            <a href="/profile" className="btn btn-secondary">Edit Profile</a>
           </div>
         </div>
       </div>

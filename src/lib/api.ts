@@ -38,6 +38,17 @@ export const authAPI = {
   },
 }
 
+export const userAPI = {
+  async me() {
+    const { data } = await http.get<ApiResponse>(`/users/me`)
+    return data
+  },
+  async updateMe(payload: Partial<{ name: string; phone: string; bio: string; avatar_url: string; timezone: string }>) {
+    const { data } = await http.put<ApiResponse>(`/users/me`, payload)
+    return data
+  },
+}
+
 export const customerAPI = {
   async getAll(params: { search?: string; page?: number; per_page?: number }) {
     const { data } = await http.get<ApiResponse>(`/customers`, { params })

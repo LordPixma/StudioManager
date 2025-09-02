@@ -59,7 +59,11 @@ export function Header() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center space-x-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
               >
-                <User className="h-5 w-5" />
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="Avatar" className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <User className="h-5 w-5" />
+                )}
                 <span>{user?.name}</span>
                 <ChevronDown className="h-4 w-4" />
               </button>
@@ -72,6 +76,14 @@ export function Header() {
                       <div className="text-xs">{user?.email}</div>
                       <div className="text-xs text-primary-600">{user?.role}</div>
                     </div>
+                    <Link
+                      to="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Link>
                     <Link
                       to="/settings"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"

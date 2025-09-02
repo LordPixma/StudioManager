@@ -7,6 +7,11 @@ export interface User {
   permissions: string[]
   studio_id?: number
   tenant_id?: number // Added for multi-tenancy
+  // Optional profile fields
+  avatar_url?: string | null
+  phone?: string | null
+  bio?: string | null
+  timezone?: string | null
 }
 
 export interface AuthState {

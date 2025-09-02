@@ -42,7 +42,7 @@ function json<T>(body: ApiResponse<T>, init?: ResponseInit) {
   headers.set('Referrer-Policy', 'no-referrer')
   headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
   // Minimal CSP; Pages handles assets, API is same-origin
-  headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'")
+  headers.set('Content-Security-Policy', "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'")
   return new Response(JSON.stringify(body), { ...init, headers })
 }
 
@@ -93,6 +93,15 @@ async function ensureBookingExtensions(env: Env) {
       await env.DB!.prepare(`ALTER TABLE ${table} ADD COLUMN ${ddl}`).run()
     }
   }
+  // Ensure optional user profile fields exist
+  async function ensureUserProfileColumns() {
+    await ensureColumn('users', 'avatar_url', 'avatar_url TEXT NULL')
+    await ensureColumn('users', 'phone', 'phone TEXT NULL')
+    await ensureColumn('users', 'bio', 'bio TEXT NULL')
+    await ensureColumn('users', 'timezone', 'timezone TEXT NULL')
+    await ensureColumn('users', 'notification_prefs', 'notification_prefs TEXT NULL')
+  }
+  await ensureUserProfileColumns()
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS booking_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id INTEGER NOT NULL,
@@ -710,7 +719,22 @@ async function handleLogin(request: Request, env: Env, url: URL): Promise<Respon
 
 function serializeUser(u: any) {
   const permissions = (() => { try { return JSON.parse(u.permissions || '[]') } catch { return [] } })()
-  return { id: u.id, tenant_id: u.tenant_id, name: u.name, email: u.email, role: u.role, permissions, studio_id: u.studio_id, is_active: !!u.is_active, created_at: u.created_at }
+  return {
+    id: u.id,
+    tenant_id: u.tenant_id,
+    name: u.name,
+    email: u.email,
+    role: u.role,
+    permissions,
+    studio_id: u.studio_id,
+    is_active: !!u.is_active,
+    created_at: u.created_at,
+    // Profile fields (optional)
+    avatar_url: u.avatar_url || null,
+    phone: u.phone || null,
+    bio: u.bio || null,
+    timezone: u.timezone || null,
+  }
 }
 
 async function getUserFromSession(request: Request, env: Env): Promise<any | null> {
@@ -786,6 +810,49 @@ async function handleRegister(request: Request, env: Env): Promise<Response> {
   } catch (e: any) {
     return json({ success: false, message: `Registration failed: ${e?.message || String(e)}` }, { status: 500 })
   }
+}
+
+// --- User Profile ---
+async function handleUserProfile(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  await ensureBookingExtensions(env) // ensures user profile columns as well
+  if (request.method === 'GET') {
+    return json({ success: true, data: serializeUser(user) })
+  }
+  if (request.method === 'PUT') {
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>
+    const updates: string[] = []
+    const params: unknown[] = []
+    // Allow updating limited fields
+    const allowed: Array<keyof typeof body> = ['name','phone','bio','avatar_url','timezone']
+    for (const key of allowed) {
+      if (key in body) {
+        // Basic guard for avatar_url if provided as data URL
+        if (key === 'avatar_url' && typeof body[key] === 'string') {
+          const v = String(body[key])
+          const isDataUrl = v.startsWith('data:image/')
+          const isHttp = /^https?:\/\//i.test(v)
+          if (!(isDataUrl || isHttp)) {
+            return json({ success: false, message: 'Invalid avatar_url' }, { status: 400 })
+          }
+          // If data URL, bound size by length (~200KB)
+          if (isDataUrl && v.length > 300000) {
+            return json({ success: false, message: 'Avatar too large' }, { status: 413 })
+          }
+        }
+        updates.push(`${String(key)} = ?`)
+        params.push((body as any)[key])
+      }
+    }
+    if (!updates.length) return json({ success: true, data: serializeUser(user), message: 'No changes' })
+    params.push(user.id)
+    await dbRun(env, `UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params)
+    const updated = await dbFirst(env, 'SELECT * FROM users WHERE id = ? LIMIT 1', [user.id])
+    return json({ success: true, data: serializeUser(updated), message: 'Profile updated' })
+  }
+  return json({ success: false, message: 'Method not allowed' }, { status: 405 })
 }
 
 
@@ -1648,6 +1715,10 @@ export default {
     }
     if (url.pathname === '/api/register' && request.method === 'POST') {
       return handleRegister(request, env)
+    }
+    // User profile endpoints
+    if (url.pathname === '/api/users/me') {
+      return handleUserProfile(request, env)
     }
     if (url.pathname.startsWith('/api/tenants')) {
       return handleTenants(request, env, url)
