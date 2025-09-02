@@ -111,6 +111,11 @@ async function ensureBookingExtensions(env: Env) {
     await ensureColumn('users', 'notification_prefs', 'notification_prefs TEXT NULL')
   }
   await ensureUserProfileColumns()
+  // Loyalty and portal-related customer fields
+  await ensureColumn('customers', 'loyalty_points', 'loyalty_points INTEGER DEFAULT 0')
+  await ensureColumn('customers', 'referral_code', 'referral_code TEXT NULL')
+  await ensureColumn('customers', 'referred_by_customer_id', 'referred_by_customer_id INTEGER NULL')
+  await ensureColumn('customers', 'referral_rewarded', 'referral_rewarded INTEGER DEFAULT 0')
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS booking_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tenant_id INTEGER NOT NULL,
@@ -178,6 +183,36 @@ async function ensureBookingExtensions(env: Env) {
   await ensureColumn('rooms', 'room_type', 'room_type TEXT')
   await ensureColumn('bookings', 'event_id', 'event_id INTEGER NULL')
   await ensureColumn('bookings', 'staff_id', 'staff_id INTEGER NULL')
+  await ensureColumn('bookings', 'checked_in_at', 'checked_in_at TEXT NULL')
+  // OTPs, loyalty transactions, and QR check-ins
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS customer_otps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    customer_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS loyalty_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tenant_id INTEGER NOT NULL,
+    customer_id INTEGER NOT NULL,
+    booking_id INTEGER NULL,
+    points INTEGER NOT NULL,
+    type TEXT NOT NULL, -- 'earn' | 'redeem' | 'adjust'
+    reason TEXT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS booking_checkins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    booking_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at TEXT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`).run()
 }
 
 function requireGlobalAdmin(user: { role?: string } | null): string | null {
@@ -564,6 +599,7 @@ async function handleAnnouncements(request: Request, env: Env, url: URL): Promis
 
 // --- Auth helpers (JWT in httpOnly cookie) ---
 const SESSION_COOKIE = 'sm_session'
+const PORTAL_SESSION_COOKIE = 'cp_session'
 
 function base64UrlEncode(input: ArrayBuffer | Uint8Array): string {
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input)
@@ -633,6 +669,28 @@ function clearSessionCookie(url: URL): string {
   return parts.join('; ')
 }
 
+function portalSessionCookie(token: string, url: URL, maxAgeSeconds: number): string {
+  const secure = url.protocol === 'https:'
+  const parts = [
+    `${PORTAL_SESSION_COOKIE}=${token}`,
+    `Path=/`,
+    `HttpOnly`,
+    `SameSite=Lax`,
+  ]
+  if (secure) parts.push('Secure')
+  if (maxAgeSeconds > 0) parts.push(`Max-Age=${maxAgeSeconds}`)
+  return parts.join('; ')
+}
+
+function clearPortalSessionCookie(url: URL): string {
+  const secure = url.protocol === 'https:'
+  const parts = [
+    `${PORTAL_SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+  ]
+  if (secure) parts.push('Secure')
+  return parts.join('; ')
+}
+
 function isoPlusMinutes(mins: number): string {
   return new Date(Date.now() + mins * 60_000).toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
@@ -693,6 +751,54 @@ async function dbRun(env: Env, sql: string, params: unknown[] = []): Promise<voi
     stmt = stmt.bind(...params)
   }
   await stmt.run()
+}
+
+// --- Portal helpers ---
+async function getPortalCustomerFromSession(request: Request, env: Env): Promise<any | null> {
+  const cookie = request.headers.get('Cookie') || ''
+  const m = cookie.match(new RegExp(`${PORTAL_SESSION_COOKIE}=([^;]+)`))
+  if (!m) return null
+  if (!env.JWT_SECRET) return null
+  const token = m[1]
+  const payload = await verifyJWT(token, env.JWT_SECRET)
+  if (!payload) return null
+  const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [payload.cid])
+  if (!c) return null
+  // Optional tenant check
+  if (payload.tid && c.tenant_id !== payload.tid) return null
+  return c
+}
+
+function randomCode(n = 6): string {
+  const digits = '0123456789'
+  let out = ''
+  for (let i = 0; i < n; i++) out += digits[Math.floor(Math.random() * digits.length)]
+  return out
+}
+
+async function awardLoyaltyIfEligible(env: Env, bookingId: number): Promise<void> {
+  // Fetch booking with customer and status
+  const b = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [bookingId])
+  if (!b || b.status !== 'confirmed' || !b.customer_id) return
+  // Check if already awarded
+  const exists = await dbFirst(env, 'SELECT id FROM loyalty_transactions WHERE booking_id = ? AND type = ? LIMIT 1', [bookingId, 'earn'])
+  if (exists) return
+  // Compute points
+  const amt = Number(b.total_amount || 0)
+  const points = Math.max(1, Math.floor(amt > 0 ? amt / 10 : 10))
+  await dbRun(env, 'INSERT INTO loyalty_transactions (tenant_id, customer_id, booking_id, points, type, reason) VALUES (?,?,?,?,?,?)', [b.tenant_id, b.customer_id, bookingId, points, 'earn', 'Booking'])
+  await dbRun(env, 'UPDATE customers SET loyalty_points = COALESCE(loyalty_points,0) + ? WHERE id = ?', [points, b.customer_id])
+  // Referral bonus (one-time after first confirmed booking)
+  const c = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [b.customer_id])
+  if (c && c.referred_by_customer_id && !c.referral_rewarded) {
+    const cnt = await dbFirst(env, 'SELECT COUNT(*) as cnt FROM bookings WHERE customer_id = ? AND status = ? AND id != ?', [b.customer_id, 'confirmed', bookingId])
+    if ((cnt?.cnt || 0) === 0) {
+      const bonus = 100
+      await dbRun(env, 'INSERT INTO loyalty_transactions (tenant_id, customer_id, booking_id, points, type, reason) VALUES (?,?,?,?,?,?)', [c.tenant_id, c.referred_by_customer_id, bookingId, bonus, 'earn', 'Referral'])
+      await dbRun(env, 'UPDATE customers SET loyalty_points = COALESCE(loyalty_points,0) + ? WHERE id = ?', [bonus, c.referred_by_customer_id])
+      await dbRun(env, 'UPDATE customers SET referral_rewarded = 1 WHERE id = ?', [b.customer_id])
+    }
+  }
 }
 
 async function handleLogin(request: Request, env: Env, url: URL): Promise<Response> {
@@ -1282,6 +1388,12 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     const id = env.ROOM_LOCK.idFromName(String(payload.room_id))
     const stub = env.ROOM_LOCK.get(id)
     const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', body: JSON.stringify({ ...payload, tenant_id: user.tenant_id }), headers: { 'Content-Type': 'application/json' } }))
+    // Award loyalty if confirmed
+    if (resp.ok) {
+      const body = await resp.clone().json().catch(() => null) as any
+      const bid = body?.data?.id
+      if (bid) await awardLoyaltyIfEligible(env, Number(bid))
+    }
     return resp
   }
   // PUT /api/bookings/:id (update time/status/notes/staff)
@@ -1318,6 +1430,10 @@ async function handleBookings(request: Request, env: Env, url: URL): Promise<Res
     params.push(id)
     await dbRun(env, `UPDATE bookings SET ${updates.join(', ')} WHERE id = ?`, params)
     const updated = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [id])
+    if (newStatus === 'confirmed') {
+      // Award loyalty on status change to confirmed
+      await awardLoyaltyIfEligible(env, id)
+    }
     return json({ success: true, data: updated, message: 'Booking updated' })
   }
   // DELETE /api/bookings/:id (hard delete, optional)
@@ -1713,6 +1829,10 @@ export default {
     if (url.pathname === '/api/readiness') {
       return handleReadiness(env)
     }
+    // Customer Portal routes
+    if (url.pathname.startsWith('/api/portal')) {
+      return handlePortal(request, env, url)
+    }
   if (url.pathname === '/api/login' && request.method === 'POST') {
       return handleLogin(request, env, url)
     }
@@ -1758,6 +1878,11 @@ export default {
     }
     if (url.pathname.startsWith('/api/reports/') && (url.pathname.endsWith('.csv'))) {
       return handleReports(request, env, url)
+    }
+
+    // Staff-side check-in scan
+    if (url.pathname === '/api/checkins/scan' && request.method === 'POST') {
+      return handleCheckinScan(request, env)
     }
 
     // For all other /api/*, return 404 (no proxy)
@@ -1807,4 +1932,165 @@ async function handleAvatarGet(request: Request, env: Env, key: string): Promise
   // Cache public avatars briefly
   headers.set('Cache-Control', 'public, max-age=300')
   return new Response(obj.body, { headers })
+}
+
+// --- Customer Portal ---
+async function handlePortal(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  await ensureBookingExtensions(env)
+  const path = url.pathname
+  const method = request.method
+
+  // POST /api/portal/otp/request { email }
+  if (path === '/api/portal/otp/request' && method === 'POST') {
+    const body = await request.json().catch(() => ({})) as any
+    const email = String(body.email || '').toLowerCase().trim()
+    if (!email) return json({ success: false, message: 'Email required' }, { status: 400 })
+    const customer = await dbFirst(env, 'SELECT * FROM customers WHERE email = ? ORDER BY id DESC LIMIT 1', [email])
+    if (!customer) return json({ success: true, message: 'If the email exists, a code has been sent.' })
+    const code = randomCode(6)
+    const exp = new Date(Date.now() + 10 * 60_000).toISOString()
+    await dbRun(env, 'INSERT INTO customer_otps (tenant_id, customer_id, email, code, expires_at) VALUES (?,?,?,?,?)', [customer.tenant_id, customer.id, email, code, exp])
+    // In production, send code via email/SMS. For now, return masked message.
+    return json({ success: true, message: 'OTP sent to your email.' })
+  }
+
+  // POST /api/portal/otp/verify { email, code }
+  if (path === '/api/portal/otp/verify' && method === 'POST') {
+    if (!env.JWT_SECRET) return json({ success: false, message: 'JWT secret not configured' }, { status: 500 })
+    const body = await request.json().catch(() => ({})) as any
+    const email = String(body.email || '').toLowerCase().trim()
+    const code = String(body.code || '').trim()
+    const row = await dbFirst(env, `SELECT * FROM customer_otps WHERE email = ? AND code = ? ORDER BY id DESC LIMIT 1`, [email, code])
+    if (!row) return json({ success: false, message: 'Invalid code' }, { status: 400 })
+    if (row.used_at) return json({ success: false, message: 'Code already used' }, { status: 400 })
+    if (new Date(row.expires_at).getTime() < Date.now()) return json({ success: false, message: 'Code expired' }, { status: 400 })
+    const customer = await dbFirst(env, 'SELECT * FROM customers WHERE id = ? LIMIT 1', [row.customer_id])
+    if (!customer) return json({ success: false, message: 'Customer not found' }, { status: 404 })
+    await dbRun(env, 'UPDATE customer_otps SET used_at = CURRENT_TIMESTAMP WHERE id = ?', [row.id])
+    const now = Math.floor(Date.now() / 1000)
+    const payload = { cid: customer.id, tid: customer.tenant_id, iat: now, exp: now + 60 * 60 * 24 * 14 }
+    const token = await signJWT(payload, env.JWT_SECRET)
+    const headers = new Headers()
+    headers.append('Set-Cookie', portalSessionCookie(token, url, 60 * 60 * 24 * 14))
+    return json({ success: true, data: { customer: { id: customer.id, name: customer.name, email: customer.email, loyalty_points: customer.loyalty_points || 0 } } }, { headers })
+  }
+
+  // POST /api/portal/logout
+  if (path === '/api/portal/logout' && method === 'POST') {
+    const headers = new Headers()
+    headers.append('Set-Cookie', clearPortalSessionCookie(url))
+    return json({ success: true, message: 'Logged out' }, { headers })
+  }
+
+  // GET /api/portal/session
+  if (path === '/api/portal/session' && method === 'GET') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    return json({ success: true, data: { customer: { id: c.id, name: c.name, email: c.email, loyalty_points: c.loyalty_points || 0 } } })
+  }
+
+  // GET /api/portal/bookings?from&to
+  if (path === '/api/portal/bookings' && method === 'GET') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const qs = url.searchParams
+    const from = qs.get('from')
+    const to = qs.get('to')
+    let where = 'WHERE tenant_id = ? AND customer_id = ?'
+    const params: any[] = [c.tenant_id, c.id]
+    if (from) { where += ' AND end_time > ?'; params.push(from) }
+    if (to) { where += ' AND start_time < ?'; params.push(to) }
+    const rows = await env.DB.prepare(`SELECT * FROM bookings ${where} ORDER BY start_time ASC`).bind(...params).all()
+    return json({ success: true, data: rows?.results || [] })
+  }
+
+  // POST /api/portal/bookings { room_id, start_time, end_time, notes }
+  if (path === '/api/portal/bookings' && method === 'POST') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const p = await request.json().catch(() => ({})) as any
+    const rid = Number(p.room_id)
+    const start = String(p.start_time || '')
+    const end = String(p.end_time || '')
+    if (!(Number.isFinite(rid) && start && end)) return json({ success: false, message: 'Invalid payload' }, { status: 400 })
+    const id = env.ROOM_LOCK.idFromName(String(rid))
+    const stub = env.ROOM_LOCK.get(id)
+    const resp = await stub.fetch(new Request('https://do/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenant_id: c.tenant_id, room_id: rid, customer_id: c.id, start_time: start, end_time: end, status: 'confirmed', notes: p.notes || null }) }))
+    if (!resp.ok) return resp
+    const body = await resp.json().catch(() => null) as any
+    const bid = body?.data?.id
+    if (bid) await awardLoyaltyIfEligible(env, Number(bid))
+    return json({ success: true, data: body?.data }, { status: 201 })
+  }
+
+  // DELETE /api/portal/bookings/:id
+  const mDel = path.match(/^\/api\/portal\/bookings\/(\d+)$/)
+  if (mDel && method === 'DELETE') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const id = Number(mDel[1])
+    const existing = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [id])
+    if (!existing || existing.customer_id !== c.id) return json({ success: false, message: 'Not found' }, { status: 404 })
+    await dbRun(env, 'DELETE FROM bookings WHERE id = ?', [id])
+    return json({ success: true, message: 'Booking canceled' })
+  }
+
+  // Loyalty: GET /api/portal/loyalty
+  if (path === '/api/portal/loyalty' && method === 'GET') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const tx = await env.DB.prepare('SELECT * FROM loyalty_transactions WHERE tenant_id = ? AND customer_id = ? ORDER BY created_at DESC LIMIT 200').bind(c.tenant_id, c.id).all()
+    return json({ success: true, data: { points: c.loyalty_points || 0, transactions: tx?.results || [] } })
+  }
+
+  // Referral: POST /api/portal/referral/apply { code }
+  if (path === '/api/portal/referral/apply' && method === 'POST') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const body = await request.json().catch(() => ({})) as any
+    const code = String(body.code || '').trim()
+    if (!code) return json({ success: false, message: 'Code required' }, { status: 400 })
+    if (c.referred_by_customer_id) return json({ success: false, message: 'Referral already set' }, { status: 400 })
+    const ref = await dbFirst(env, 'SELECT * FROM customers WHERE tenant_id = ? AND referral_code = ? LIMIT 1', [c.tenant_id, code])
+    if (!ref) return json({ success: false, message: 'Invalid code' }, { status: 404 })
+    if (ref.id === c.id) return json({ success: false, message: 'Cannot refer yourself' }, { status: 400 })
+    await dbRun(env, 'UPDATE customers SET referred_by_customer_id = ? WHERE id = ?', [ref.id, c.id])
+    return json({ success: true, message: 'Referral applied' })
+  }
+
+  // QR: GET /api/portal/checkins/:bookingId/qr -> returns a short code
+  const mQr = path.match(/^\/api\/portal\/checkins\/(\d+)\/qr$/)
+  if (mQr && method === 'GET') {
+    const c = await getPortalCustomerFromSession(request, env)
+    if (!c) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    const bid = Number(mQr[1])
+    const b = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [bid])
+    if (!b || b.customer_id !== c.id) return json({ success: false, message: 'Not found' }, { status: 404 })
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+    const exp = new Date(Date.now() + 60 * 60_000).toISOString()
+    await dbRun(env, 'INSERT INTO booking_checkins (booking_id, code, expires_at) VALUES (?,?,?)', [bid, code, exp])
+    return json({ success: true, data: { code, expires_at: exp } })
+  }
+
+  return json({ success: false, message: 'Not found' }, { status: 404 })
+}
+
+// Staff-side: POST /api/checkins/scan { code }
+async function handleCheckinScan(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ success: false, message: 'DB not bound' }, { status: 503 })
+  const user = await getUserFromSession(request, env)
+  if (!user) return json({ success: false, message: 'Unauthorized' }, { status: 401 })
+  const body = await request.json().catch(() => ({})) as any
+  const code = String(body.code || '').trim().toUpperCase()
+  if (!code) return json({ success: false, message: 'Code required' }, { status: 400 })
+  const row = await dbFirst(env, 'SELECT * FROM booking_checkins WHERE code = ? ORDER BY id DESC LIMIT 1', [code])
+  if (!row) return json({ success: false, message: 'Invalid code' }, { status: 404 })
+  if (row.used_at) return json({ success: false, message: 'Code already used' }, { status: 400 })
+  if (new Date(row.expires_at).getTime() < Date.now()) return json({ success: false, message: 'Code expired' }, { status: 400 })
+  const b = await dbFirst(env, 'SELECT * FROM bookings WHERE id = ? LIMIT 1', [row.booking_id])
+  if (!b || b.tenant_id !== user.tenant_id) return json({ success: false, message: 'Not found' }, { status: 404 })
+  await dbRun(env, 'UPDATE booking_checkins SET used_at = CURRENT_TIMESTAMP WHERE id = ?', [row.id])
+  await dbRun(env, 'UPDATE bookings SET checked_in_at = CURRENT_TIMESTAMP WHERE id = ?', [b.id])
+  return json({ success: true, data: { booking_id: b.id, customer_id: b.customer_id, checked_in_at: new Date().toISOString() }, message: 'Checked in' })
 }

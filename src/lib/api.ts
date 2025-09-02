@@ -357,3 +357,54 @@ export const announcementsAPI = {
     return data
   },
 }
+
+// Customer Portal APIs
+export const portalAPI = {
+  async requestOtp(email: string) {
+    const { data } = await http.post<ApiResponse>(`/portal/otp/request`, { email })
+    return data
+  },
+  async verifyOtp(email: string, code: string) {
+    const { data } = await http.post<ApiResponse<{ customer: { id: number; name: string; email: string; loyalty_points: number } }>>(`/portal/otp/verify`, { email, code })
+    return data
+  },
+  async session() {
+    const { data } = await http.get<ApiResponse<{ customer: { id: number; name: string; email: string; loyalty_points: number } }>>(`/portal/session`)
+    return data
+  },
+  async logout() {
+    const { data } = await http.post<ApiResponse>(`/portal/logout`)
+    return data
+  },
+  async listBookings(params: { from?: string; to?: string } = {}) {
+    const { data } = await http.get<ApiResponse<any[]>>(`/portal/bookings`, { params })
+    return data
+  },
+  async createBooking(input: { room_id: number; start_time: string; end_time: string; notes?: string }) {
+    const { data } = await http.post<ApiResponse<any>>(`/portal/bookings`, input)
+    return data
+  },
+  async cancelBooking(id: number) {
+    const { data } = await http.delete<ApiResponse>(`/portal/bookings/${id}`)
+    return data
+  },
+  async loyalty() {
+    const { data } = await http.get<ApiResponse<{ points: number; transactions: any[] }>>(`/portal/loyalty`)
+    return data
+  },
+  async applyReferral(code: string) {
+    const { data } = await http.post<ApiResponse>(`/portal/referral/apply`, { code })
+    return data
+  },
+  async getQrCode(bookingId: number) {
+    const { data } = await http.get<ApiResponse<{ code: string; expires_at: string }>>(`/portal/checkins/${bookingId}/qr`)
+    return data
+  },
+}
+
+export const checkinsAPI = {
+  async scan(code: string) {
+    const { data } = await http.post<ApiResponse<{ booking_id: number; customer_id: number; checked_in_at: string }>>(`/checkins/scan`, { code })
+    return data
+  }
+}

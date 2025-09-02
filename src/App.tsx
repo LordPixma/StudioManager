@@ -18,6 +18,13 @@ import { ReportsPage } from './pages/ReportsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
+// Customer Portal (public)
+import PortalLoginPage from './pages/PortalLoginPage'
+import PortalBookingsPage from './pages/PortalBookingsPage'
+import PortalLoyaltyPage from './pages/PortalLoyaltyPage'
+import PortalQrPage from './pages/PortalQrPage'
+// Staff utility
+import StaffCheckinPage from './pages/StaffCheckinPage'
 // Admin pages are optional; disable imports if not present
 
 function App() {
@@ -29,6 +36,11 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+  {/* Customer portal public routes */}
+  <Route path="/portal/login" element={<PortalLoginPage />} />
+  <Route path="/portal/bookings" element={<PortalBookingsPage />} />
+  <Route path="/portal/loyalty" element={<PortalLoyaltyPage />} />
+  <Route path="/portal/qr" element={<PortalQrPage />} />
         
         {/* Protected routes */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
@@ -42,6 +54,7 @@ function App() {
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/staff/checkin" element={<StaffCheckinPage />} />
           {/* Admin routes can be added here when pages exist */}
         </Route>
         
