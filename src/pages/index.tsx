@@ -667,6 +667,22 @@ export function ReportsPage() {
   const [cust, setCust] = useState<{ retention_rate?: number; churn_rate?: number; avg_clv?: number } | null>(null)
   const [occ, setOcc] = useState<OccupancyResponse | null>(null)
   const [staff, setStaff] = useState<{ staff?: StaffPerformanceRow[] } | null>(null)
+  const [showCustomizer, setShowCustomizer] = useState(false)
+  const [widgets, setWidgets] = useState<{ kpi: boolean; forecast: boolean; occupancy: boolean; customers: boolean; peak: boolean; staff: boolean }>(() => {
+    try {
+      const raw = localStorage.getItem('reports.widgets')
+      if (raw) return JSON.parse(raw)
+    } catch {}
+    return { kpi: true, forecast: true, occupancy: true, customers: true, peak: true, staff: true }
+  })
+  const [forecastMetric, setForecastMetric] = useState<'revenue' | 'bookings'>(() => {
+    const m = localStorage.getItem('reports.forecastMetric')
+    return m === 'bookings' ? 'bookings' : 'revenue'
+  })
+  const [budgetTarget, setBudgetTarget] = useState<number>(() => {
+    const v = Number(localStorage.getItem('reports.budgetTarget') || '')
+    return Number.isFinite(v) && v > 0 ? v : 0
+  })
   const { notify } = useToast()
 
   const load = async () => {
@@ -676,7 +692,7 @@ export function ReportsPage() {
       const toIso = new Date(new Date(to).setHours(23,59,59,999)).toISOString()
       const [s, f, c, o, st] = await Promise.all([
         analyticsAPI.summary({ from: fromIso, to: toIso, open_hours_per_day: openHours }),
-        analyticsAPI.forecast({ metric: 'revenue', period: 'monthly', months: 3 }),
+        analyticsAPI.forecast({ metric: forecastMetric, period: 'monthly', months: 3 }),
         analyticsAPI.customers({ from: fromIso, to: toIso }),
         analyticsAPI.occupancy({ from: fromIso, to: toIso, open_hours_per_day: openHours }),
         analyticsAPI.staff({ from: fromIso, to: toIso }),
@@ -696,6 +712,17 @@ export function ReportsPage() {
 
   useEffect(() => { load() // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Persist widget/forecast settings
+  useEffect(() => {
+    try { localStorage.setItem('reports.widgets', JSON.stringify(widgets)) } catch {}
+  }, [widgets])
+  useEffect(() => {
+    try { localStorage.setItem('reports.forecastMetric', forecastMetric) } catch {}
+  }, [forecastMetric])
+  useEffect(() => {
+    try { localStorage.setItem('reports.budgetTarget', String(budgetTarget || '')) } catch {}
+  }, [budgetTarget])
 
   const handleDownload = async (kind: 'bookings' | 'revenue') => {
     try {
@@ -762,46 +789,89 @@ export function ReportsPage() {
           <span className="text-gray-500">to</span>
           <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           <Input type="number" min={1} max={24} value={openHours} onChange={(e)=>setOpenHours(Number(e.target.value)||12)} className="w-24" placeholder="Open hrs" />
+          <Select value={forecastMetric} onChange={(e) => setForecastMetric((e.target as HTMLSelectElement).value as 'revenue' | 'bookings')} className="w-36">
+            <option value="revenue">Revenue</option>
+            <option value="bookings">Bookings</option>
+          </Select>
+          <Input type="number" min={0} step="0.01" value={budgetTarget || ''} onChange={(e)=>setBudgetTarget(Number(e.target.value)||0)} className="w-36" placeholder="Budget ($/mo)" />
           <Button variant="secondary" onClick={load} disabled={loading}><RefreshCw className="h-4 w-4"/></Button>
+          <Button variant="secondary" onClick={() => setShowCustomizer(v => !v)}>Customize</Button>
         </div>
       </div>
 
+      {showCustomizer && (
+        <div className="card">
+          <div className="card-body grid md:grid-cols-3 gap-3 text-sm">
+            {([
+              ['kpi','KPIs'],
+              ['forecast','Forecast'],
+              ['occupancy','Occupancy'],
+              ['customers','Customers'],
+              ['peak','Peak Times'],
+              ['staff','Staff'],
+            ] as Array<[keyof typeof widgets, string]>).map(([key,label]) => (
+              <label key={String(key)} className="flex items-center gap-2">
+                <input type="checkbox" checked={widgets[key]} onChange={(e)=>setWidgets(w => ({...w, [key]: e.target.checked}))} />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* KPIs */}
-      <div className="grid md:grid-cols-4 gap-4">
-        {kpi('Revenue', `$${Number(summary?.revenue||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
-        {kpi('Bookings', Number(summary?.total_bookings||0), <TrendingUp className="h-5 w-5"/>)}
-        {kpi('Avg. booking value', `$${Number(summary?.avg_booking_value||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
-        {kpi('Unique customers', Number(summary?.unique_customers||0), <UsersIcon className="h-5 w-5"/>)}
-      </div>
+      {widgets.kpi && (
+        <div className="grid md:grid-cols-4 gap-4">
+          {kpi('Revenue', `$${Number(summary?.revenue||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
+          {kpi('Bookings', Number(summary?.total_bookings||0), <TrendingUp className="h-5 w-5"/>)}
+          {kpi('Avg. booking value', `$${Number(summary?.avg_booking_value||0).toFixed(2)}`, <DollarSign className="h-5 w-5"/>)}
+          {kpi('Unique customers', Number(summary?.unique_customers||0), <UsersIcon className="h-5 w-5"/>)}
+        </div>
+      )}
 
       {/* Forecast & occupancy */}
       <div className="grid md:grid-cols-2 gap-6">
+        {widgets.forecast && (
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Revenue Forecast (next 3 mo)</h3></div>
           <div className="card-body space-y-3">
-            <div className="text-sm text-gray-600">Method: {forecast?.method ? forecast.method.replace(/_/g, ' ') : ''}</div>
+            <div className="text-sm text-gray-600">Method: {forecast?.method ? forecast.method.replace(/_/g, ' ') : ''} · Metric: {forecastMetric}</div>
             {/* Sparkline based on history + forecasts */}
             {(() => {
-              const historyVals = Array.isArray(forecast?.history) ? forecast!.history.map((h: any) => Number(h.value) || 0) : []
-              const forecastVals = Array.isArray(forecast?.forecasts) ? forecast!.forecasts.map((f: any) => Number(f.value) || 0) : []
+              const historyVals = Array.isArray(forecast?.history) ? (forecast!.history as ForecastPoint[]).map((h) => Number(h.value) || 0) : []
+              const forecastVals = Array.isArray(forecast?.forecasts) ? (forecast!.forecasts as ForecastPoint[]).map((f) => Number(f.value) || 0) : []
               const all = [...historyVals, ...forecastVals]
               return all.length > 0 ? (
                 <Sparkline values={all} splitIndex={historyVals.length} />
               ) : null
             })()}
             <ul className="text-sm space-y-1">
-              {forecast?.forecasts?.map((f: any) => (
-                <li key={f.period} className="flex justify-between"><span>{f.period}</span><span className="font-medium">${Number(f.value).toFixed(2)}</span></li>
-              ))}
+              {(forecast?.forecasts as ForecastPoint[] | undefined)?.map((f) => {
+                const valNum = Number(f.value)
+                const formatted = forecastMetric === 'revenue' ? `$${valNum.toFixed(2)}` : String(valNum)
+                const variance = forecastMetric === 'revenue' && budgetTarget > 0 ? valNum - budgetTarget : null
+                const varianceStr = variance != null ? `${variance >= 0 ? '+' : ''}$${Math.abs(variance).toFixed(2)}` : null
+                return (
+                  <li key={f.period} className="flex justify-between">
+                    <span>{f.period}</span>
+                    <span className="font-medium">
+                      {formatted}
+                      {varianceStr && <span className={`ml-2 ${variance! >= 0 ? 'text-green-600' : 'text-red-600'}`}>({varianceStr})</span>}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         </div>
+        )}
+        {widgets.occupancy && (
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Occupancy</h3></div>
           <div className="card-body space-y-3">
             <div className="flex items-center gap-2 text-sm text-gray-600"><Clock className="h-4 w-4"/> Assumed open hours/day: {occ?.assumptions?.open_hours_per_day} · Days: {occ?.assumptions?.days}</div>
             <div className="space-y-2">
-              {occ?.per_room?.map((r: any) => (
+              {occ?.per_room?.map((r: OccupancyRoom) => (
                 <div key={r.room_id}>
                   <div className="flex justify-between text-sm"><span>{r.room_name || `Room ${r.room_id}`}</span><span>{Math.round((r.utilization||0)*100)}%</span></div>
                   <div className="w-full h-2 bg-gray-100 rounded"><div className="h-2 bg-primary-500 rounded" style={{ width: `${Math.min(100, Math.round((r.utilization||0)*100))}%` }} /></div>
@@ -810,10 +880,12 @@ export function ReportsPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Customer analytics and peak times */}
       <div className="grid md:grid-cols-2 gap-6">
+        {widgets.customers && (
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Customers</h3></div>
           <div className="card-body text-sm space-y-2">
@@ -822,6 +894,8 @@ export function ReportsPage() {
             <div>Avg CLV (last 180d): <span className="font-medium">${Number(cust?.avg_clv||0).toFixed(2)}</span></div>
           </div>
         </div>
+        )}
+        {widgets.peak && (
         <div className="card">
           <div className="card-header"><h3 className="text-lg font-medium">Peak Times</h3></div>
           <div className="card-body text-sm space-y-2">
@@ -830,10 +904,12 @@ export function ReportsPage() {
             <div>Occupancy rate (overall): <span className="font-medium">{Math.round((summary?.occupancy_rate||0)*100)}%</span></div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Staff performance */}
-      <div className="card">
+  {widgets.staff && (
+  <div className="card">
         <div className="card-header flex items-center justify-between">
           <h3 className="text-lg font-medium">Staff Performance</h3>
           <span className="text-xs text-gray-500">Requires assigning bookings to staff</span>
@@ -849,7 +925,7 @@ export function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {staff?.staff?.map((s: any) => (
+        {staff?.staff?.map((s: StaffPerformanceRow) => (
                   <tr key={s.staff_id} className="border-t">
                     <td className="py-2 pr-4">{s.staff_name}</td>
                     <td className="py-2 pr-4">{s.bookings}</td>
@@ -861,6 +937,7 @@ export function ReportsPage() {
           </div>
         </div>
       </div>
+  )}
 
       {/* CSV downloads */}
       <div className="grid md:grid-cols-2 gap-6">
